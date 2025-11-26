@@ -21,7 +21,7 @@ router.post(
 );
 
 router.post(
-  "/create-staff",
+  "/create",
   validateRequest(adminValidations.create),
 
   loggerMiddleware,
