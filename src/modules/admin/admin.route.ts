@@ -65,14 +65,14 @@ router.get(
 router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_VIEW),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_STAFF),
   AdminController.getAllAdmins
 );
 
 router.get(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_VIEW),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_STAFF),
   AdminController.getAdminById
 );
 
@@ -94,7 +94,7 @@ router.patch(
 router.patch(
   "/update-staff/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_UPDATE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_STAFF),
   validateRequest(adminValidations.update),
   loggerMiddleware,
   AdminController.updateAdmin
@@ -103,7 +103,7 @@ router.patch(
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_DELETE),
+  JwtInstance.hasPermissions(PermissionEnum.DELETE_STAFF),
   AdminController.deleteAdmin
 );
 

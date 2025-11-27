@@ -38,14 +38,14 @@ router.patch(
   "/:id",
   validateRequest(UserValidations.update),
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_UPDATE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_STUDENT),
   UserController.updateUser
 );
 
 router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_VIEW),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
   UserController.getAllCustomers
 );
 
@@ -58,14 +58,14 @@ router.get(
 router.get(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_VIEW),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
   UserController.getUserById
 );
 
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.USER_DELETE),
+  JwtInstance.hasPermissions(PermissionEnum.DELETE_STUDENT),
   UserController.deleteUser
 );
 
