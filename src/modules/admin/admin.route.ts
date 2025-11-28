@@ -13,12 +13,12 @@ import { PermissionEnum } from "../permission/permission.enum";
 
 const router = Router();
 
-router.post(
-  "/",
-  validateRequest(adminValidations.create),
-  loggerMiddleware,
-  AdminController.createAdmin
-);
+// router.post(
+//   "/",
+//   validateRequest(adminValidations.create),
+//   loggerMiddleware,
+//   AdminController.createAdmin
+// );
 
 router.post(
   "/create",
