@@ -11,8 +11,36 @@ const router = Router();
 router.post(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.MANAGE_PERMISSIONS),
+  JwtInstance.hasPermissions(PermissionEnum.CREATE_QUESTION),
   QuestionController.createQuestion
+);
+
+router.get(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_QUESTION),
+  QuestionController.getQuestionById
+);
+
+router.get(
+  "/",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_QUESTION),
+  QuestionController.getAllQuestions
+);
+
+router.patch(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_QUESTION),
+  QuestionController.updateQuestionById
+);
+
+router.delete(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.DELETE_QUESTION),
+  QuestionController.deleteQuestionById
 );
 
 export const QuestionRoutes = router;
