@@ -13,7 +13,7 @@ export interface IQuestion {
   type: QuestionType;
   content: string;
   options?: string[];
-  correctAnswer: string | IQuestionBlank[];
+  blanks: string | IQuestionBlank[];
   mathFormula?: string;
   answerType: answerType;
   marks: number;
