@@ -40,9 +40,9 @@ class Service {
         { new: true }
       );
 
-      await OTPService.sendVerificationOtp(data.phone_number, "user");
+      // await OTPService.sendVerificationOtp(data.phone_number, "user");
 
-      if (data.role === ROLES.CUSTOMER && updatedUser) {
+      if (data.role === ROLES.STUDENT && updatedUser) {
         if (updatedUser) {
           if (updatedUser) {
             emitter.emit("user.registered", updatedUser._id);
@@ -52,13 +52,12 @@ class Service {
 
       return updatedUser;
     }
-    data.status = USER_STATUS.INACTIVE; // set status to inactive by default
+    data.status = USER_STATUS.ACTIVE; // set status to active by default
     data.password = await BcryptInstance.hash(data.password);
     const result = await UserModel.create(data);
 
-    await OTPService.sendVerificationOtp(data.phone_number, "user");
-
-    if (data.role === ROLES.CUSTOMER) {
+    // await OTPService.sendVerificationOtp(data.phone_number, "user");
+    if (data.role === ROLES.STUDENT) {
       emitter.emit("user.registered", result._id);
     }
 
@@ -89,7 +88,7 @@ class Service {
         },
         { new: true }
       );
-      if (data.role === ROLES.CUSTOMER) {
+      if (data.role === ROLES.STUDENT) {
         emitter.emit("user.registered", updatedUser?._id);
       }
       return updatedUser;
@@ -97,7 +96,7 @@ class Service {
 
     const result = await UserModel.create(data);
 
-    if (data.role === ROLES.CUSTOMER) {
+    if (data.role === ROLES.STUDENT) {
       emitter.emit("user.registered", result._id);
     }
     return result;

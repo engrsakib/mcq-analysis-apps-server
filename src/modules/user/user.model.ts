@@ -10,7 +10,7 @@ const userSchema = new Schema<IUser>(
     image: { type: String, default: "" },
     is_Deleted: { type: Boolean, default: false },
     email: { type: String, default: "" },
-    role: { type: String, default: ROLES.CUSTOMER },
+    role: { type: String, default: ROLES.STUDENT },
     password: { type: String, required: true },
     status: { type: String, enum: ["active", "inactive"], default: "inactive" },
     last_login_at: { type: Date, default: null },
