@@ -12,7 +12,7 @@ const userSchema = new Schema<IUser>(
     email: { type: String, default: "" },
     role: { type: String, default: ROLES.STUDENT },
     password: { type: String, required: true },
-    status: { type: String, enum: ["active", "inactive"], default: "inactive" },
+    status: { type: String, enum: ["active", "inactive"], default: "active" },
     last_login_at: { type: Date, default: null },
   },
   schemaOptions

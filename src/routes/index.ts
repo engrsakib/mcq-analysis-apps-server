@@ -6,6 +6,7 @@ import { Router } from "express";
 import { UserRoutes } from "@/modules/user/user.routes";
 import { UploadRoutes } from "@/modules/upload/upload.routes";
 import { PermissionsRoutes } from "@/modules/permission/permission.route";
+import { QuestionRoutes } from "./../modules/questions/question.route";
 const router = Router();
 
 const moduleRoutes = [
@@ -33,6 +34,10 @@ const moduleRoutes = [
   {
     path: "/permissions",
     route: PermissionsRoutes,
+  },
+  {
+    path: "/question",
+    route: QuestionRoutes,
   },
 ];
 
