@@ -14,7 +14,7 @@ const QuestionBlankSchema = new Schema<IQuestionBlank>(
 
 const QuestionSchema = new Schema<IQuestion>(
   {
-    examId: { type: Number },
+    questionId: { type: Number, required: true, unique: true },
     title: { type: String, required: true },
 
     description: { type: String },

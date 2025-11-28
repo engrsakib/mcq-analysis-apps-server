@@ -7,7 +7,7 @@ export interface IQuestionBlank {
 }
 
 export interface IQuestion {
-  examId?: number;
+  questionId: number;
   title: string;
   description?: string;
   type: QuestionType;
