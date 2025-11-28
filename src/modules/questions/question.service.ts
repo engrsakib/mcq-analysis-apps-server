@@ -60,4 +60,4 @@ class Service {
   };
 }
 
-export const AdminService = new Service();
+export const QuestionService = new Service();
