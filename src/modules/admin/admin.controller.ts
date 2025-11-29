@@ -68,7 +68,7 @@ class Controller extends BaseController {
 
   adminLogin = this.catchAsync(async (req: Request, res: Response) => {
     const result = await AdminService.adminLogin(req.body);
-    // cookieManager.setTokens(res, access_token, refresh_token);
+    cookieManager.setTokens(res, result.access_token, result.refresh_token);
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,

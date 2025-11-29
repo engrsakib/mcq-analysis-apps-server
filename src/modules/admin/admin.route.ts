@@ -23,6 +23,8 @@ const router = Router();
 router.post(
   "/create",
   validateRequest(adminValidations.create),
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.CREATE_STAFF),
 
   loggerMiddleware,
   AdminController.createAdminByAdmin
