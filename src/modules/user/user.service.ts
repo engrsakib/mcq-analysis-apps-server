@@ -160,10 +160,6 @@ class Service {
 
     const result = await UserModel.find(searchCondition)
       .select({ password: 0 })
-      .populate({
-        path: "permissions",
-        select: "key -_id",
-      })
       .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
       .skip(skip)
       .limit(limit)
