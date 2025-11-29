@@ -10,7 +10,7 @@ import { BarcodeService } from "@/lib/barcode";
 class Service {
   createQuestion = async (questionData: any) => {
     const quesId = BarcodeService.generateEAN13();
-    questionData.id = quesId;
+    questionData.questionId = quesId;
 
     const question = await QuestionModel.create(questionData);
     return question;

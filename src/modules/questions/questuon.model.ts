@@ -22,19 +22,22 @@ const QuestionSchema = new Schema<IQuestion>(
     type: {
       type: String,
       enum: Object.values(QuestionType),
+      default: QuestionType.GENERAL,
       required: true,
     },
 
-    content: { type: String, required: true },
+    content: { type: String, required: false },
 
     options: {
       type: [String],
       default: [],
+      required: false,
     },
 
     blanks: {
       type: Schema.Types.Mixed,
       default: [],
+      required: false,
     },
 
     mathFormula: { type: String },
@@ -42,6 +45,7 @@ const QuestionSchema = new Schema<IQuestion>(
     answerType: {
       type: String,
       enum: Object.values(answerType),
+      default: answerType.MCQ,
       required: true,
     },
 

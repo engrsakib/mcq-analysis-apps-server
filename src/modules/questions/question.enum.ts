@@ -1,5 +1,5 @@
 export enum QuestionType {
-  GENAREL = "general",
+  GENERAL = "general",
   MATH = "math",
   SCIENCE = "science",
   HISTORY = "history",

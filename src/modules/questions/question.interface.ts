@@ -1,7 +1,7 @@
 import { answerType, QuestionType } from "./question.enum";
 
 export interface IQuestionBlank {
-  id: number;
+  id?: number;
   options: string[];
   correctAnswer: string;
 }
@@ -11,7 +11,7 @@ export interface IQuestion {
   title: string;
   description?: string;
   type: QuestionType;
-  content: string;
+  content?: string;
   options?: string[];
   blanks: string | IQuestionBlank[];
   mathFormula?: string;
