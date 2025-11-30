@@ -15,12 +15,31 @@ class Controller extends BaseController {
   });
 
   getAllQuestions = this.catchAsync(async (req: Request, res: Response) => {
-    const questions = await QuestionService.getAllQuestions(req.query);
+    // ১. ফিল্টার আলাদা করা
+    const filters = {
+      searchTerm: req.query.searchTerm as string,
+    };
+
+    // ২. পেজিনেশন অপশন (এখানেই ফিক্স করা হয়েছে)
+    const paginationOptions = {
+      // Number(...) ব্যবহার করে স্ট্রিং থেকে নাম্বারে কনভার্ট করুন
+      page: Number(req.query.page || 1),
+      limit: Number(req.query.limit || 10),
+      sortBy: req.query.sortBy as string,
+      sortOrder: req.query.sortOrder as "asc" | "desc",
+    };
+
+    const result = await QuestionService.getAllQuestions(
+      filters,
+      paginationOptions
+    );
+
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
       message: "Questions retrieved successfully",
-      data: questions,
+
+      data: result,
     });
   });
 

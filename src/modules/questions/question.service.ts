@@ -15,20 +15,76 @@ class Service {
     const question = await QuestionModel.create(questionData);
     return question;
   };
-  getAllQuestions = async (paginationOptions: IPaginationOptions) => {
+  // getAllQuestions = async (paginationOptions: IPaginationOptions) => {
+  //   const { page, limit, skip, sortBy, sortOrder } =
+  //     paginationHelpers.calculatePagination(paginationOptions);
+  //   const sortConditions: { [key: string]: 1 | -1 } = {};
+
+  //   if (sortBy && sortOrder) {
+  //     sortConditions[sortBy] = sortOrder === "asc" ? 1 : -1;
+  //   }
+  //   const questions = await QuestionModel.find()
+  //     .sort(sortConditions)
+  //     .skip(skip)
+  //     .limit(limit);
+  //   const total = await QuestionModel.countDocuments();
+  //   return { meta: { page, limit, total }, data: questions };
+  // };
+
+  // ১. এখানে searchTerm আর্গুমেন্ট হিসেবে রিসিভ করবেন (paginationOptions এর পাশাপাশি বা আলাদাভাবে)
+  getAllQuestions = async (
+    filters: { searchTerm?: string }, // নতুন ফিল্টার প্যারামিটার
+    paginationOptions: IPaginationOptions
+  ) => {
+    const { searchTerm } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
       paginationHelpers.calculatePagination(paginationOptions);
-    const sortConditions: { [key: string]: 1 | -1 } = {};
 
+    // ২. সার্চ কন্ডিশন তৈরি করা
+    const andConditions: any[] = [];
+
+    // যদি searchTerm থাকে, তবে title এর ওপর partial match সার্চ করবে
+    if (searchTerm) {
+      andConditions.push({
+        $or: [
+          {
+            title: {
+              $regex: searchTerm,
+              $options: "i", // 'i' মানে case-insensitive (ছোট/বড় হাতের অক্ষর সমস্যা করবে না)
+            },
+          },
+        ],
+      });
+    }
+
+    // ৩. ফাইনাল কুয়েরি কন্ডিশন
+    // যদি কোনো কন্ডিশন থাকে তবে $and ব্যবহার করবে, না থাকলে খালি অবজেক্ট {}
+    const whereConditions =
+      andConditions.length > 0 ? { $and: andConditions } : {};
+
+    // ৪. সর্টিং কন্ডিশন
+    const sortConditions: { [key: string]: 1 | -1 } = {};
     if (sortBy && sortOrder) {
       sortConditions[sortBy] = sortOrder === "asc" ? 1 : -1;
     }
-    const questions = await QuestionModel.find()
+
+    // ৫. ডাটাবেস কুয়েরি
+    const questions = await QuestionModel.find(whereConditions) // এখানে whereConditions পাস করা হলো
       .sort(sortConditions)
       .skip(skip)
       .limit(limit);
-    const total = await QuestionModel.countDocuments();
-    return { meta: { page, limit, total }, data: questions };
+
+    // ৬. মোট ডকুমেন্ট গণনা (ফিল্টার অনুযায়ী)
+    const total = await QuestionModel.countDocuments(whereConditions);
+
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+      },
+      data: questions,
+    };
   };
 
   getQuestionById = async (id: number) => {
