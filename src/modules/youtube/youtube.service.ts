@@ -45,6 +45,31 @@ class Service {
     const video = await YoutubeModel.findOne({ video_number: id });
     return video;
   }
+
+  async updateYoutubeVideoById(id: string, updateData: any) {
+    const updatedVideo = await YoutubeModel.findOneAndUpdate(
+      { video_number: id },
+      updateData,
+      { new: true }
+    );
+    return updatedVideo;
+  }
+
+  async deleteYoutubeVideoById(id: string) {
+    const deletedVideo = await YoutubeModel.findOneAndDelete({
+      video_number: id,
+    });
+    return deletedVideo;
+  }
+
+  async publishYoutubeVideo(id: string) {
+    const publishedVideo = await YoutubeModel.findOneAndUpdate(
+      { video_number: id },
+      { is_published: true },
+      { new: true }
+    );
+    return publishedVideo;
+  }
 }
 
 export const YoutubeService = new Service();
