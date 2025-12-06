@@ -61,12 +61,13 @@ class Service {
     return deletedVideo;
   }
 
-  async publishYoutubeVideo(id: string) {
+  async publishVideoToggole(id: string) {
     const publishedVideo = await YoutubeModel.findOneAndUpdate(
       { video_number: id },
-      { is_published: true },
+      [{ $set: { is_published: { $not: "$is_published" } } }],
       { new: true }
     );
+
     return publishedVideo;
   }
 }
