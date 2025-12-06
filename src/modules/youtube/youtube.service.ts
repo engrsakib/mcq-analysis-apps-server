@@ -3,7 +3,7 @@ import { YoutubeModel } from "./youtube.model";
 
 class Service {
   async createYoutubeVideo(videoData: any) {
-    videoData.is_published = false; // Default value
+    // Default value
     videoData.video_number = await BarcodeService.generateEAN13(); // Auto-increment video_number
 
     const video = await YoutubeModel.create(videoData);
