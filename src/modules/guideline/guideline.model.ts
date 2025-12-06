@@ -5,7 +5,7 @@ import {
   IGuideline,
 } from "./guideline.interface";
 
-const youtubeSchema = new Schema<IGuideline>({
+const GuidelineSchema = new Schema<IGuideline>({
   guideline_number: { type: Number, required: false },
   title: { type: String, required: true },
   category: {
@@ -31,4 +31,4 @@ const youtubeSchema = new Schema<IGuideline>({
   },
 });
 
-export const GuidelineModel = model("Guideline", youtubeSchema);
+export const GuidelineModel = model("Guideline", GuidelineSchema);
