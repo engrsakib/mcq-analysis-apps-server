@@ -3,10 +3,10 @@ export type IGuideline = {
   title: string;
   category: GUIDELINE_CATEGORY_ENUMS;
   description?: string;
-  status: GUIDELINE_ADMIN_ENUMS;
+  status: GUIDELINE_STATUS;
 };
 
-export enum GUIDELINE_ADMIN_ENUMS {
+export enum GUIDELINE_STATUS {
   INACTIVE = "inactive",
   ACTIVE = "active",
   ADMIN_APPROVAL = "admin_approval",
