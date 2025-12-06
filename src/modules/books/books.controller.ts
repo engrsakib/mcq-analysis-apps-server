@@ -57,6 +57,24 @@ class Controller extends BaseController {
     });
   });
 
+  publishBookToggole = this.catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id;
+    if (!id) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: "Book entry ID is required",
+      });
+    }
+    const publishedBook = await BooksService.publishBookToggole(id);
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Book entry publish status toggled successfully",
+      data: publishedBook,
+    });
+  });
+
   updateBookById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     const updateData = req.body;

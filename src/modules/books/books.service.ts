@@ -3,7 +3,6 @@ import { BooksModel } from "./books.model";
 
 class Service {
   async create(bookData: any) {
-    bookData.is_published = false; // Default value
     bookData.book_number = await BarcodeService.generateEAN13(); // Auto-increment book_number
 
     const book = await BooksModel.create(bookData);

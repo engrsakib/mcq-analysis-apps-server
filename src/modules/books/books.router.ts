@@ -27,4 +27,11 @@ router.delete(
   BooksController.deleteBookById
 );
 
+router.patch(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  BooksController.publishBookToggole
+);
+
 export const BooksRoutes = router;
