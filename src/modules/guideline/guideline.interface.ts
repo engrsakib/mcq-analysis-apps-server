@@ -4,6 +4,7 @@ export type IGuideline = {
   category: GUIDELINE_CATEGORY_ENUMS;
   description?: string;
   status: GUIDELINE_STATUS;
+  thumbnail_url?: string;
 };
 
 export enum GUIDELINE_STATUS {
@@ -12,10 +13,11 @@ export enum GUIDELINE_STATUS {
   ADMIN_APPROVAL = "admin_approval",
 }
 
-enum GUIDELINE_CATEGORY_ENUMS {
+export enum GUIDELINE_CATEGORY_ENUMS {
   GENERAL = "general",
   TECHNICAL = "technical",
   EXAM = "exam",
   BCS_PREPARATION = "bcs_preparation",
-  PRIMARY_TEACHRER = "primary_teacher",
+  PRIMARY_TEACHER_PREPARATION = "primary_teacher_preparation",
+  TEACHER_NIBONDHON_PREPARATION = "teacher_nibondhon_preparation",
 }
