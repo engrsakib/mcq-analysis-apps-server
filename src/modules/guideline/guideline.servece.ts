@@ -72,4 +72,4 @@ class Service {
   }
 }
 
-export const YoutubeService = new Service();
+export const GuidelineService = new Service();
