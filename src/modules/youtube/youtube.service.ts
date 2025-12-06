@@ -17,11 +17,10 @@ class Service {
     const skip = (page - 1) * limit;
     const searchTerm = query.searchTerm || "";
 
-    const searchCondition = searchTerm
-      ? {
-          title: { $regex: searchTerm, $options: "i" },
-        }
-      : {};
+    const searchCondition = {
+      is_published: true,
+      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+    };
 
     const videos = await YoutubeModel.find(searchCondition)
       .skip(skip)
