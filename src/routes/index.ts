@@ -8,6 +8,7 @@ import { UploadRoutes } from "@/modules/upload/upload.routes";
 import { PermissionsRoutes } from "@/modules/permission/permission.route";
 import { QuestionRoutes } from "./../modules/questions/question.route";
 import { YoutubeRoutes } from "@/modules/youtube/youtube.route";
+import { GuidelineRoutes } from "@/modules/guideline/guideline.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -30,6 +31,10 @@ const moduleRoutes = [
   {
     path: "/youtube",
     route: YoutubeRoutes,
+  },
+  {
+    path: "/guideline",
+    route: GuidelineRoutes,
   },
   {
     path: "/upload",
