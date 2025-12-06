@@ -7,6 +7,7 @@ export const ROLES = {
 
   // User roles
   STUDENT: "student",
+  CUSTOMER: "customer",
 };
 
 export type IRoles = (typeof ROLES)[keyof typeof ROLES];
