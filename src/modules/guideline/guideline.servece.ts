@@ -62,13 +62,26 @@ class Service {
     return deletedGuideline;
   }
 
-  async publishGuideline(id: string) {
-    const publishedGuideline = await GuidelineModel.findOneAndUpdate(
+  async toggleGuidelineStatus(id: string) {
+    const result = await GuidelineModel.findOneAndUpdate(
       { guideline_number: id },
-      { status: GUIDELINE_STATUS.ACTIVE },
+      [
+        {
+          $set: {
+            status: {
+              $cond: {
+                if: { $eq: ["$status", GUIDELINE_STATUS.ACTIVE] },
+                then: GUIDELINE_STATUS.INACTIVE,
+                else: GUIDELINE_STATUS.ACTIVE,
+              },
+            },
+          },
+        },
+      ],
       { new: true }
     );
-    return publishedGuideline;
+
+    return result;
   }
 }
 

@@ -27,5 +27,11 @@ router.delete(
   JwtInstance.hasPermissions(PermissionEnum.DELETE_GUIDELINE),
   YoutubeController.deleteYouTubeById
 );
+router.patch(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  GuidelineController.toggleGuidelineStatus
+);
 
 export const GuidelineRoutes = router;

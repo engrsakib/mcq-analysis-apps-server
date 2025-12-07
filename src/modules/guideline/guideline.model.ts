@@ -7,7 +7,12 @@ import {
 
 const GuidelineSchema = new Schema<IGuideline>({
   guideline_number: { type: Number, required: false },
-  title: { type: String, required: true },
+  title: {
+    type: String,
+    required: true,
+    default: "write title here",
+    unique: true,
+  },
   category: {
     type: String,
     enum: Object.values(GUIDELINE_CATEGORY_ENUMS),

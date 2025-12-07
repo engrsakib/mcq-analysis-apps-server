@@ -2,7 +2,7 @@ export type IGuideline = {
   guideline_number?: number;
   title: string;
   category: GUIDELINE_CATEGORY_ENUMS;
-  description?: string;
+  description: string;
   status: GUIDELINE_STATUS;
   thumbnail_url?: string;
 };

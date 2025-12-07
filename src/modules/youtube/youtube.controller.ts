@@ -98,6 +98,26 @@ class Controller extends BaseController {
       message: "YouTube entry deleted successfully",
     });
   });
+
+  publishYouTubeToggle = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const id = req.params.id;
+      if (!id) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "YouTube entry ID is required",
+        });
+      }
+      const publishedVideo = await YoutubeService.publishVideoToggole(id);
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "YouTube entry publish status toggled successfully",
+        data: publishedVideo,
+      });
+    }
+  );
 }
 
 export const YoutubeController = new Controller();

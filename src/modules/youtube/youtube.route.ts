@@ -27,4 +27,11 @@ router.delete(
   YoutubeController.deleteYouTubeById
 );
 
+router.patch(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  YoutubeController.publishYouTubeToggle
+);
+
 export const YoutubeRoutes = router;

@@ -99,6 +99,26 @@ class Controller extends BaseController {
       message: "YouTube entry deleted successfully",
     });
   });
+
+  toggleGuidelineStatus = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const id = req.params.id;
+      if (!id) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "Guideline entry ID is required",
+        });
+      }
+      const toggledGuideline = await GuidelineService.toggleGuidelineStatus(id);
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Guideline entry status toggled successfully",
+        data: toggledGuideline,
+      });
+    }
+  );
 }
 
 export const GuidelineController = new Controller();
