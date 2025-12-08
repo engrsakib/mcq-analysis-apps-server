@@ -133,6 +133,7 @@ class JWT {
           .populate({ path: "permissions", select: "key" })
           .lean();
 
+        console.log(admin, "admin");
         const keys =
           admin &&
           admin.permissions &&

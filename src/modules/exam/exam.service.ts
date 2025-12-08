@@ -37,6 +37,7 @@ class Service {
     const exams = await ExamModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
+      .select("-questions")
       .sort({ createdAt: -1 });
 
     const total = await ExamModel.countDocuments(searchCondition);
