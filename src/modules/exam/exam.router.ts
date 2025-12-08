@@ -30,7 +30,7 @@ router.patch(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
   JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
-  ExamController.toggleExamStatus
+  ExamController.updateStatus
 );
 
 export const ExamRoutes = router;

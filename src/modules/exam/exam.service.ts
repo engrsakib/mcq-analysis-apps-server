@@ -1,6 +1,5 @@
 import { BarcodeService } from "@/lib/barcode";
 import { ExamModel } from "./exam.model";
-import { GUIDELINE_STATUS } from "../guideline/guideline.interface";
 import { IExam } from "./exam.interface";
 
 class Service {
@@ -85,26 +84,18 @@ class Service {
     return deletedExam;
   }
 
-  async toggleExamStatus(id: string) {
-    const result = await ExamModel.findOneAndUpdate(
+  async updateExamStatus(id: string, payload: Partial<IExam>) {
+    const updatedExam = await ExamModel.findOneAndUpdate(
       { exam_number: id },
-      [
-        {
-          $set: {
-            status: {
-              $cond: {
-                if: { $eq: ["$status", GUIDELINE_STATUS.ACTIVE] },
-                then: GUIDELINE_STATUS.INACTIVE,
-                else: GUIDELINE_STATUS.ACTIVE,
-              },
-            },
-          },
-        },
-      ],
-      { new: true }
+      payload,
+      { new: true, runValidators: true }
     );
 
-    return result;
+    if (!updatedExam) {
+      throw new Error("Exam not found");
+    }
+
+    return updatedExam;
   }
 }
 

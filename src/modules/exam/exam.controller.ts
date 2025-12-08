@@ -95,23 +95,40 @@ class Controller extends BaseController {
     });
   });
 
-  toggleExamStatus = this.catchAsync(async (req: Request, res: Response) => {
-    const id = req.params.id;
-    if (!id) {
-      return this.sendResponse(res, {
-        statusCode: HttpStatusCode.BAD_REQUEST,
-        success: false,
-        message: "Guideline entry ID is required",
+  updateStatus = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body; // { is_published: true, is_started: false }
+
+      // ১. হোয়াইটলিস্টিং (Whitelisting): শুধুমাত্র এই ফিল্ডগুলোই আপডেট করা যাবে
+      const allowedUpdates = ["is_published", "is_started", "is_completed"];
+      const updates = Object.keys(updateData);
+
+      // চেক করা হচ্ছে ইউজার এমন কিছু পাঠিয়েছে কিনা যা এলাউড না
+      const isValidOperation = updates.every((field) =>
+        allowedUpdates.includes(field)
+      );
+
+      if (!isValidOperation) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid updates! You can only update: is_published, is_started, is_completed",
+        });
+      }
+
+      // ২. সার্ভিসে কল করা
+      const result = await examService.updateExamStatus(id, updateData);
+
+      res.status(200).json({
+        success: true,
+        message: "Exam status updated successfully",
+        data: result,
       });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
     }
-    const toggledExam = await examService.toggleExamStatus(id);
-    this.sendResponse(res, {
-      statusCode: HttpStatusCode.OK,
-      success: true,
-      message: "Exam entry status toggled successfully",
-      data: toggledExam,
-    });
-  });
+  };
 }
 
 export const ExamController = new Controller();
