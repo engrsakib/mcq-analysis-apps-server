@@ -3,7 +3,6 @@ import { JwtInstance } from "@/lib/jwt";
 import { ROLES } from "@/constants/roles";
 import { PermissionEnum } from "../permission/permission.enum";
 import { GuidelineController } from "./guideline.controller";
-import { YoutubeController } from "../youtube/youtube.controller";
 
 const router = Router();
 
@@ -25,7 +24,7 @@ router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
   JwtInstance.hasPermissions(PermissionEnum.DELETE_GUIDELINE),
-  YoutubeController.deleteYouTubeById
+  GuidelineController.deleteGuidelineById
 );
 router.patch(
   "/:id",
