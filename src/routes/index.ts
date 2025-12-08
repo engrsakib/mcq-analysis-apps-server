@@ -10,6 +10,7 @@ import { QuestionRoutes } from "./../modules/questions/question.route";
 import { YoutubeRoutes } from "@/modules/youtube/youtube.route";
 import { GuidelineRoutes } from "@/modules/guideline/guideline.router";
 import { BooksRoutes } from "@/modules/books/books.router";
+import { ExamRoutes } from "@/modules/exam/exam.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -32,6 +33,10 @@ const moduleRoutes = [
   {
     path: "/youtube",
     route: YoutubeRoutes,
+  },
+  {
+    path: "/exam",
+    route: ExamRoutes,
   },
   {
     path: "/guideline",
