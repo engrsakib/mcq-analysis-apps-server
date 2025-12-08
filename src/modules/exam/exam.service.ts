@@ -59,12 +59,21 @@ class Service {
     return exam;
   }
 
-  async updateExamById(id: string, updateData: any) {
+  async updateExamById(id: string, payload: Partial<IExam>) {
     const updatedExam = await ExamModel.findOneAndUpdate(
       { exam_number: id },
-      updateData,
-      { new: true }
-    );
+      payload,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate("questions");
+
+    // যদি এক্সাম খুঁজে না পাওয়া যায়
+    if (!updatedExam) {
+      throw new Error("Exam not found");
+    }
+
     return updatedExam;
   }
 
