@@ -4,12 +4,12 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 import { resultService } from "./result.service";
 
 class Controller extends BaseController {
-  createQuestion = this.catchAsync(async (req: Request, res: Response) => {
+  createResult = this.catchAsync(async (req: Request, res: Response) => {
     const question = await resultService.createResult(req.body);
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
       success: true,
-      message: "Question created successfully",
+      message: "results submitted successfully",
       data: question,
     });
   });
