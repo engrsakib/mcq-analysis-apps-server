@@ -1,7 +1,7 @@
 import { ResultModel } from "./result.model";
 
 class service {
-  create = async (resultData: any) => {
+  createResult = async (resultData: any) => {
     const result = await ResultModel.create(resultData);
     return result;
   };
