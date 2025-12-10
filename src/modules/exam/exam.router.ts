@@ -6,6 +6,12 @@ import { ExamController } from "./exam.controller";
 
 const router = Router();
 
+router.get(
+  "/exam-search",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  ExamController.getExamForSearch
+);
+
 router.post(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),

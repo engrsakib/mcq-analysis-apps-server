@@ -17,8 +17,23 @@ class Controller extends BaseController {
   getResultsBySearch = this.catchAsync(async (req: Request, res: Response) => {
     const phone = req.query.phone as string | undefined;
     const examNum = req.query.examNum ? Number(req.query.examNum) : undefined;
+    const page = req.query.page ? Number(req.query.page) : 1;
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    if (!examNum) {
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: "Exam number is required",
+      });
+      return;
+    }
 
-    const results = await resultService.getResultsBySearch(phone, examNum);
+    const results = await resultService.getResultsBySearch(
+      phone,
+      examNum,
+      page,
+      limit
+    );
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,

@@ -95,6 +95,19 @@ class Controller extends BaseController {
     });
   });
 
+  getExamForSearch = this.catchAsync(async (req: Request, res: Response) => {
+    const search = req.query.search as string | undefined;
+
+    const exams = await examService.getExamForSearch(search);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Exams retrieved successfully",
+      data: exams,
+    });
+  });
+
   updateStatus = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

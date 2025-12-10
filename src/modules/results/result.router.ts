@@ -10,4 +10,10 @@ router.post(
   ResultController.createResult
 );
 
+router.get(
+  "/",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  ResultController.getResultsBySearch
+);
+
 export const ResultRoutes = router;

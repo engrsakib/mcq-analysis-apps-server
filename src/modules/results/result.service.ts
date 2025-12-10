@@ -6,7 +6,14 @@ class service {
     return result;
   };
 
-  getResultsBySearch = async (phone?: string, examNum?: number) => {
+  getResultsBySearch = async (
+    phone?: string,
+    examNum?: number,
+    page: number = 1,
+    limit: number = 10
+  ) => {
+    const skip = (page - 1) * limit;
+
     const matchQuery: any = {};
 
     if (phone) {
@@ -22,23 +29,41 @@ class service {
       },
 
       {
-        $sort: {
-          score: -1,
-        },
-      },
+        $facet: {
+          // ক. ডাটা আনার পাইপলাইন
+          data: [
+            { $sort: { score: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 0,
+                student_name: 1,
+                student_phone: 1,
+                exam_number: 1,
+                score: 1,
+              },
+            },
+          ],
 
-      {
-        $project: {
-          _id: 0,
-          student_name: 1,
-          student_phone: 1,
-          exam_number: 1,
-          score: 1,
+          totalCount: [{ $count: "total" }],
         },
       },
     ]);
 
-    return result;
+    const data = result[0].data;
+    const totalResult = result[0].totalCount[0]?.total || 0;
+    const totalPages = Math.ceil(totalResult / limit);
+
+    return {
+      meta: {
+        page,
+        limit,
+        totalResult,
+        totalPages,
+      },
+      data,
+    };
   };
 }
 

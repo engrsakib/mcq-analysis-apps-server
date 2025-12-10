@@ -84,6 +84,30 @@ class Service {
     return deletedExam;
   }
 
+  async getExamForSearch(search?: string) {
+    const query: any = {};
+
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      const orConditions: any[] = [{ title: { $regex: searchRegex } }];
+
+      // !isNaN চেক করে নিশ্চিত হচ্ছি ইনপুটটি নাম্বার কি না
+      if (!isNaN(Number(search))) {
+        orConditions.push({ exam_number: Number(search) });
+      }
+
+      query.$or = orConditions;
+    }
+
+    const exams = await ExamModel.find(query)
+      .select("exam_number exam_name exam_date_time")
+      .sort({ exam_date_time: -1 })
+      .limit(15)
+      .lean();
+
+    return exams;
+  }
+
   async updateExamStatus(id: string, payload: Partial<IExam>) {
     const updatedExam = await ExamModel.findOneAndUpdate(
       { exam_number: id },
