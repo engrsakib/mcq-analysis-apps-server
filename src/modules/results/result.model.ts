@@ -1,28 +1,6 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
+import { IResult, IwrittenExam } from "./result.interface";
 
-// ইন্টারফেসগুলো এখানে উল্লেখ করা হলো (আপনার দেওয়া অংশ)
-interface IwrittenExam {
-  _id: string;
-  question: string;
-  answer: string;
-}
-
-export interface IResult {
-  _id: string;
-  user: Types.ObjectId;
-  exam_number?: number;
-  score: number;
-  totalQuestions: number;
-  correctAnswers: number;
-  wrongAnswers: number;
-  unanswered: number;
-  is_cheted: boolean;
-  is_on_time: boolean;
-  dateTaken: Date;
-  writtenExam: IwrittenExam[];
-}
-
-// ১. Written Exam এর জন্য সাব-স্কিমা (Sub-schema)
 const WrittenExamSchema = new Schema<IwrittenExam>(
   {
     question: { type: String, required: true },
@@ -31,13 +9,16 @@ const WrittenExamSchema = new Schema<IwrittenExam>(
   { _id: true }
 );
 
-// ২. মূল Result স্কিমা
 const ResultSchema = new Schema<IResult>(
   {
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+    student_name: {
+      type: String,
       required: true,
+    },
+    student_phone: {
+      type: String,
+      required: true,
+      default: "",
     },
     exam_number: {
       type: Number,
@@ -67,7 +48,7 @@ const ResultSchema = new Schema<IResult>(
       required: true,
       default: 0,
     },
-    is_cheted: {
+    is_cheated: {
       type: Boolean,
       required: true,
       default: false,

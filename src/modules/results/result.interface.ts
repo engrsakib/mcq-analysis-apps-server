@@ -1,21 +1,19 @@
-import { Types } from "mongoose";
-
-interface IwrittenExam {
-  _id: string;
+export interface IwrittenExam {
   question: string;
   answer: string;
+  _id?: string;
 }
 
-export interface IResult {
-  _id: string;
-  user: Types.ObjectId;
+export interface IResult extends Document {
+  student_name: string;
+  student_phone: string;
   exam_number?: number;
   score: number;
   totalQuestions: number;
   correctAnswers: number;
   wrongAnswers: number;
   unanswered: number;
-  is_cheted: boolean;
+  is_cheated: boolean;
   is_on_time: boolean;
   dateTaken: Date;
   writtenExam: IwrittenExam[];
