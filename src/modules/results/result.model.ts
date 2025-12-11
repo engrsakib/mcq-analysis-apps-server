@@ -24,6 +24,10 @@ const ResultSchema = new Schema<IResult>(
       type: Number,
       required: false,
     },
+    total_score: {
+      type: Number,
+      required: true,
+    },
     score: {
       type: Number,
       required: true,

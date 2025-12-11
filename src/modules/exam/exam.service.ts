@@ -88,10 +88,13 @@ class Service {
     const query: any = {};
 
     if (search) {
+      // ১. 'i' ফ্ল্যাগ থাকায় ছোট/বড় হাতের অক্ষর নিয়ে চিন্তা করতে হবে না
+      // 'bsc' লিখলেও 'BSC' আসবে, 'math' লিখলেও 'BSC math test' আসবে
       const searchRegex = new RegExp(search, "i");
-      const orConditions: any[] = [{ title: { $regex: searchRegex } }];
 
-      // !isNaN চেক করে নিশ্চিত হচ্ছি ইনপুটটি নাম্বার কি না
+      const orConditions: any[] = [{ exam_name: { $regex: searchRegex } }];
+
+      // ২. যদি ইনপুটটি নাম্বার হয় (যেমন: 101), তবে exam_number দিয়েও খুঁজবে
       if (!isNaN(Number(search))) {
         orConditions.push({ exam_number: Number(search) });
       }

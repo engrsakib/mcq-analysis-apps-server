@@ -96,8 +96,9 @@ class Controller extends BaseController {
   });
 
   getExamForSearch = this.catchAsync(async (req: Request, res: Response) => {
-    const search = req.query.search as string | undefined;
+    const search = req.query.exam_name as string | undefined;
 
+    // console.log(req, "ser")
     const exams = await examService.getExamForSearch(search);
 
     this.sendResponse(res, {

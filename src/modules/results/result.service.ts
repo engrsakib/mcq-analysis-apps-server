@@ -41,6 +41,7 @@ class service {
                 student_name: 1,
                 student_phone: 1,
                 exam_number: 1,
+                total_score: 1,
                 score: 1,
               },
             },

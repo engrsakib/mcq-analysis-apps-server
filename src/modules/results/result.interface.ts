@@ -8,6 +8,7 @@ export interface IResult extends Document {
   student_name: string;
   student_phone: string;
   exam_number?: number;
+  total_score: number;
   score: number;
   totalQuestions: number;
   correctAnswers: number;
