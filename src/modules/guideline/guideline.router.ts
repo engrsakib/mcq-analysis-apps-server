@@ -12,7 +12,13 @@ router.post(
   JwtInstance.hasPermissions(PermissionEnum.CREATE_GUIDELINE),
   GuidelineController.createGuideline
 );
-router.get("/", GuidelineController.getAllGuidelines);
+router.get(
+  "/",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_GUIDELINE),
+  GuidelineController.getAllGuidelines
+);
+router.get("/user", GuidelineController.getAllGuidelinesForUsers);
 router.get("/:id", GuidelineController.getGuidelineById);
 router.put(
   "/:id",
