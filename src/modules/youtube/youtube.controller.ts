@@ -39,6 +39,21 @@ class Controller extends BaseController {
     });
   });
 
+  getAllYouTubesForUsers = this.catchAsync(
+    async (req: Request, res: Response) => {
+      // Implementation for retrieving all YouTube entries
+      const query = req.query;
+      const videos = await YoutubeService.getAllYoutubeVideosForUsers(query);
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "YouTube entries retrieved successfully",
+        data: videos,
+      });
+    }
+  );
+
   getYouTubeById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     if (!id) {

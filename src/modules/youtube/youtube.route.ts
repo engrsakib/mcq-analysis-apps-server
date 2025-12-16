@@ -12,7 +12,13 @@ router.post(
   JwtInstance.hasPermissions(PermissionEnum.CREATE_GUIDELINE),
   YoutubeController.createYouTube
 );
-router.get("/", YoutubeController.getAllYouTubes);
+router.get(
+  "/",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_GUIDELINE),
+  YoutubeController.getAllYouTubes
+);
+router.get("/user", YoutubeController.getAllYouTubesForUsers);
 router.get("/:id", YoutubeController.getYouTubeById);
 router.put(
   "/:id",
