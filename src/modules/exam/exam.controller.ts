@@ -69,6 +69,24 @@ class Controller extends BaseController {
     });
   });
 
+  getExamByIdForUsers = this.catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id;
+    if (!id) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: "Guideline entry ID is required",
+      });
+    }
+    const exam = await examService.getExamByIdForUsers(id);
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Exam entry retrieved successfully",
+      data: exam, // Replace with actual data
+    });
+  });
+
   updateExamById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     const updateData = req.body;

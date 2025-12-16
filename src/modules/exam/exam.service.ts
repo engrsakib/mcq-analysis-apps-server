@@ -90,6 +90,14 @@ class Service {
     return exam;
   }
 
+  async getExamByIdForUsers(id: string) {
+    const exam = await ExamModel.findOne({
+      exam_number: id,
+      is_started: true,
+    }).populate("questions");
+    return exam;
+  }
+
   async updateExamById(id: string, payload: Partial<IExam>) {
     const updatedExam = await ExamModel.findOneAndUpdate(
       { exam_number: id },
