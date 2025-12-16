@@ -52,6 +52,37 @@ class Service {
     };
   }
 
+  async getAllExamsForUsers(query: any) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const searchTerm = query.searchTerm || "";
+
+    const searchCondition = {
+      is_published: true,
+      // is_started: true,
+      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+    };
+
+    const exams = await ExamModel.find(searchCondition)
+      .skip(skip)
+      .limit(limit)
+      .select("-questions")
+      .sort({ createdAt: -1 });
+
+    const total = await ExamModel.countDocuments(searchCondition);
+
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+        totalPage: Math.ceil(total / limit),
+      },
+      data: exams,
+    };
+  }
+
   async getExamById(id: string) {
     const exam = await ExamModel.findOne({ exam_number: id }).populate(
       "questions"

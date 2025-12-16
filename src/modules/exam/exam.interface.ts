@@ -8,6 +8,6 @@ export interface IExam {
   total_marks: number;
   is_started: boolean;
   is_completed: boolean;
-  questions: ObjectId[];
   is_published: boolean;
+  questions: ObjectId[];
 }
