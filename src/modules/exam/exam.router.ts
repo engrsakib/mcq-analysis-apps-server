@@ -18,7 +18,13 @@ router.post(
   JwtInstance.hasPermissions(PermissionEnum.CREATE_EXAM),
   ExamController.createExam
 );
-router.get("/", ExamController.getAllExams);
+router.get(
+  "/",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_EXAM),
+  ExamController.getAllExams
+);
+router.get("/user", ExamController.getAllExamsForUsers);
 router.get("/:id", ExamController.getExamById);
 router.put(
   "/:id",

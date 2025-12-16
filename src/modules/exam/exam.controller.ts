@@ -38,6 +38,19 @@ class Controller extends BaseController {
     });
   });
 
+  getAllExamsForUsers = this.catchAsync(async (req: Request, res: Response) => {
+    // Implementation for retrieving all Exam entries
+    const query = req.query;
+    const exams = await examService.getAllExamsForUsers(query);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Exam entries retrieved successfully",
+      data: exams,
+    });
+  });
+
   getExamById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     if (!id) {
