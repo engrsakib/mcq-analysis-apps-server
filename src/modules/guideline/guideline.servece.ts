@@ -19,6 +19,34 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition = {
+      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+    };
+
+    const guidelines = await GuidelineModel.find(searchCondition)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await GuidelineModel.countDocuments(searchCondition);
+
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+        totalPage: Math.ceil(total / limit),
+      },
+      data: guidelines,
+    };
+  }
+
+  async getAllGuidelinesForUsers(query: any) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const searchTerm = query.searchTerm || "";
+
+    const searchCondition = {
       status: GUIDELINE_STATUS.ACTIVE,
       ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
     };
