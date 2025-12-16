@@ -40,6 +40,21 @@ class Controller extends BaseController {
     });
   });
 
+  getAllGuidelinesForUsers = this.catchAsync(
+    async (req: Request, res: Response) => {
+      // Implementation for retrieving all Guideline entries
+      const query = req.query;
+      const guidelines = await GuidelineService.getAllGuidelinesForUsers(query);
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Guideline entries retrieved successfully",
+        data: guidelines,
+      });
+    }
+  );
+
   getGuidelineById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     if (!id) {
