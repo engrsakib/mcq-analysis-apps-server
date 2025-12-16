@@ -39,6 +39,19 @@ class Controller extends BaseController {
     });
   });
 
+  getAllBooksForUsers = this.catchAsync(async (req: Request, res: Response) => {
+    // Implementation for retrieving all YouTube entries
+    const query = req.query;
+    const books = await BooksService.getAllBooksForUsers(query);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Book entries retrieved successfully",
+      data: books,
+    });
+  });
+
   getBookById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     if (!id) {

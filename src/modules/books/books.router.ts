@@ -12,7 +12,13 @@ router.post(
   JwtInstance.hasPermissions(PermissionEnum.CREATE_GUIDELINE),
   BooksController.createBooks
 );
-router.get("/", BooksController.getAllBooks);
+router.get(
+  "/",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_BOOK),
+  BooksController.getAllBooks
+);
+router.get("/user", BooksController.getAllBooksForUsers);
 router.get("/:id", BooksController.getBookById);
 router.put(
   "/:id",
