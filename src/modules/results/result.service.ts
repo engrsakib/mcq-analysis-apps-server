@@ -66,6 +66,18 @@ class service {
       data,
     };
   };
+
+  getSingleResultByExamNumber = async (examNum: number) => {
+    // ১. exam_number দিয়ে ডাটা খোঁজা হচ্ছে
+    const result = await ResultModel.findOne({ exam_number: examNum });
+
+    // ২. যদি রেজাল্ট না পাওয়া যায়
+    if (!result) {
+      throw new Error("Result not found for this exam number!");
+    }
+
+    return result;
+  };
 }
 
 export const resultService = new service();

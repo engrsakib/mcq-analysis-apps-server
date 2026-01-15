@@ -12,7 +12,7 @@ router.post(
 
 router.get(
   "/",
-  JwtInstance.authenticate(Object.values(ROLES)),
+  // JwtInstance.authenticate(Object.values(ROLES)),
   ResultController.getResultsBySearch
 );
 

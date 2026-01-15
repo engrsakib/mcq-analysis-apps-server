@@ -23,6 +23,8 @@ const ResultSchema = new Schema<IResult>(
     exam_number: {
       type: Number,
       required: false,
+      index: true,
+      unique: true,
     },
     total_score: {
       type: Number,
