@@ -18,7 +18,7 @@ router.get(
 
 router.get(
   "/:exam_number",
-  // JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.authenticate(Object.values(ROLES)),
   ResultController.getResultByExamNumber
 );
 

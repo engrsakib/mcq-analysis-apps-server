@@ -68,12 +68,10 @@ class service {
   };
 
   getSingleResultByExamNumber = async (examNum: number) => {
-    // ১. exam_number দিয়ে ডাটা খোঁজা হচ্ছে
     const result = await ResultModel.findOne({ exam_number: examNum }).select(
       "-dateTaken -createdAt -updatedAt -__v"
     );
 
-    // ২. যদি রেজাল্ট না পাওয়া যায়
     if (!result) {
       throw new Error("Result not found for this exam number!");
     }

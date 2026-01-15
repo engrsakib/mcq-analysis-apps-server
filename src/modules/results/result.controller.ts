@@ -43,7 +43,6 @@ class Controller extends BaseController {
   });
 
   getResultByExamNumber = async (req: Request, res: Response) => {
-    // প্যারামস থেকে নাম্বারটি নেওয়া হলো (স্ট্রিং থেকে নাম্বারে কনভার্ট করতে হবে)
     const examNum = Number(req.params.exam_number);
 
     const result = await resultService.getSingleResultByExamNumber(examNum);
