@@ -19,3 +19,11 @@ export interface IResult extends Document {
   dateTaken: Date;
   writtenExam: IwrittenExam[];
 }
+
+export type UpdateMarkAction = "increase_marks" | "decrease_marks";
+
+export interface IUpdateMarkPayload {
+  exam_number: number;
+  amount: number;
+  action: UpdateMarkAction;
+}
