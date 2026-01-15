@@ -131,29 +131,24 @@ class service {
     return leaderboard;
   };
 
-  getResultLeaderboard = async (examNum?: number) => {
-    const query: any = {};
-
-    if (examNum) {
-      query.exam_number = examNum;
-    }
-
-    const results = await ResultModel.find(query)
+  getMixedLeaderboard = async (examNum: number, phone?: string) => {
+    // শুধুমাত্র এক্সাম নাম্বার দিয়ে সব ডাটা আনা হচ্ছে (র‍্যাংক জেনারেশনের জন্য)
+    const results = await ResultModel.find({ exam_number: examNum })
       .sort({
-        is_cheated: 1,
-
-        is_on_time: -1,
-
-        score: -1,
-
-        dateTaken: 1,
+        is_cheated: 1, // সৎ আগে
+        is_on_time: -1, // অন-টাইম আগে
+        score: -1, // বেশি মার্ক আগে
+        dateTaken: 1, // আগে জমা দেওয়া আগে
       })
-      .select("student_name score is_cheated is_on_time exam_number")
+      .select(
+        "student_name student_phone score is_cheated is_on_time exam_number"
+      )
       .lean();
 
+    // ৩. সবার র‍্যাংক জেনারেট করা
     let currentRank = 1;
 
-    const leaderboard = results.map((student) => {
+    const fullLeaderboard = results.map((student) => {
       let rankDisplay: string | number;
 
       if (student.is_cheated) {
@@ -165,13 +160,23 @@ class service {
       return {
         rank: rankDisplay,
         name: student.student_name,
+        phone: student.student_phone, // ফোন নম্বর রেসপন্সে রাখা হলো ম্যাচ করার জন্য
         score: student.score,
         status: getStatusText(student.is_cheated, student.is_on_time),
         exam_number: student.exam_number,
       };
     });
 
-    return leaderboard;
+    // ৪. যদি ফোন নম্বর দেওয়া থাকে, তাহলে ফিল্টার করে শুধু ওই ছাত্রকে পাঠাব
+    if (phone) {
+      const studentResult = fullLeaderboard.filter(
+        (item) => item.phone === phone
+      );
+      return studentResult;
+    }
+
+    // ফোন নম্বর না থাকলে পুরো লিডারবোর্ড যাবে
+    return fullLeaderboard;
   };
 
   // ছোট হেল্পার ফাংশন স্ট্যাটাস দেখানোর জন্য

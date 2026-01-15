@@ -56,22 +56,28 @@ class Controller extends BaseController {
 
   getLeaderboard = async (req: Request, res: Response) => {
     try {
-      const examNum = req.query.exam_number
-        ? Number(req.query.exam_number)
-        : undefined;
+      // ১. প্যারামস থেকে এক্সাম নাম্বার (বাধ্যতামূলক)
+      const examNum = Number(req.params.exam_number);
 
+      // ভ্যালিডেশন: এক্সাম নাম্বার না থাকলে এরর
       if (!examNum) {
         return res.status(400).json({
           success: false,
-          message: "Exam number is required",
+          message: "Exam number is required in params!",
         });
       }
 
-      const result = await resultService.getResultLeaderboard(examNum);
+      // ২. কুয়েরি থেকে ফোন নাম্বার (অপশনাল) - সার্চের জন্য
+      const phone = req.query.phone as string | undefined;
+
+      // ৩. সার্ভিস কল
+      const result = await resultService.getMixedLeaderboard(examNum, phone);
 
       res.status(200).json({
         success: true,
-        message: "Leaderboard retrieved successfully",
+        message: phone
+          ? "Student result found"
+          : "Leaderboard retrieved successfully",
         data: result,
       });
     } catch (error: any) {

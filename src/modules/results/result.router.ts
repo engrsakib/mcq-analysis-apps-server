@@ -11,6 +11,12 @@ router.post(
 );
 
 router.get(
+  "/:exam_number/leaderboard",
+  // JwtInstance.authenticate(Object.values(ROLES)),
+  ResultController.getLeaderboard
+);
+
+router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
   ResultController.getResultsBySearch
