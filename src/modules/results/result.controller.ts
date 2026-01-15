@@ -42,6 +42,39 @@ class Controller extends BaseController {
     });
   });
 
+  updateMarks = async (req: Request, res: Response) => {
+    try {
+      // বডি থেকে ডাটা নেওয়া
+      const { exam_number, amount, action } = req.body;
+
+      // ভ্যালিডেশন: জরুরি ফিল্ড আছে কিনা চেক করা (অপশনাল কিন্তু ভালো প্র্যাকটিস)
+      if (!exam_number || !amount || !action) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide exam_number, amount, and action",
+        });
+      }
+
+      // সার্ভিস কল করা
+      const result = await resultService.updateStudentMarks({
+        exam_number,
+        amount,
+        action, // 'increase_marks' or 'decrease_marks'
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Marks updated successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || "Failed to update marks",
+      });
+    }
+  };
+
   getResultByExamNumber = async (req: Request, res: Response) => {
     const examNum = Number(req.params.exam_number);
 

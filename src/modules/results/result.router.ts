@@ -22,6 +22,12 @@ router.get(
   ResultController.getResultsBySearch
 );
 
+router.patch(
+  "/update-marks",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  ResultController.updateMarks
+);
+
 router.get(
   "/:exam_number",
   JwtInstance.authenticate(Object.values(ROLES)),
