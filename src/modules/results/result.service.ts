@@ -81,12 +81,17 @@ class service {
   };
 
   updateStudentMarks = async (payload: IUpdateMarkPayload) => {
-    const { exam_number, amount, action } = payload;
+    const { exam_number, student_phone, amount, action } = payload;
 
+    // লজিক: ইনক্রিজ বা ডিক্রিজ
     const incrementValue = action === "increase_marks" ? amount : -amount;
 
+    // কুয়েরি: এখানে দুটো কন্ডিশনই সত্য হতে হবে (AND Logic)
     const result = await ResultModel.findOneAndUpdate(
-      { exam_number: exam_number },
+      {
+        exam_number: exam_number,
+        student_phone: student_phone,
+      },
       {
         $inc: { score: incrementValue },
       },
@@ -96,8 +101,9 @@ class service {
       }
     );
 
+    // যদি রেজাল্ট না পাওয়া যায় (মানে রোল বা ফোন যেকোনো একটা ভুল বা ম্যাচ করেনি)
     if (!result) {
-      throw new Error("Student result not found!");
+      throw new Error("Result not found! Exam number or Phone did not match.");
     }
 
     return result;

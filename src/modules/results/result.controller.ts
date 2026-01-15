@@ -44,22 +44,22 @@ class Controller extends BaseController {
 
   updateMarks = async (req: Request, res: Response) => {
     try {
-      // বডি থেকে ডাটা নেওয়া
-      const { exam_number, amount, action } = req.body;
+      const { exam_number, student_phone, amount, action } = req.body;
 
-      // ভ্যালিডেশন: জরুরি ফিল্ড আছে কিনা চেক করা (অপশনাল কিন্তু ভালো প্র্যাকটিস)
-      if (!exam_number || !amount || !action) {
+      // ১. ভ্যালিডেশন: দুটো ফিল্ডই থাকতে হবে
+      if (!exam_number || !student_phone || !amount || !action) {
         return res.status(400).json({
           success: false,
-          message: "Please provide exam_number, amount, and action",
+          message: "Exam Number AND Student Phone both are required!",
         });
       }
 
-      // সার্ভিস কল করা
+      // ২. সার্ভিস কল
       const result = await resultService.updateStudentMarks({
         exam_number,
+        student_phone,
         amount,
-        action, // 'increase_marks' or 'decrease_marks'
+        action,
       });
 
       res.status(200).json({
@@ -68,10 +68,8 @@ class Controller extends BaseController {
         data: result,
       });
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to update marks",
-      });
+      // এখানে 'Result not found' এররটি হ্যান্ডেল হবে
+      res.status(404).json({ success: false, message: error.message });
     }
   };
 

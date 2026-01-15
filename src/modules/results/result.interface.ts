@@ -24,6 +24,7 @@ export type UpdateMarkAction = "increase_marks" | "decrease_marks";
 
 export interface IUpdateMarkPayload {
   exam_number: number;
+  student_phone?: string;
   amount: number;
   action: UpdateMarkAction;
 }
