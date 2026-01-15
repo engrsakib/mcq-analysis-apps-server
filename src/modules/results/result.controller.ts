@@ -75,8 +75,12 @@ class Controller extends BaseController {
 
   getResultByExamNumber = async (req: Request, res: Response) => {
     const examNum = Number(req.params.exam_number);
+    const phone = req.query.phone as string | undefined;
 
-    const result = await resultService.getSingleResultByExamNumber(examNum);
+    const result = await resultService.getSingleResultByExamNumber(
+      examNum,
+      phone
+    );
 
     res.send({
       success: true,

@@ -68,10 +68,14 @@ class service {
     };
   };
 
-  getSingleResultByExamNumber = async (examNum: number) => {
-    const result = await ResultModel.findOne({ exam_number: examNum }).select(
-      "-dateTaken -createdAt -updatedAt -__v"
-    );
+  getSingleResultByExamNumber = async (
+    examNum: number,
+    student_phone?: string
+  ) => {
+    const result = await ResultModel.findOne({
+      exam_number: examNum,
+      student_phone,
+    }).select("-dateTaken -createdAt -updatedAt -__v");
 
     if (!result) {
       throw new Error("Result not found for this exam number!");
