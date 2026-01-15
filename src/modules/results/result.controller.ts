@@ -53,6 +53,34 @@ class Controller extends BaseController {
       data: result,
     });
   };
+
+  getLeaderboard = async (req: Request, res: Response) => {
+    try {
+      const examNum = req.query.exam_number
+        ? Number(req.query.exam_number)
+        : undefined;
+
+      if (!examNum) {
+        return res.status(400).json({
+          success: false,
+          message: "Exam number is required",
+        });
+      }
+
+      const result = await resultService.getResultLeaderboard(examNum);
+
+      res.status(200).json({
+        success: true,
+        message: "Leaderboard retrieved successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || "Something went wrong",
+      });
+    }
+  };
 }
 
 export const ResultController = new Controller();
