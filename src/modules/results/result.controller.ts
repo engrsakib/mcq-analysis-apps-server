@@ -9,7 +9,8 @@ class Controller extends BaseController {
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
       success: true,
-      message: "results submitted successfully",
+      message:
+        "results submitted successfully and You can check your result after exam is completed",
       data: question,
     });
   });

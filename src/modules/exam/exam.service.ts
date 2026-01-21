@@ -151,8 +151,6 @@ class Service {
     const query: any = {};
 
     if (search) {
-      // ১. 'i' ফ্ল্যাগ থাকায় ছোট/বড় হাতের অক্ষর নিয়ে চিন্তা করতে হবে না
-      // 'bsc' লিখলেও 'BSC' আসবে, 'math' লিখলেও 'BSC math test' আসবে
       const searchRegex = new RegExp(search, "i");
 
       const orConditions: any[] = [{ exam_name: { $regex: searchRegex } }];
@@ -166,7 +164,7 @@ class Service {
     }
 
     const exams = await ExamModel.find(query)
-      .select("exam_number exam_name exam_date_time")
+      .select("exam_number exam_name exam_date_time is_published, is_completed")
       .sort({ exam_date_time: -1 })
       .limit(15)
       .lean();
