@@ -73,9 +73,9 @@ const ResultSchema = new Schema<IResult>(
       type: [WrittenExamSchema],
       default: [],
     },
-    is_result_published: {
+    is_written_mark_updated: {
       type: Boolean,
-      required: true,
+      required: false,
       default: false,
     },
   },

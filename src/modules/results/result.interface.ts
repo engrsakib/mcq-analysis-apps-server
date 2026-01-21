@@ -15,7 +15,7 @@ export interface IResult extends Document {
   wrongAnswers: number;
   unanswered: number;
   is_cheated: boolean;
-  is_result_published: boolean;
+  is_written_mark_updated?: boolean;
   is_on_time: boolean;
   dateTaken: Date;
   writtenExam: IwrittenExam[];
