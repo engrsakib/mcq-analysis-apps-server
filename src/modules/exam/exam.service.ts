@@ -1,6 +1,7 @@
 import { BarcodeService } from "@/lib/barcode";
 import { ExamModel } from "./exam.model";
 import { IExam } from "./exam.interface";
+import { ResultModel } from "../results/result.model";
 
 class Service {
   async createExam(payload: Partial<IExam>): Promise<IExam> {
@@ -52,7 +53,8 @@ class Service {
     };
   }
 
-  async getAllExamsForUsers(query: any) {
+  async getAllExamsForUsers(query: any, userPhone: string) {
+    // ১. userPhone প্যারামিটার যোগ করা হয়েছে
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -64,13 +66,35 @@ class Service {
       ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
     };
 
+    // ২. .lean() ব্যবহার করা হয়েছে যাতে আমরা ডাটা মডিফাই করতে পারি
     const exams = await ExamModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
       .select("-questions")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const total = await ExamModel.countDocuments(searchCondition);
+
+    // ৩. এক্সামগুলোর exam_number বের করা হলো
+    const examNumbers = exams.map((exam) => exam.exam_number);
+
+    // ৪. ResultModel থেকে চেক করা হচ্ছে ইউজার এই এক্সামগুলো দিয়েছে কি না
+    const attendedExams = await ResultModel.find({
+      student_phone: userPhone,
+      exam_number: { $in: examNumbers },
+    }).select("exam_number");
+
+    // ৫. ফাস্ট লুকআপের জন্য Set তৈরি করা হলো
+    const attendedExamNumbers = new Set(
+      attendedExams.map((res) => res.exam_number)
+    );
+
+    // ৬. ডাটা ম্যাপ করে is_attends_exam ফিল্ডটি যুক্ত করা হলো
+    const dataWithAttendanceStatus = exams.map((exam) => ({
+      ...exam,
+      is_attends_exam: attendedExamNumbers.has(exam.exam_number),
+    }));
 
     return {
       meta: {
@@ -79,7 +103,7 @@ class Service {
         total,
         totalPage: Math.ceil(total / limit),
       },
-      data: exams,
+      data: dataWithAttendanceStatus, // মডিফাইড ডাটা রিটার্ন করা হলো
     };
   }
 

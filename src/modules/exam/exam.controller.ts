@@ -41,7 +41,8 @@ class Controller extends BaseController {
   getAllExamsForUsers = this.catchAsync(async (req: Request, res: Response) => {
     // Implementation for retrieving all Exam entries
     const query = req.query;
-    const exams = await examService.getAllExamsForUsers(query);
+    const userPhone = req.user?.phone; // Assuming user phone is available in req.user
+    const exams = await examService.getAllExamsForUsers(query, userPhone);
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
