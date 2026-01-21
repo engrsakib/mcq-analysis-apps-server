@@ -173,6 +173,7 @@ class service {
       },
       {
         $inc: { score: incrementValue },
+        $set: { is_written_mark_updated: true },
       },
       {
         new: true,
@@ -196,7 +197,6 @@ class service {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
 
-    // ২. প্রথমে ওই এক্সামের সবার রেজাল্ট নিয়ে আসা হলো (সর্টিং সহ)
     const allResults = await ResultModel.find({ exam_number: examNum })
       .sort({
         is_cheated: 1, // False (0) আগে, True (1) পরে -> অর্থাৎ সৎ আগে, চিটার শেষে
