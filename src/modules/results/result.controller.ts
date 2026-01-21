@@ -89,38 +89,25 @@ class Controller extends BaseController {
     });
   };
 
-  getLeaderboard = async (req: Request, res: Response) => {
-    try {
-      // ১. প্যারামস থেকে এক্সাম নাম্বার (বাধ্যতামূলক)
-      const examNum = Number(req.params.exam_number);
+  getExamLeaderboard = async (req: Request, res: Response) => {
+    const loggedInUserPhone = req.user.phone_number; // অথেন্টিকেশন থেকে পাওয়া ফোন
+    const examNum = Number(req.params.exam_number); // প্যারামস থেকে এক্সাম নাম্বার
+    const query = req.query; // পেজিনেশনের জন্য (page, limit)
 
-      // ভ্যালিডেশন: এক্সাম নাম্বার না থাকলে এরর
-      if (!examNum) {
-        return res.status(400).json({
-          success: false,
-          message: "Exam number is required in params!",
-        });
-      }
+    console.log(loggedInUserPhone, "logged");
 
-      // ২. কুয়েরি থেকে ফোন নাম্বার (অপশনাল) - সার্চের জন্য
-      const phone = req.query.phone as string | undefined;
+    const result = await resultService.getExamLeaderboard(
+      loggedInUserPhone,
+      examNum,
+      query
+    );
 
-      // ৩. সার্ভিস কল
-      const result = await resultService.getMixedLeaderboard(examNum, phone);
-
-      res.status(200).json({
-        success: true,
-        message: phone
-          ? "Student result found"
-          : "Leaderboard retrieved successfully",
-        data: result,
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || "Something went wrong",
-      });
-    }
+    this.sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Leaderboard retrieved successfully",
+      data: result,
+    });
   };
 }
 

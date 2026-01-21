@@ -68,6 +68,81 @@ class service {
     };
   };
 
+  getResultsBySearchForUsers = async (
+    loggedInUserPhone: string, // ১. লগইন ইউজারের ফোন নম্বর এখানে নিতে হবে
+    phone?: string,
+    examNum?: number,
+    page: number = 1,
+    limit: number = 10
+  ) => {
+    const skip = (page - 1) * limit;
+
+    // ১. মেইন লিস্টের জন্য কুয়েরি (যা সার্চ বা ফিল্টার অনুযায়ী আসবে)
+    const listMatchQuery: any = {};
+    if (phone) listMatchQuery.student_phone = phone;
+    if (examNum) listMatchQuery.exam_number = examNum;
+
+    // ২. কারেন্ট ইউজারের জন্য কুয়েরি (লগইন ফোন নম্বর এবং নির্দিষ্ট এক্সাম নম্বর)
+    const currentUserMatchQuery: any = {
+      student_phone: loggedInUserPhone,
+    };
+    if (examNum) currentUserMatchQuery.exam_number = examNum;
+
+    // ৩. কমন প্রোজেকশন (কি কি ফিল্ড দেখাবেন)
+    const projectFields = {
+      _id: 0,
+      student_name: 1,
+      student_phone: 1,
+      exam_number: 1,
+      total_score: 1,
+      score: 1,
+    };
+
+    const result = await ResultModel.aggregate([
+      {
+        $facet: {
+          // ক. মেইন ডাটা লিস্ট (লিডারবোর্ড বা রেজাল্ট লিস্ট)
+          data: [
+            { $match: listMatchQuery },
+            { $sort: { score: -1 } }, // স্কোরের ভিত্তিতে সর্ট
+            { $skip: skip },
+            { $limit: limit },
+            { $project: projectFields },
+          ],
+
+          // খ. মোট ডাটা কাউন্ট (পেজিনেশনের জন্য)
+          totalCount: [{ $match: listMatchQuery }, { $count: "total" }],
+
+          // গ. লগইন করা ইউজারের নিজের রেজাল্ট
+          currentUser: [
+            { $match: currentUserMatchQuery },
+            { $project: projectFields },
+            { $limit: 1 }, // একজন ইউজারের একটি এক্সামের একটাই রেজাল্ট দরকার
+          ],
+        },
+      },
+    ]);
+
+    const data = result[0].data;
+    const totalResult = result[0].totalCount[0]?.total || 0;
+    const totalPages = Math.ceil(totalResult / limit);
+
+    // কারেন্ট ইউজার ডাটা অ্যারে থেকে অবজেক্টে নেওয়া হলো (না থাকলে null)
+    const currentUserData = result[0].currentUser[0] || null;
+
+    // ৪. রেসপন্স রিটার্ন করা
+    return {
+      meta: {
+        page,
+        limit,
+        totalResult,
+        totalPages,
+      },
+      current_user: currentUserData, // এখানে লগইন ইউজারের ডাটা থাকবে
+      data, // বাকি সবার ডাটা
+    };
+  };
+
   getSingleResultByExamNumber = async (
     examNum: number,
     student_phone?: string
@@ -113,32 +188,80 @@ class service {
     return result;
   };
 
-  getExamLeaderboard = async (examNum?: number) => {
-    const query: any = {
-      is_cheated: false,
-      is_on_time: true,
-    };
+  getExamLeaderboard = async (
+    loggedInUserPhone: string, // ১. লগইন ইউজারের ফোন নম্বর
+    examNum: number,
+    query: any
+  ) => {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
 
-    if (examNum) {
-      query.exam_number = examNum;
-    }
-
-    const result = await ResultModel.find(query)
-
-      .sort({ score: -1, dateTaken: 1 })
-
-      .select("student_name score exam_number dateTaken")
+    // ২. প্রথমে ওই এক্সামের সবার রেজাল্ট নিয়ে আসা হলো (সর্টিং সহ)
+    const allResults = await ResultModel.find({ exam_number: examNum })
+      .sort({
+        is_cheated: 1, // False (0) আগে, True (1) পরে -> অর্থাৎ সৎ আগে, চিটার শেষে
+        is_on_time: -1, // True (1) আগে, False (0) পরে -> অর্থাৎ অন-টাইম আগে
+        score: -1, // বেশি মার্ক আগে
+        dateTaken: 1, // আগে জমা দেওয়া আগে
+      })
+      .select(
+        "student_name student_phone score exam_number dateTaken is_cheated is_on_time"
+      )
       .lean();
 
-    const leaderboard = result.map((student, index) => ({
-      rank: index + 1,
-      name: student.student_name,
-      exam_number: student.exam_number,
-      score: student.score,
-      date: student.dateTaken,
-    }));
+    // ৩. র‍্যাংক প্রসেসিং (লজিক বসানো)
+    let currentRank = 1;
 
-    return leaderboard;
+    const processedLeaderboard = allResults.map((student) => {
+      let rankDisplay: string | number | null = null;
+
+      if (student.is_cheated) {
+        // যারা চিটেড করেছে
+        rankDisplay = "Cheater";
+      } else if (!student.is_on_time) {
+        // যারা লেট করেছে (র‍্যাংক দিবে না)
+        rankDisplay = null;
+      } else {
+        // যারা সৎ এবং অন-টাইম (র‍্যাংক পাবে)
+        rankDisplay = currentRank++;
+      }
+
+      return {
+        rank: rankDisplay,
+        student_name: student.student_name,
+        student_phone: student.student_phone,
+        exam_number: student.exam_number,
+        score: student.score,
+        // date: student.dateTaken, // প্রয়োজন হলে আনকমেন্ট করো
+      };
+    });
+
+    // ৪. লগইন করা ইউজারের ডাটা খুঁজে বের করা (প্রসেসড লিস্ট থেকে)
+    const currentUserData =
+      processedLeaderboard.find(
+        (item) => item.student_phone === loggedInUserPhone
+      ) || null;
+
+    // ৫. পেজিনেশন লজিক (Array Slice)
+    const totalResult = processedLeaderboard.length;
+    const totalPages = Math.ceil(totalResult / limit);
+    const startIndex = (page - 1) * limit;
+    const paginatedData = processedLeaderboard.slice(
+      startIndex,
+      startIndex + limit
+    );
+
+    // ৬. ফাইনাল রেসপন্স রিটার্ন
+    return {
+      meta: {
+        page,
+        limit,
+        totalResult,
+        totalPages,
+      },
+      current_user: currentUserData, // লগইন ইউজারের নিজের রেজাল্ট ও র‍্যাংক
+      data: paginatedData, // পেজিনেটেড লিডারবোর্ড
+    };
   };
 
   getMixedLeaderboard = async (examNum: number, phone?: string) => {
