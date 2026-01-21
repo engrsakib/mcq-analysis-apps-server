@@ -73,6 +73,11 @@ const ResultSchema = new Schema<IResult>(
       type: [WrittenExamSchema],
       default: [],
     },
+    is_result_published: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   {
     timestamps: true,
