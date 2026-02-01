@@ -32,7 +32,7 @@ const GuidelineSchema = new Schema<IGuideline>({
   },
   thumbnail_url: {
     type: String,
-    required: true,
+    required: false,
   },
 });
 
