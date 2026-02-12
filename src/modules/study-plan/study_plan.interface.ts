@@ -5,6 +5,7 @@ export type IstudyPlan = {
   status: GUIDELINE_STATUS;
   thumbnail_url?: string;
   study_plan_url: string;
+  category: GUIDELINE_CATEGORY_ENUMS;
 };
 
 export enum GUIDELINE_STATUS {
