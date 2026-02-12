@@ -14,8 +14,8 @@ router.get(
 
 router.post(
   "/",
-  JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.CREATE_EXAM),
+  // JwtInstance.authenticate(Object.values(ROLES)),
+  // JwtInstance.hasPermissions(PermissionEnum.CREATE_EXAM),
   ExamController.createExam
 );
 router.get(

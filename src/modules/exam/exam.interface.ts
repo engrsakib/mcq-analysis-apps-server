@@ -1,12 +1,7 @@
 import { ObjectId } from "mongoose";
 
-export enum NegativeMark {
-  ZERO = 0,
-  QUARTER = 0.25,
-  HALF = 0.5,
-  FULL = 1,
-}
-
+export const NegativeMark = [0, 0.25, 0.5, 1] as const;
+export type NegativeMark = (typeof NegativeMark)[number];
 export interface IExam {
   exam_number?: number;
   exam_name: string;

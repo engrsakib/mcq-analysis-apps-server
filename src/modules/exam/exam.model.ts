@@ -15,7 +15,7 @@ const examSchema = new Schema<IExam>({
     type: Number,
     enum: Object.values(NegativeMark),
     required: true,
-    default: NegativeMark.ZERO,
+    default: NegativeMark[0],
   },
 });
 
