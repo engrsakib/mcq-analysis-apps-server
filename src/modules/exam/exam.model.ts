@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IExam } from "./exam.interface";
+import { IExam, NegativeMark } from "./exam.interface";
 
 const examSchema = new Schema<IExam>({
   exam_number: { type: Number, required: false },
@@ -11,6 +11,12 @@ const examSchema = new Schema<IExam>({
   is_completed: { type: Boolean, required: true, default: false },
   questions: [{ type: Schema.Types.ObjectId, ref: "Question", required: true }],
   is_published: { type: Boolean, required: true, default: false },
+  negative_mark: {
+    type: Number,
+    enum: Object.values(NegativeMark),
+    required: true,
+    default: NegativeMark.ZERO,
+  },
 });
 
 export const ExamModel = model<IExam>("Exam", examSchema);
