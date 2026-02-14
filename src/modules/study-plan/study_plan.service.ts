@@ -3,16 +3,16 @@ import { StudyPlan } from "./study_plan.model";
 import { GUIDELINE_STATUS } from "./study_plan.interface";
 
 class Service {
-  async createGuideline(guidelineData: any) {
-    guidelineData.is_published = false; // Default value
-    guidelineData.guideline_number = await BarcodeService.generateEAN13(); // Auto-increment guideline_number
+  async createStudyPlan(guidelineData: any) {
+    guidelineData.is_published = false;
+    guidelineData.study_plan_number = await BarcodeService.generateEAN13();
 
     const guideline = await StudyPlan.create(guidelineData);
 
     return guideline;
   }
 
-  async getAllGuidelines(query: any) {
+  async getAllStudyPlans(query: any) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -40,7 +40,7 @@ class Service {
     };
   }
 
-  async getAllGuidelinesForUsers(query: any) {
+  async getAllStudyPlansForUsers(query: any) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -69,12 +69,12 @@ class Service {
     };
   }
 
-  async getGuidelineById(id: string) {
-    const guideline = await StudyPlan.findOne({ study_plan_number: id });
-    return guideline;
+  async getStudyPlanById(id: string) {
+    const studyPlan = await StudyPlan.findOne({ study_plan_number: id });
+    return studyPlan;
   }
 
-  async updateGuidelineById(id: string, updateData: any) {
+  async updateStudyPlanById(id: string, updateData: any) {
     const updatedGuideline = await StudyPlan.findOneAndUpdate(
       { study_plan_number: id },
       updateData,
@@ -83,14 +83,14 @@ class Service {
     return updatedGuideline;
   }
 
-  async deleteGuidelineById(id: string) {
-    const deletedGuideline = await StudyPlan.findOneAndDelete({
+  async deleteStudyPlanById(id: string) {
+    const deletedStudyPlan = await StudyPlan.findOneAndDelete({
       study_plan_number: id,
     });
-    return deletedGuideline;
+    return deletedStudyPlan;
   }
 
-  async toggleGuidelineStatus(id: string) {
+  async toggleStudyPlanStatus(id: string) {
     const result = await StudyPlan.findOneAndUpdate(
       { study_plan_number: id },
       [
@@ -113,4 +113,4 @@ class Service {
   }
 }
 
-export const GuidelineService = new Service();
+export const StudyPlanService = new Service();
