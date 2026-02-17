@@ -12,6 +12,7 @@ import { GuidelineRoutes } from "@/modules/guideline/guideline.router";
 import { BooksRoutes } from "@/modules/books/books.router";
 import { ExamRoutes } from "@/modules/exam/exam.router";
 import { ResultRoutes } from "@/modules/results/result.router";
+import { StudyPlanRoutes } from "@/modules/study-plan/study_plan.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -38,6 +39,10 @@ const moduleRoutes = [
   {
     path: "/results",
     route: ResultRoutes,
+  },
+  {
+    path: "/study-plan",
+    route: StudyPlanRoutes,
   },
   {
     path: "/exam",
