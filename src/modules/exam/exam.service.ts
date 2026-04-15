@@ -53,6 +53,38 @@ class Service {
     };
   }
 
+  // get upcoming exams for users
+  async getUpcomingExamsForUsers(query: any) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const searchTerm = query.searchTerm || "";
+
+    const searchCondition = {
+      is_published: true,
+      is_started: false,
+      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+    };
+
+    const exams = await ExamModel.find(searchCondition)
+      .skip(skip)
+      .limit(limit)
+      .select("-questions")
+      .sort({ createdAt: -1 });
+
+    const total = await ExamModel.countDocuments(searchCondition);
+
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+        totalPage: Math.ceil(total / limit),
+      },
+      data: exams,
+    };
+  }
+
   async getAllExamsForUsers(query: any, userPhone: string) {
     // ১. userPhone প্যারামিটার যোগ করা হয়েছে
     const page = Number(query.page) || 1;

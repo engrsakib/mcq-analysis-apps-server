@@ -127,6 +127,21 @@ class Controller extends BaseController {
     });
   });
 
+  // get upcoming exams for users controller
+  getUpcomingExamsForUsers = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const query = req.query;
+      const exams = await examService.getUpcomingExamsForUsers(query);
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Upcoming exam entries retrieved successfully",
+        data: exams,
+      });
+    }
+  );
+
   getExamForSearch = this.catchAsync(async (req: Request, res: Response) => {
     const search = req.query.exam_name as string | undefined;
 
