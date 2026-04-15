@@ -102,7 +102,9 @@ class Service {
     const exams = await ExamModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
-      .select("-questions")
+      .select(
+        "-questions -duration_minutes -total_marks -is_started -is_completed -is_published -negative_mark -createdAt -updatedAt -__v"
+      )
       .sort({ createdAt: -1 })
       .lean();
 

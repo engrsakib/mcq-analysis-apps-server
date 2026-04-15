@@ -24,7 +24,9 @@ router.get(
   JwtInstance.hasPermissions(PermissionEnum.VIEW_EXAM),
   ExamController.getAllExams
 );
+
 router.get("/user", ExamController.getAllExamsForUsers);
+router.get("/upcoming", ExamController.getUpcomingExamsForUsers);
 router.get("/:id", ExamController.getExamById);
 router.get("/user/:id", ExamController.getExamByIdForUsers);
 router.put(
