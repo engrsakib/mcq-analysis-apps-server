@@ -18,22 +18,28 @@ jobQueue.setHandler(async (event: AppEvent) => {
       return handleSendNotificationJob(event.payload);
 
     case "STUDY_PLAN_CREATED":
-      return handleStudyPlanCreated(event.payload);
+    case "STUDY_PLAN_UPDATED":
+      return handleStudyPlanCreated(event.payload as any);
 
     case "YOUTUBE_VIDEO_ADDED":
-      return handleYoutubeVideoAdded(event.payload);
+    case "YOUTUBE_VIDEO_UPDATED":
+      return handleYoutubeVideoAdded(event.payload as any);
 
     case "RESULT_PUBLISHED":
-      return handleResultPublished(event.payload);
+    case "RESULT_UPDATED":
+      return handleResultPublished(event.payload as any);
 
     case "BOOK_UPLOADED":
-      return handleBookUploaded(event.payload);
+    case "BOOK_UPDATED":
+      return handleBookUploaded(event.payload as any);
 
     case "EXAM_CREATED":
-      return handleExamCreated(event.payload);
+    case "EXAM_UPDATED":
+      return handleExamCreated(event.payload as any);
 
     case "GUIDELINE_CREATED":
-      return handleGuidelineCreated(event.payload);
+    case "GUIDELINE_UPDATED":
+      return handleGuidelineCreated(event.payload as any);
 
     case "EXAM_RESULT_PUBLISHED":
       return handleResultPublished({

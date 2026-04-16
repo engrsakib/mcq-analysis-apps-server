@@ -1,5 +1,6 @@
 import { BarcodeService } from "@/lib/barcode";
 import { YoutubeModel } from "./youtube.model";
+import { eventBus } from "@/events/EventBus";
 
 class Service {
   async createYoutubeVideo(videoData: any) {
@@ -7,6 +8,16 @@ class Service {
     videoData.video_number = await BarcodeService.generateEAN13(); // Auto-increment video_number
 
     const video = await YoutubeModel.create(videoData);
+
+    await eventBus.publish({
+      type: "YOUTUBE_VIDEO_ADDED",
+      payload: {
+        userId: videoData.created_by || "system",
+        videoId:
+          (video.video_number as any)?.toString() || video._id.toString(),
+        title: (video as any).title,
+      },
+    });
 
     return video;
   }
@@ -78,6 +89,20 @@ class Service {
       updateData,
       { new: true }
     );
+
+    if (updatedVideo) {
+      await eventBus.publish({
+        type: "YOUTUBE_VIDEO_UPDATED",
+        payload: {
+          userId: updateData.updated_by || "system",
+          videoId:
+            (updatedVideo.video_number as any)?.toString() ||
+            updatedVideo._id.toString(),
+          title: (updatedVideo as any).title,
+        },
+      });
+    }
+
     return updatedVideo;
   }
 

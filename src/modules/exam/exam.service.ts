@@ -2,6 +2,7 @@ import { BarcodeService } from "@/lib/barcode";
 import { ExamModel } from "./exam.model";
 import { IExam } from "./exam.interface";
 import { ResultModel } from "../results/result.model";
+import { eventBus } from "@/events/EventBus";
 
 class Service {
   async createExam(payload: Partial<IExam>): Promise<IExam> {
@@ -17,6 +18,16 @@ class Service {
       };
 
       const result = await ExamModel.create(examData);
+
+      await eventBus.publish({
+        type: "EXAM_CREATED",
+        payload: {
+          userId: (payload as any).created_by || "system",
+          examId:
+            (result.exam_number as any)?.toString() || result._id.toString(),
+          title: (result as any).title || "New Exam",
+        },
+      });
 
       return result;
     } catch (error) {
@@ -170,7 +181,16 @@ class Service {
     if (!updatedExam) {
       throw new Error("Exam not found");
     }
-
+    await eventBus.publish({
+      type: "EXAM_UPDATED",
+      payload: {
+        userId: (payload as any).updated_by || "system",
+        examId:
+          (updatedExam.exam_number as any)?.toString() ||
+          updatedExam._id.toString(),
+        title: (updatedExam as any).title || "Exam Updated",
+      },
+    });
     return updatedExam;
   }
 

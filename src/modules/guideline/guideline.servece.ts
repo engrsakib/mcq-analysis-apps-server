@@ -1,6 +1,7 @@
 import { BarcodeService } from "@/lib/barcode";
 import { GuidelineModel } from "./guideline.model";
 import { GUIDELINE_STATUS } from "./guideline.interface";
+import { eventBus } from "@/events/EventBus";
 
 class Service {
   async createGuideline(guidelineData: any) {
@@ -8,6 +9,17 @@ class Service {
     guidelineData.guideline_number = await BarcodeService.generateEAN13(); // Auto-increment guideline_number
 
     const guideline = await GuidelineModel.create(guidelineData);
+
+    await eventBus.publish({
+      type: "GUIDELINE_CREATED",
+      payload: {
+        userId: guidelineData.created_by || "system",
+        guidelineId:
+          (guideline.guideline_number as any)?.toString() ||
+          guideline._id.toString(),
+        title: guideline.title,
+      },
+    });
 
     return guideline;
   }
@@ -80,6 +92,20 @@ class Service {
       updateData,
       { new: true }
     );
+
+    if (updatedGuideline) {
+      await eventBus.publish({
+        type: "GUIDELINE_UPDATED",
+        payload: {
+          userId: updateData.updated_by || "system",
+          guidelineId:
+            (updatedGuideline.guideline_number as any)?.toString() ||
+            updatedGuideline._id.toString(),
+          title: updatedGuideline.title,
+        },
+      });
+    }
+
     return updatedGuideline;
   }
 

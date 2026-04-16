@@ -90,6 +90,18 @@ class Service {
       updateData,
       { new: true }
     );
+
+    if (updatedGuideline) {
+      await eventBus.publish({
+        type: "STUDY_PLAN_UPDATED",
+        payload: {
+          userId: updateData.updated_by || "Admin",
+          planId: updatedGuideline.study_plan_number as number,
+          title: updatedGuideline.title,
+        },
+      });
+    }
+
     return updatedGuideline;
   }
 

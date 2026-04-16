@@ -1,9 +1,21 @@
 import { IUpdateMarkPayload } from "./result.interface";
 import { ResultModel } from "./result.model";
+import { eventBus } from "@/events/EventBus";
 
 class service {
   createResult = async (resultData: any) => {
     const result = await ResultModel.create(resultData);
+
+    await eventBus.publish({
+      type: "RESULT_PUBLISHED",
+      payload: {
+        userId: resultData.student_phone || resultData.created_by || "system",
+        resultId: result._id.toString(),
+        title: resultData.title || "Result Published",
+        score: result.score,
+      },
+    });
+
     return result;
   };
 
@@ -178,6 +190,18 @@ class service {
         runValidators: true,
       }
     );
+
+    if (result) {
+      await eventBus.publish({
+        type: "RESULT_UPDATED",
+        payload: {
+          userId: student_phone || "system",
+          resultId: result._id.toString(),
+          title: "Result Updated",
+          score: result.score,
+        },
+      });
+    }
 
     if (!result) {
       throw new Error("Result not found! Exam number or Phone did not match.");

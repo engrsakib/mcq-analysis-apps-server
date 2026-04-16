@@ -1,11 +1,21 @@
 import { BarcodeService } from "@/lib/barcode";
 import { BooksModel } from "./books.model";
+import { eventBus } from "@/events/EventBus";
 
 class Service {
   async create(bookData: any) {
     bookData.book_number = await BarcodeService.generateEAN13(); // Auto-increment book_number
 
     const book = await BooksModel.create(bookData);
+
+    await eventBus.publish({
+      type: "BOOK_UPLOADED",
+      payload: {
+        userId: bookData.created_by || "system",
+        bookId: (book.book_number as any)?.toString() || book._id.toString(),
+        title: book.title,
+      },
+    });
 
     return book;
   }
@@ -78,6 +88,20 @@ class Service {
       updateData,
       { new: true }
     );
+
+    if (updatedBook) {
+      await eventBus.publish({
+        type: "BOOK_UPDATED",
+        payload: {
+          userId: updateData.updated_by || "system",
+          bookId:
+            (updatedBook.book_number as any)?.toString() ||
+            updatedBook._id.toString(),
+          title: updatedBook.title,
+        },
+      });
+    }
+
     return updatedBook;
   }
 
