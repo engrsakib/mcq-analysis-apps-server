@@ -23,9 +23,12 @@ class Service {
         type: "EXAM_CREATED",
         payload: {
           userId: (payload as any).created_by || "system",
+          title: (result as any).title || "Exam",
+          description: "Created successfully",
+          module: "exam",
+          time: new Date().toISOString(),
           examId:
             (result.exam_number as any)?.toString() || result._id.toString(),
-          title: (result as any).title || "New Exam",
         },
       });
 
@@ -185,10 +188,13 @@ class Service {
       type: "EXAM_UPDATED",
       payload: {
         userId: (payload as any).updated_by || "system",
+        title: (updatedExam as any).title || "Exam",
+        description: "Updated successfully",
+        module: "exam",
+        time: new Date().toISOString(),
         examId:
           (updatedExam.exam_number as any)?.toString() ||
           updatedExam._id.toString(),
-        title: (updatedExam as any).title || "Exam Updated",
       },
     });
     return updatedExam;
@@ -236,6 +242,20 @@ class Service {
     if (!updatedExam) {
       throw new Error("Exam not found");
     }
+
+    await eventBus.publish({
+      type: "EXAM_UPDATED",
+      payload: {
+        userId: (payload as any).updated_by || "system",
+        title: (updatedExam as any).title || "Exam",
+        description: "Updated successfully",
+        module: "exam",
+        time: new Date().toISOString(),
+        examId:
+          (updatedExam.exam_number as any)?.toString() ||
+          updatedExam._id.toString(),
+      },
+    });
 
     return updatedExam;
   }

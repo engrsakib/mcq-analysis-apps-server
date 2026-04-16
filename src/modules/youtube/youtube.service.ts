@@ -13,9 +13,12 @@ class Service {
       type: "YOUTUBE_VIDEO_ADDED",
       payload: {
         userId: videoData.created_by || "system",
+        title: (video as any).title || "YouTube Video",
+        description: "Created successfully",
+        module: "youtube",
+        time: new Date().toISOString(),
         videoId:
           (video.video_number as any)?.toString() || video._id.toString(),
-        title: (video as any).title,
       },
     });
 
@@ -95,10 +98,13 @@ class Service {
         type: "YOUTUBE_VIDEO_UPDATED",
         payload: {
           userId: updateData.updated_by || "system",
+          title: (updatedVideo as any).title || "YouTube Video",
+          description: "Updated successfully",
+          module: "youtube",
+          time: new Date().toISOString(),
           videoId:
             (updatedVideo.video_number as any)?.toString() ||
             updatedVideo._id.toString(),
-          title: (updatedVideo as any).title,
         },
       });
     }

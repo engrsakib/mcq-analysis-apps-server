@@ -13,9 +13,12 @@ class Service {
     await eventBus.publish({
       type: "STUDY_PLAN_CREATED",
       payload: {
-        userId: "Admin",
+        userId: guidelineData.created_by || "system",
+        title: guideline.title || "Study Plan",
+        description: "Created successfully",
+        module: "study-plan",
+        time: new Date().toISOString(),
         planId: guideline.study_plan_number as number,
-        title: guideline.title,
       },
     });
 
@@ -95,9 +98,12 @@ class Service {
       await eventBus.publish({
         type: "STUDY_PLAN_UPDATED",
         payload: {
-          userId: updateData.updated_by || "Admin",
+          userId: updateData.updated_by || "system",
+          title: updatedGuideline.title || "Study Plan",
+          description: "Updated successfully",
+          module: "study-plan",
+          time: new Date().toISOString(),
           planId: updatedGuideline.study_plan_number as number,
-          title: updatedGuideline.title,
         },
       });
     }

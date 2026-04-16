@@ -1,9 +1,8 @@
 import { handleSendNotificationEvent } from "./notification.handler";
+import { NotificationEventPayload } from "@/events/EventTypes";
 
-export async function handleSendNotificationJob(payload: {
-  userId: string;
-  title: string;
-  message: string;
-}) {
+export async function handleSendNotificationJob(
+  payload: NotificationEventPayload
+) {
   await handleSendNotificationEvent(payload);
 }

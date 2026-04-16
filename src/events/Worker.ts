@@ -1,11 +1,16 @@
-import { handleSendNotificationJob } from "@/modules/notification/notification.job";
 import {
   handleBookUploaded,
+  handleBookUpdated,
   handleExamCreated,
+  handleExamUpdated,
   handleGuidelineCreated,
+  handleGuidelineUpdated,
   handleResultPublished,
+  handleResultUpdated,
   handleStudyPlanCreated,
+  handleStudyPlanUpdated,
   handleYoutubeVideoAdded,
+  handleYoutubeVideoUpdated,
 } from "@/modules/notification/notification.handler";
 import { eventBus } from "./EventBus";
 import { AppEvent } from "./EventTypes";
@@ -14,46 +19,57 @@ let workerInitialized = false;
 
 jobQueue.setHandler(async (event: AppEvent) => {
   switch (event.type) {
-    case "SEND_NOTIFICATION":
-      return handleSendNotificationJob(event.payload);
-
     case "STUDY_PLAN_CREATED":
+      await handleStudyPlanCreated(event.payload);
+      break;
+
     case "STUDY_PLAN_UPDATED":
-      return handleStudyPlanCreated(event.payload as any);
+      await handleStudyPlanUpdated(event.payload);
+      break;
 
     case "YOUTUBE_VIDEO_ADDED":
+      await handleYoutubeVideoAdded(event.payload);
+      break;
+
     case "YOUTUBE_VIDEO_UPDATED":
-      return handleYoutubeVideoAdded(event.payload as any);
+      await handleYoutubeVideoUpdated(event.payload);
+      break;
 
     case "RESULT_PUBLISHED":
+      await handleResultPublished(event.payload);
+      break;
+
     case "RESULT_UPDATED":
-      return handleResultPublished(event.payload as any);
+      await handleResultUpdated(event.payload);
+      break;
 
     case "BOOK_UPLOADED":
+      await handleBookUploaded(event.payload);
+      break;
+
     case "BOOK_UPDATED":
-      return handleBookUploaded(event.payload as any);
+      await handleBookUpdated(event.payload);
+      break;
 
     case "EXAM_CREATED":
+      await handleExamCreated(event.payload);
+      break;
+
     case "EXAM_UPDATED":
-      return handleExamCreated(event.payload as any);
+      await handleExamUpdated(event.payload);
+      break;
 
     case "GUIDELINE_CREATED":
+      await handleGuidelineCreated(event.payload);
+      break;
+
     case "GUIDELINE_UPDATED":
-      return handleGuidelineCreated(event.payload as any);
-
-    case "EXAM_RESULT_PUBLISHED":
-      return handleResultPublished({
-        userId: event.payload.userId,
-        resultId: event.payload.examId,
-        title: "Exam result published",
-        score: event.payload.score,
-      });
-
-    case "OTP_SENT":
-      return;
+      await handleGuidelineUpdated(event.payload);
+      break;
 
     default:
       console.log("Unknown event:", event);
+      break;
   }
 });
 

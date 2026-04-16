@@ -10,9 +10,11 @@ class service {
       type: "RESULT_PUBLISHED",
       payload: {
         userId: resultData.student_phone || resultData.created_by || "system",
+        title: resultData.title || "Result",
+        description: "Created successfully",
+        module: "result",
+        time: new Date().toISOString(),
         resultId: result._id.toString(),
-        title: resultData.title || "Result Published",
-        score: result.score,
       },
     });
 
@@ -196,9 +198,11 @@ class service {
         type: "RESULT_UPDATED",
         payload: {
           userId: student_phone || "system",
+          title: "Result",
+          description: "Updated successfully",
+          module: "result",
+          time: new Date().toISOString(),
           resultId: result._id.toString(),
-          title: "Result Updated",
-          score: result.score,
         },
       });
     }

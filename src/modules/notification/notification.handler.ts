@@ -1,181 +1,114 @@
-import {
-  ICreateNotificationPayload,
-  NotificationModuleEnum,
-} from "./notification.interface";
-import { NotificationService } from "./notification.service";
+import { NotificationEventPayload } from "@/events/EventTypes";
+import { NotificationModel } from "./notification.model";
 import { UserModel } from "@/modules/user/user.model";
 import { sendPushNotification } from "@/config/firebase/firebase.config";
 
-export interface INotificationWorkerPayload {
-  userId: string;
-  title: string;
-  description: string;
-  module: NotificationModuleEnum;
-}
-
-export interface ISendNotificationEventPayload {
-  userId: string;
-  title: string;
-  message: string;
-}
-
-interface IStudyPlanCreatedPayload {
-  userId: string;
-  planId: string | number;
-  title: string;
-}
-
-interface IYoutubeVideoAddedPayload {
-  userId: string;
-  videoId: string;
-  title: string;
-}
-
-interface IResultPublishedPayload {
-  userId: string;
-  resultId: string;
-  title: string;
-  score?: number;
-}
-
-interface IBookUploadedPayload {
-  userId: string;
-  bookId: string;
-  title: string;
-}
-
-interface IExamCreatedPayload {
-  userId: string;
-  examId: string;
-  title: string;
-}
-
-interface IGuidelineCreatedPayload {
-  userId: string;
-  guidelineId: string;
-  title: string;
-}
-
-const DEFAULT_NOTIFICATION_MODULE = NotificationModuleEnum.RESULT;
-
-const NOTIFICATION_PREFIX = {
-  STUDY_PLAN: "Study plan created",
-  YOUTUBE: "New YouTube video",
-  RESULT: "Result published",
-  BOOK: "Book uploaded",
-  EXAM: "Exam created",
-  GUIDELINE: "Guideline created",
-} as const;
+type IUserToken = {
+  fcmToken?: string;
+  fcm_token?: string;
+};
 
 const getUserFcmToken = async (userId: string): Promise<string | null> => {
-  const user = await UserModel.findById(userId).select("fcmToken").lean<{
-    fcmToken?: string;
-  } | null>();
+  const user = await UserModel.findById(userId)
+    .select("fcmToken fcm_token")
+    .lean<IUserToken | null>();
 
-  return user?.fcmToken?.trim() ? user.fcmToken : null;
+  const token = user?.fcmToken || user?.fcm_token;
+  return token?.trim() ? token.trim() : null;
 };
 
-const processNotification = async (
-  payload: ICreateNotificationPayload
+const saveAndPushNotification = async (
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  const token = await getUserFcmToken(payload.userId);
-
-  if (token) {
-    await sendPushNotification(token, payload.title, payload.description);
-  }
-
-  await NotificationService.createNotification(payload);
-};
-
-export const handleNotificationEvent = async (
-  payload: INotificationWorkerPayload
-) => {
-  const notificationPayload: ICreateNotificationPayload = {
+  await NotificationModel.create({
     userId: payload.userId,
     title: payload.title,
     description: payload.description,
     module: payload.module,
-  };
+    time: payload.time,
+    isRead: false,
+  });
 
-  return NotificationService.createNotification(notificationPayload);
+  const token = await getUserFcmToken(payload.userId);
+  if (token) {
+    await sendPushNotification(token, payload.title, payload.description);
+  }
 };
 
 export const handleSendNotificationEvent = async (
-  payload: ISendNotificationEventPayload
-) => {
-  return handleNotificationEvent({
-    userId: payload.userId,
-    title: payload.title,
-    description: payload.message,
-    module: DEFAULT_NOTIFICATION_MODULE,
-  });
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };
 
 export const handleStudyPlanCreated = async (
-  payload: IStudyPlanCreatedPayload
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  await processNotification({
-    userId: payload.userId,
-    title: payload.title,
-    description: `${NOTIFICATION_PREFIX.STUDY_PLAN}: #${payload.planId}`,
-    module: NotificationModuleEnum.STUDY_PLAN,
-  });
+  await saveAndPushNotification(payload);
+};
+
+export const handleStudyPlanUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };
 
 export const handleYoutubeVideoAdded = async (
-  payload: IYoutubeVideoAddedPayload
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  await processNotification({
-    userId: payload.userId,
-    title: payload.title,
-    description: `${NOTIFICATION_PREFIX.YOUTUBE}: ${payload.videoId}`,
-    module: NotificationModuleEnum.YOUTUBE,
-  });
+  await saveAndPushNotification(payload);
+};
+
+export const handleYoutubeVideoUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };
 
 export const handleResultPublished = async (
-  payload: IResultPublishedPayload
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  const scoreInfo =
-    typeof payload.score === "number" ? `, score ${payload.score}` : "";
+  await saveAndPushNotification(payload);
+};
 
-  await processNotification({
-    userId: payload.userId,
-    title: payload.title,
-    description: `${NOTIFICATION_PREFIX.RESULT}: ${payload.resultId}${scoreInfo}`,
-    module: NotificationModuleEnum.RESULT,
-  });
+export const handleResultUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };
 
 export const handleBookUploaded = async (
-  payload: IBookUploadedPayload
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  await processNotification({
-    userId: payload.userId,
-    title: payload.title,
-    description: `${NOTIFICATION_PREFIX.BOOK}: ${payload.bookId}`,
-    module: NotificationModuleEnum.BOOKS,
-  });
+  await saveAndPushNotification(payload);
+};
+
+export const handleBookUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };
 
 export const handleExamCreated = async (
-  payload: IExamCreatedPayload
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  await processNotification({
-    userId: payload.userId,
-    title: payload.title,
-    description: `${NOTIFICATION_PREFIX.EXAM}: ${payload.examId}`,
-    module: NotificationModuleEnum.EXAM,
-  });
+  await saveAndPushNotification(payload);
+};
+
+export const handleExamUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };
 
 export const handleGuidelineCreated = async (
-  payload: IGuidelineCreatedPayload
+  payload: NotificationEventPayload
 ): Promise<void> => {
-  await processNotification({
-    userId: payload.userId,
-    title: payload.title,
-    description: `${NOTIFICATION_PREFIX.GUIDELINE}: ${payload.guidelineId}`,
-    module: NotificationModuleEnum.GUIDELINE,
-  });
+  await saveAndPushNotification(payload);
+};
+
+export const handleGuidelineUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await saveAndPushNotification(payload);
 };

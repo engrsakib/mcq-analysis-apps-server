@@ -14,10 +14,13 @@ class Service {
       type: "GUIDELINE_CREATED",
       payload: {
         userId: guidelineData.created_by || "system",
+        title: guideline.title || "Guideline",
+        description: "Created successfully",
+        module: "guideline",
+        time: new Date().toISOString(),
         guidelineId:
           (guideline.guideline_number as any)?.toString() ||
           guideline._id.toString(),
-        title: guideline.title,
       },
     });
 
@@ -98,10 +101,13 @@ class Service {
         type: "GUIDELINE_UPDATED",
         payload: {
           userId: updateData.updated_by || "system",
+          title: updatedGuideline.title || "Guideline",
+          description: "Updated successfully",
+          module: "guideline",
+          time: new Date().toISOString(),
           guidelineId:
             (updatedGuideline.guideline_number as any)?.toString() ||
             updatedGuideline._id.toString(),
-          title: updatedGuideline.title,
         },
       });
     }

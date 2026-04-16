@@ -1,4 +1,5 @@
 import { Document } from "mongoose";
+import { NotificationModuleName } from "@/events/EventTypes";
 
 export enum NotificationModuleEnum {
   STUDY_PLAN = "study-plan",
@@ -12,8 +13,9 @@ export enum NotificationModuleEnum {
 export interface INotification extends Document {
   title: string;
   description: string;
-  module: NotificationModuleEnum;
+  module: NotificationModuleName;
   userId: string;
+  time: string;
   isRead: boolean;
   createdAt: Date;
 }
@@ -21,6 +23,7 @@ export interface INotification extends Document {
 export interface ICreateNotificationPayload {
   title: string;
   description: string;
-  module: NotificationModuleEnum;
+  module: NotificationModuleName;
   userId: string;
+  time: string;
 }

@@ -13,6 +13,7 @@ const notificationSchema = new Schema<INotification>({
     required: true,
   },
   userId: { type: String, required: true, index: true },
+  time: { type: String, required: true },
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });

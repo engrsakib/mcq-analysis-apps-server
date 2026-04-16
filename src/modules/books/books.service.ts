@@ -12,8 +12,11 @@ class Service {
       type: "BOOK_UPLOADED",
       payload: {
         userId: bookData.created_by || "system",
+        title: book.title || "Book",
+        description: "Created successfully",
+        module: "books",
+        time: new Date().toISOString(),
         bookId: (book.book_number as any)?.toString() || book._id.toString(),
-        title: book.title,
       },
     });
 
@@ -94,10 +97,13 @@ class Service {
         type: "BOOK_UPDATED",
         payload: {
           userId: updateData.updated_by || "system",
+          title: updatedBook.title || "Book",
+          description: "Updated successfully",
+          module: "books",
+          time: new Date().toISOString(),
           bookId:
             (updatedBook.book_number as any)?.toString() ||
             updatedBook._id.toString(),
-          title: updatedBook.title,
         },
       });
     }
