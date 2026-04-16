@@ -8,6 +8,7 @@ import "./events/index";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { corsOptions } from "./config/corsOptions";
+import { initWorker } from "./events/Worker";
 
 dotenv.config();
 
@@ -46,7 +47,7 @@ app.get("/", async (req, res) => {
     data: null,
   });
 });
-
+initWorker();
 // applications routes
 app.use("/api/v1", router);
 

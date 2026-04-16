@@ -12,3 +12,4 @@ logs
 key
 .vercel
 .env
+src/config/firebase/serviceAccountKey.json

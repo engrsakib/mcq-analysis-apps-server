@@ -1,6 +1,7 @@
 import { BarcodeService } from "@/lib/barcode";
 import { StudyPlan } from "./study_plan.model";
 import { GUIDELINE_STATUS } from "./study_plan.interface";
+import { eventBus } from "@/events/EventBus";
 
 class Service {
   async createStudyPlan(guidelineData: any) {
@@ -8,6 +9,15 @@ class Service {
     guidelineData.study_plan_number = await BarcodeService.generateEAN13();
 
     const guideline = await StudyPlan.create(guidelineData);
+
+    await eventBus.publish({
+      type: "STUDY_PLAN_CREATED",
+      payload: {
+        userId: "Admin",
+        planId: guideline.study_plan_number as number,
+        title: guideline.title,
+      },
+    });
 
     return guideline;
   }
