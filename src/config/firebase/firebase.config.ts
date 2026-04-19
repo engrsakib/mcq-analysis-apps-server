@@ -6,23 +6,47 @@ export type PushNotificationResult = {
   error?: string;
 };
 
-console.log("CLIENT EMAIL:", process.env.FIREBASE_CLIENT_EMAIL);
+// Fix Render/Docker private key issues
+function fixPrivateKey(key?: string) {
+  if (!key) return undefined;
 
-const firebaseAdmin =
+  let fixed = key.trim();
+
+  // Case 1: Render double-escapes → \\n
+  if (fixed.includes("\\n")) {
+    fixed = fixed.replace(/\\n/g, "\n");
+  }
+
+  // Case 2: Render removes newline → single line
+  if (!fixed.includes("\n")) {
+    fixed = fixed
+      .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
+      .replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----\n");
+  }
+
+  return fixed;
+}
+
+const serviceAccount = {
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+  private_key: fixPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  client_id: process.env.FIREBASE_CLIENT_ID,
+  client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+};
+
+// Debug (Render logs এ দেখবে)
+console.log("PRIVATE KEY FIRST 40:", serviceAccount.private_key?.slice(0, 40));
+
+export const firebaseAdmin =
   admin.apps.length > 0
     ? admin.app()
     : admin.initializeApp({
-        credential: admin.credential.cert({
-          project_id: process.env.FIREBASE_PROJECT_ID,
-          private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-          private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-          client_email: process.env.FIREBASE_CLIENT_EMAIL,
-          client_id: process.env.FIREBASE_CLIENT_ID,
-          client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-        } as admin.ServiceAccount),
+        credential: admin.credential.cert(
+          serviceAccount as admin.ServiceAccount
+        ),
       });
-
-export { firebaseAdmin };
 
 export const sendPushNotification = async (
   token: string,
@@ -32,25 +56,14 @@ export const sendPushNotification = async (
   try {
     const messageId = await firebaseAdmin.messaging().send({
       token,
-      notification: {
-        title,
-        body,
-      },
+      notification: { title, body },
     });
 
-    return {
-      success: true,
-      messageId,
-    };
+    return { success: true, messageId };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Failed to send push notification";
-
     return {
       success: false,
-      error: errorMessage,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
