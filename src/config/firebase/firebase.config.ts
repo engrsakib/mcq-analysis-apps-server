@@ -6,22 +6,21 @@ export type PushNotificationResult = {
   error?: string;
 };
 
-// Fix Render/Docker private key issues
 function fixPrivateKey(key?: string) {
   if (!key) return undefined;
 
   let fixed = key.trim();
 
-  // Case 1: Render double-escapes → \\n
-  if (fixed.includes("\\n")) {
-    fixed = fixed.replace(/\\n/g, "\n");
+  if (fixed.startsWith('"') && fixed.endsWith('"')) {
+    fixed = fixed.slice(1, -1);
   }
 
-  // Case 2: Render removes newline → single line
+  fixed = fixed.replace(/\\n/g, "\n");
+
   if (!fixed.includes("\n")) {
     fixed = fixed
-      .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
-      .replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----\n");
+      .replace(/-----BEGIN PRIVATE KEY-----/g, "-----BEGIN PRIVATE KEY-----\n")
+      .replace(/-----END PRIVATE KEY-----/g, "\n-----END PRIVATE KEY-----\n");
   }
 
   return fixed;
@@ -35,9 +34,6 @@ const serviceAccount = {
   client_id: process.env.FIREBASE_CLIENT_ID,
   client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
 };
-
-// Debug (Render logs এ দেখবে)
-console.log("PRIVATE KEY FIRST 40:", serviceAccount.private_key?.slice(0, 40));
 
 export const firebaseAdmin =
   admin.apps.length > 0
