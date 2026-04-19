@@ -182,6 +182,19 @@ class Controller extends BaseController {
       data: null,
     });
   });
+
+  saveToken = this.catchAsync(async (req: Request, res: Response) => {
+    const { userId, token } = req.body;
+
+    const result = await UserService.saveToken(userId, token);
+
+    this.sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "FCM token saved successfully",
+      data: result,
+    });
+  });
 }
 
 export const UserController = new Controller();

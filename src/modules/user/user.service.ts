@@ -393,6 +393,31 @@ class Service {
 
     await UserModel.findByIdAndUpdate(user._id, { password: newPassword });
   }
+
+  async saveToken(userId: string, token: string) {
+    if (!userId || !token) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "userId and token are required"
+      );
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { fcmToken: token.trim() },
+      { new: true }
+    );
+
+    if (!user) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
+    }
+
+    return {
+      userId: user._id.toString(),
+      fcmToken: user.fcmToken,
+      savedAt: new Date().toISOString(),
+    };
+  }
 }
 
 export const UserService = new Service();

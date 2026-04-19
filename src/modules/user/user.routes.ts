@@ -20,6 +20,12 @@ router.post(
   UserController.create
 );
 
+router.post(
+  "/save-token",
+  JwtInstance.authenticate(),
+  UserController.saveToken
+);
+
 router.patch(
   "/self",
   validateRequest(UserValidations.update),
