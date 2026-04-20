@@ -11,12 +11,25 @@ function fixPrivateKey(key?: string) {
 
   let fixed = key.trim();
 
+  // ১. যদি কোটেশন থাকে (Render অনেক সময় "" যোগ করে), তা সরানো
   if (fixed.startsWith('"') && fixed.endsWith('"')) {
     fixed = fixed.slice(1, -1);
   }
 
+  // ২. চেক করা কি-টি Base64 কি না। যদি PEM ট্যাগ না থাকে, তবে ডিকোড করা।
+  if (!fixed.includes("-----BEGIN PRIVATE KEY-----")) {
+    try {
+      // Base64 থেকে আসল টেক্সটে রূপান্তর
+      fixed = Buffer.from(fixed, "base64").toString("utf-8");
+    } catch (e) {
+      console.error("Firebase Key Decoding Error:", e);
+    }
+  }
+
+  // ৩. নিউ-লাইন (\n) ক্যারেক্টারগুলো ঠিক করা
   fixed = fixed.replace(/\\n/g, "\n");
 
+  // ৪. যদি কোনো কারণে সব এক লাইনে চলে আসে, তবে ম্যানুয়ালি লাইন ব্রেক দেওয়া
   if (!fixed.includes("\n")) {
     fixed = fixed
       .replace(/-----BEGIN PRIVATE KEY-----/g, "-----BEGIN PRIVATE KEY-----\n")
