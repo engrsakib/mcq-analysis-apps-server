@@ -37,8 +37,7 @@ class Controller extends BaseController {
       });
     }
 
-    const notifications =
-      await NotificationService.getNotificationsByUserId(userId);
+    const notifications = await NotificationService.getNotificationsByUserId();
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,

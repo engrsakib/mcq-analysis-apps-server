@@ -14,8 +14,8 @@ class Service {
     return NotificationModel.create(payload);
   }
 
-  async getNotificationsByUserId(userId: string): Promise<INotification[]> {
-    return NotificationModel.find({ userId }).sort(NOTIFICATION_SORT);
+  async getNotificationsByUserId(): Promise<INotification[]> {
+    return NotificationModel.find({}).sort(NOTIFICATION_SORT);
   }
 
   async getUnreadNotificationsByUserId(
