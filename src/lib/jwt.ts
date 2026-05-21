@@ -7,6 +7,7 @@ import { HttpStatusCode } from "./httpStatus";
 import { cookieManager } from "@/shared/cookie";
 import { IRoles } from "@/constants/roles";
 import { AdminModel } from "@/modules/admin/admin.model";
+import catchAsync from "@/shared/catchAsync";
 
 class JWT {
   private signToken = async (
@@ -46,20 +47,14 @@ class JWT {
   }
 
   public authenticate(allowedRoles?: IRoles[]) {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      const { access_token, refresh_token } = this.extractTokens(req, "header");
-
-      if (!access_token && !refresh_token) {
-        return next(
-          new ApiError(
-            HttpStatusCode.UNAUTHORIZED,
-            "Unauthenticated access. Please login to access resource(s)"
-          )
+    return catchAsync(
+      async (req: Request, res: Response, next: NextFunction) => {
+        const { access_token, refresh_token } = this.extractTokens(
+          req,
+          "header"
         );
-      }
 
-      try {
-        if (!access_token) {
+        if (!access_token && !refresh_token) {
           return next(
             new ApiError(
               HttpStatusCode.UNAUTHORIZED,
@@ -67,32 +62,9 @@ class JWT {
             )
           );
         }
-        const payload = jwt.verify(
-          access_token,
-          envConfig.jwt.secret
-        ) as unknown as IJWtPayload;
 
-        if (!payload.id) {
-          return next(
-            new ApiError(
-              HttpStatusCode.UNAUTHORIZED,
-              "Invalid authentication token"
-            )
-          );
-        }
-
-        if (Array.isArray(allowedRoles) && allowedRoles.length > 0) {
-          if (!allowedRoles.includes(payload.role as IRoles)) {
-            next(
-              new ApiError(HttpStatusCode.FORBIDDEN, "Forbidden: Access denied")
-            );
-          }
-        }
-        req.user = payload;
-        next();
-      } catch (error: any) {
-        if (error instanceof TokenExpiredError) {
-          if (!refresh_token) {
+        try {
+          if (!access_token) {
             return next(
               new ApiError(
                 HttpStatusCode.UNAUTHORIZED,
@@ -100,24 +72,65 @@ class JWT {
               )
             );
           }
-          return this.handleExpiredAccessToken(refresh_token, res, next);
-        }
+          const payload = jwt.verify(
+            access_token,
+            envConfig.jwt.secret
+          ) as unknown as IJWtPayload;
 
-        if (error?.statusCode === HttpStatusCode.FORBIDDEN) {
+          if (!payload.id) {
+            return next(
+              new ApiError(
+                HttpStatusCode.UNAUTHORIZED,
+                "Invalid authentication token"
+              )
+            );
+          }
+
+          if (Array.isArray(allowedRoles) && allowedRoles.length > 0) {
+            if (!allowedRoles.includes(payload.role as IRoles)) {
+              return next(
+                new ApiError(
+                  HttpStatusCode.FORBIDDEN,
+                  "Forbidden: Access denied"
+                )
+              );
+            }
+          }
+          req.user = payload;
+          next();
+        } catch (error: any) {
+          if (error instanceof TokenExpiredError) {
+            if (!refresh_token) {
+              return next(
+                new ApiError(
+                  HttpStatusCode.UNAUTHORIZED,
+                  "Unauthenticated access. Please login to access resource(s)"
+                )
+              );
+            }
+            return await this.handleExpiredAccessToken(
+              refresh_token,
+              res,
+              next
+            );
+          }
+
+          if (error?.statusCode === HttpStatusCode.FORBIDDEN) {
+            return next(
+              new ApiError(HttpStatusCode.FORBIDDEN, "Forbidden: Access denied")
+            );
+          }
           return next(
-            new ApiError(HttpStatusCode.FORBIDDEN, "Forbidden: Access denied")
+            new ApiError(HttpStatusCode.UNAUTHORIZED, "Authentication failed")
           );
         }
-        return next(
-          new ApiError(HttpStatusCode.UNAUTHORIZED, "Authentication failed")
-        );
       }
-    };
+    );
   }
 
   public hasPermissions(requiredPermission: string) {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      try {
+    return catchAsync(
+      async (req: Request, res: Response, next: NextFunction) => {
         const adminId = req.user?.id;
         if (!adminId) {
           return next(
@@ -142,8 +155,6 @@ class JWT {
             ? (admin.permissions as { key: string[] }).key
             : [];
 
-        // console.log(keys.includes(requiredPermission), { keys, requiredPermission });
-
         if (!keys.includes(requiredPermission)) {
           return next(
             new ApiError(
@@ -154,15 +165,8 @@ class JWT {
         }
 
         next();
-      } catch (err) {
-        return next(
-          new ApiError(
-            HttpStatusCode.INTERNAL_SERVER_ERROR,
-            "Internal server error"
-          )
-        );
       }
-    };
+    );
   }
 
   private extractTokens(
@@ -215,7 +219,9 @@ class JWT {
       if (error instanceof TokenExpiredError) {
         return this.logoutUser(res);
       }
-      throw new ApiError(HttpStatusCode.UNAUTHORIZED, "Unauthenticated access");
+      return next(
+        new ApiError(HttpStatusCode.UNAUTHORIZED, "Unauthenticated access")
+      );
     }
   };
 

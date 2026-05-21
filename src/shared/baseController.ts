@@ -1,4 +1,5 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { Response } from "express";
+import catchAsync from "./catchAsync";
 
 type IApiResponse<T> = {
   statusCode: number;
@@ -13,15 +14,8 @@ class BaseController {
   constructor(model: any = "") {
     this.model = model;
   }
-  catchAsync =
-    (fn: RequestHandler) =>
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      try {
-        await fn(req, res, next);
-      } catch (error) {
-        next(error);
-      }
-    };
+
+  catchAsync = catchAsync;
 
   sendResponse<T>(res: Response, data: IApiResponse<T>): void {
     const responseData: IApiResponse<T> = {

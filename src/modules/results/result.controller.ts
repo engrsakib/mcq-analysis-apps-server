@@ -43,57 +43,55 @@ class Controller extends BaseController {
     });
   });
 
-  updateMarks = async (req: Request, res: Response) => {
-    try {
-      const { exam_number, student_phone, amount, action } = req.body;
+  updateMarks = this.catchAsync(async (req: Request, res: Response) => {
+    const { exam_number, student_phone, amount, action } = req.body;
 
-      // ১. ভ্যালিডেশন: দুটো ফিল্ডই থাকতে হবে
-      if (!exam_number || !student_phone || !amount || !action) {
-        return res.status(400).json({
-          success: false,
-          message: "Exam Number AND Student Phone both are required!",
-        });
-      }
-
-      // ২. সার্ভিস কল
-      const result = await resultService.updateStudentMarks({
-        exam_number,
-        student_phone,
-        amount,
-        action,
+    if (!exam_number || !student_phone || !amount || !action) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: "Exam Number AND Student Phone both are required!",
       });
-
-      res.status(200).json({
-        success: true,
-        message: "Marks updated successfully",
-        data: result,
-      });
-    } catch (error: any) {
-      // এখানে 'Result not found' এররটি হ্যান্ডেল হবে
-      res.status(404).json({ success: false, message: error.message });
     }
-  };
 
-  getResultByExamNumber = async (req: Request, res: Response) => {
-    const examNum = Number(req.params.exam_number);
-    const phone = req.query.phone as string | undefined;
+    const result = await resultService.updateStudentMarks({
+      exam_number,
+      student_phone,
+      amount,
+      action,
+    });
 
-    const result = await resultService.getSingleResultByExamNumber(
-      examNum,
-      phone
-    );
-
-    res.send({
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
       success: true,
-      message: "Result retrieved successfully",
+      message: "Marks updated successfully",
       data: result,
     });
-  };
+  });
 
-  getExamLeaderboard = async (req: Request, res: Response) => {
-    const loggedInUserPhone = req.user.phone_number; // অথেন্টিকেশন থেকে পাওয়া ফোন
-    const examNum = Number(req.params.exam_number); // প্যারামস থেকে এক্সাম নাম্বার
-    const query = req.query; // পেজিনেশনের জন্য (page, limit)
+  getResultByExamNumber = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const examNum = Number(req.params.exam_number);
+      const phone = req.query.phone as string | undefined;
+
+      const result = await resultService.getSingleResultByExamNumber(
+        examNum,
+        phone
+      );
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Result retrieved successfully",
+        data: result,
+      });
+    }
+  );
+
+  getExamLeaderboard = this.catchAsync(async (req: Request, res: Response) => {
+    const loggedInUserPhone = req.user.phone_number;
+    const examNum = Number(req.params.exam_number);
+    const query = req.query;
 
     console.log(loggedInUserPhone, "logged");
 
@@ -104,12 +102,12 @@ class Controller extends BaseController {
     );
 
     this.sendResponse(res, {
-      statusCode: 200,
+      statusCode: HttpStatusCode.OK,
       success: true,
       message: "Leaderboard retrieved successfully",
       data: result,
     });
-  };
+  });
 }
 
 export const ResultController = new Controller();

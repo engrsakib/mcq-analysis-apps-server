@@ -28,11 +28,6 @@ async function main() {
     console.error(`Unhandled Promise Rejection: ${error?.message}`, {
       stack: error?.stack,
     });
-    if (server) {
-      server.close(() => process.exit(1));
-    } else {
-      process.exit(1);
-    }
   });
 }
 
