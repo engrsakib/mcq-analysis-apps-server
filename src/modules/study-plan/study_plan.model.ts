@@ -11,6 +11,11 @@ const studyPlanSchema = new Schema<IstudyPlan>(
       type: Number,
       default: 0,
     },
+    position: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
     title: {
       type: String,
       required: [true, "Title is required"],

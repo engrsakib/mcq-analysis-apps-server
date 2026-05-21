@@ -31,6 +31,13 @@ router.put(
   StudyPlanController.updateStudyPlan
 );
 
+router.patch(
+  "/reorder",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  StudyPlanController.reorderStudyPlans
+);
+
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),

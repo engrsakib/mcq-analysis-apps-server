@@ -1,5 +1,6 @@
 export type IstudyPlan = {
   study_plan_number?: number;
+  position?: number;
   title: string;
   description: string;
   status: GUIDELINE_STATUS;
