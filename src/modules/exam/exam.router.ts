@@ -25,7 +25,11 @@ router.get(
   ExamController.getAllExams
 );
 
-router.get("/user", ExamController.getAllExamsForUsers);
+router.get(
+  "/user",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  ExamController.getAllExamsForUsers
+);
 router.get("/upcoming", ExamController.getUpcomingExamsForUsers);
 router.get("/:id", ExamController.getExamById);
 router.get("/user/:id", ExamController.getExamByIdForUsers);

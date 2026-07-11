@@ -1,6 +1,7 @@
 import { envConfig } from "../config";
 import { schemas } from "./components/schemas";
 import { securitySchemes } from "./components/security";
+import { PRODUCTION_API_BASE_URL } from "./constants";
 import { healthPaths } from "./paths/health.paths";
 import { apiPaths } from "./paths";
 
@@ -9,15 +10,12 @@ export const SWAGGER_JSON_PATH = "/api/v1/sakib/server/docs.json";
 
 const port = envConfig.app.port;
 
-const resolveApiServerUrl = (baseUrl?: string): string | null => {
-  if (!baseUrl) return null;
+const resolveApiServerUrl = (baseUrl: string): string => {
   const normalized = baseUrl.replace(/\/$/, "");
   return normalized.endsWith("/api/v1") ? normalized : `${normalized}/api/v1`;
 };
 
-const productionServerUrl = resolveApiServerUrl(
-  envConfig.clients.server_base_url
-);
+const productionServerUrl = resolveApiServerUrl(PRODUCTION_API_BASE_URL);
 
 export const openApiSpec = {
   openapi: "3.1.0",
@@ -38,14 +36,10 @@ export const openApiSpec = {
       url: `http://localhost:${port}/api/v1`,
       description: "Local development server",
     },
-    ...(productionServerUrl
-      ? [
-          {
-            url: productionServerUrl,
-            description: "Production server",
-          },
-        ]
-      : []),
+    {
+      url: productionServerUrl,
+      description: "Production server (Render)",
+    },
   ],
   tags: [
     { name: "Health", description: "Application health check" },

@@ -21,6 +21,19 @@ export interface IResult extends Document {
   writtenExam: IwrittenExam[];
 }
 
+export interface ICreateResultInput {
+  exam_number: number;
+  total_score: number;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  unanswered: number;
+  is_cheated?: boolean;
+  is_on_time?: boolean;
+  writtenExam?: IwrittenExam[];
+}
+
 export type UpdateMarkAction = "increase_marks" | "decrease_marks";
 
 export interface IUpdateMarkPayload {

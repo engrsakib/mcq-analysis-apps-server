@@ -1,16 +1,127 @@
-import { IUpdateMarkPayload } from "./result.interface";
+import { ICreateResultInput, IUpdateMarkPayload } from "./result.interface";
 import { ResultModel } from "./result.model";
 import { eventBus } from "@/events/EventBus";
+import ApiError from "@/middlewares/error";
+import { HttpStatusCode } from "@/lib/httpStatus";
+import { ExamModel } from "../exam/exam.model";
+import { UserModel } from "../user/user.model";
+import { IJWtPayload } from "@/interfaces/common.interface";
 
 class service {
-  createResult = async (resultData: any) => {
-    const result = await ResultModel.create(resultData);
+  createResult = async (resultData: ICreateResultInput, user: IJWtPayload) => {
+    const {
+      exam_number,
+      total_score,
+      score,
+      totalQuestions,
+      correctAnswers,
+      wrongAnswers,
+      unanswered,
+      is_cheated,
+      is_on_time,
+      writtenExam,
+    } = resultData;
+
+    if (!exam_number) {
+      throw new ApiError(HttpStatusCode.BAD_REQUEST, "Exam number is required");
+    }
+
+    const [exam, existingResult, userRecord] = await Promise.all([
+      ExamModel.findOne({ exam_number })
+        .select(
+          "exam_name exam_date_time duration_minutes is_published is_started is_completed questions"
+        )
+        .lean(),
+      ResultModel.findOne({
+        exam_number,
+        student_phone: user.phone_number,
+      })
+        .select("_id")
+        .lean(),
+      UserModel.findById(user.id)
+        .select("name phone_number status is_Deleted")
+        .lean(),
+    ]);
+
+    if (!userRecord || userRecord.is_Deleted) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
+    }
+
+    if (userRecord.status === "inactive") {
+      throw new ApiError(HttpStatusCode.FORBIDDEN, "User account is inactive");
+    }
+
+    if (!exam) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "Exam not found");
+    }
+
+    if (!exam.is_published) {
+      throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam is not published");
+    }
+
+    if (!exam.is_started) {
+      throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam has not started yet");
+    }
+
+    if (exam.is_completed) {
+      throw new ApiError(
+        HttpStatusCode.FORBIDDEN,
+        "Exam has already been completed"
+      );
+    }
+
+    const examEndTime = new Date(exam.exam_date_time);
+    examEndTime.setMinutes(examEndTime.getMinutes() + exam.duration_minutes);
+
+    if (new Date() > examEndTime) {
+      throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam has expired");
+    }
+
+    if (existingResult) {
+      throw new ApiError(
+        HttpStatusCode.CONFLICT,
+        "You have already submitted this exam"
+      );
+    }
+
+    if (exam.questions.length !== totalQuestions) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "Question count does not match the exam"
+      );
+    }
+
+    if (correctAnswers + wrongAnswers + unanswered !== totalQuestions) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "Answer counts do not match total questions"
+      );
+    }
+
+    if (score < 0 || score > total_score) {
+      throw new ApiError(HttpStatusCode.BAD_REQUEST, "Invalid score");
+    }
+
+    const result = await ResultModel.create({
+      student_name: userRecord.name || user.name || "",
+      student_phone: user.phone_number,
+      exam_number,
+      total_score,
+      score,
+      totalQuestions,
+      correctAnswers,
+      wrongAnswers,
+      unanswered,
+      is_cheated: is_cheated ?? false,
+      is_on_time: is_on_time ?? true,
+      writtenExam: writtenExam ?? [],
+    });
 
     await eventBus.publish({
       type: "RESULT_PUBLISHED",
       payload: {
-        userId: resultData.student_phone || resultData.created_by || "system",
-        title: resultData.title || "Result",
+        userId: user.phone_number,
+        title: exam.exam_name || "Result",
         description: "Created successfully",
         module: "result",
         time: new Date().toISOString(),
@@ -167,7 +278,10 @@ class service {
     }).select("-dateTaken -createdAt -updatedAt -__v");
 
     if (!result) {
-      throw new Error("Result not found for this exam number!");
+      throw new ApiError(
+        HttpStatusCode.NOT_FOUND,
+        "Result not found for this exam number!"
+      );
     }
 
     return result;
@@ -208,7 +322,10 @@ class service {
     }
 
     if (!result) {
-      throw new Error("Result not found! Exam number or Phone did not match.");
+      throw new ApiError(
+        HttpStatusCode.NOT_FOUND,
+        "Result not found! Exam number or Phone did not match."
+      );
     }
 
     return result;

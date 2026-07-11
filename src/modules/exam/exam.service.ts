@@ -1,8 +1,9 @@
 import { BarcodeService } from "@/lib/barcode";
 import { ExamModel } from "./exam.model";
 import { IExam } from "./exam.interface";
-import { ResultModel } from "../results/result.model";
 import { eventBus } from "@/events/EventBus";
+import ApiError from "@/middlewares/error";
+import { HttpStatusCode } from "@/lib/httpStatus";
 
 class Service {
   async createExam(payload: Partial<IExam>): Promise<IExam> {
@@ -100,49 +101,84 @@ class Service {
   }
 
   async getAllExamsForUsers(query: any, userPhone: string) {
-    // ১. userPhone প্যারামিটার যোগ করা হয়েছে
+    if (!userPhone) {
+      throw new ApiError(
+        HttpStatusCode.UNAUTHORIZED,
+        "Authenticated user phone number is required"
+      );
+    }
+
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
     const searchTerm = query.searchTerm || "";
 
-    const searchCondition = {
+    const searchCondition: Record<string, unknown> = {
       is_published: true,
-      // is_started: true,
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
     };
 
-    // ২. .lean() ব্যবহার করা হয়েছে যাতে আমরা ডাটা মডিফাই করতে পারি
-    const exams = await ExamModel.find(searchCondition)
-      .skip(skip)
-      .limit(limit)
-      .select(
-        "-questions -duration_minutes -total_marks -is_started -is_completed -is_published -negative_mark -createdAt -updatedAt -__v"
-      )
-      .sort({ createdAt: -1 })
-      .lean();
+    if (searchTerm) {
+      searchCondition.exam_name = { $regex: searchTerm, $options: "i" };
+    }
 
-    const total = await ExamModel.countDocuments(searchCondition);
+    const [aggregationResult] = await ExamModel.aggregate([
+      { $match: searchCondition },
+      { $sort: { createdAt: -1 } },
+      {
+        $facet: {
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $lookup: {
+                from: "results",
+                let: { examNum: "$exam_number" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$exam_number", "$$examNum"] },
+                          { $eq: ["$student_phone", userPhone] },
+                        ],
+                      },
+                    },
+                  },
+                  { $project: { _id: 1 } },
+                  { $limit: 1 },
+                ],
+                as: "userSubmission",
+              },
+            },
+            {
+              $addFields: {
+                is_attends_exam: {
+                  $gt: [{ $size: "$userSubmission" }, 0],
+                },
+              },
+            },
+            {
+              $project: {
+                questions: 0,
+                duration_minutes: 0,
+                total_marks: 0,
+                is_started: 0,
+                is_completed: 0,
+                is_published: 0,
+                negative_mark: 0,
+                createdAt: 0,
+                updatedAt: 0,
+                __v: 0,
+                userSubmission: 0,
+              },
+            },
+          ],
+          total: [{ $count: "count" }],
+        },
+      },
+    ]);
 
-    // ৩. এক্সামগুলোর exam_number বের করা হলো
-    const examNumbers = exams.map((exam) => exam.exam_number);
-
-    // ৪. ResultModel থেকে চেক করা হচ্ছে ইউজার এই এক্সামগুলো দিয়েছে কি না
-    const attendedExams = await ResultModel.find({
-      student_phone: userPhone,
-      exam_number: { $in: examNumbers },
-    }).select("exam_number");
-
-    // ৫. ফাস্ট লুকআপের জন্য Set তৈরি করা হলো
-    const attendedExamNumbers = new Set(
-      attendedExams.map((res) => res.exam_number)
-    );
-
-    // ৬. ডাটা ম্যাপ করে is_attends_exam ফিল্ডটি যুক্ত করা হলো
-    const dataWithAttendanceStatus = exams.map((exam) => ({
-      ...exam,
-      is_attends_exam: attendedExamNumbers.has(exam.exam_number),
-    }));
+    const total = aggregationResult?.total?.[0]?.count || 0;
 
     return {
       meta: {
@@ -151,7 +187,7 @@ class Service {
         total,
         totalPage: Math.ceil(total / limit),
       },
-      data: dataWithAttendanceStatus, // মডিফাইড ডাটা রিটার্ন করা হলো
+      data: aggregationResult?.data || [],
     };
   }
 

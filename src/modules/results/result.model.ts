@@ -23,8 +23,6 @@ const ResultSchema = new Schema<IResult>(
     exam_number: {
       type: Number,
       required: false,
-      index: true,
-      unique: true,
     },
     total_score: {
       type: Number,
@@ -84,4 +82,27 @@ const ResultSchema = new Schema<IResult>(
   }
 );
 
+ResultSchema.index({ exam_number: 1, student_phone: 1 }, { unique: true });
+
 export const ResultModel = model<IResult>("Result", ResultSchema);
+
+export async function syncResultIndexes(): Promise<void> {
+  const collection = ResultModel.collection;
+  const indexes = await collection.indexes();
+
+  const legacyUniqueExamIndex = indexes.find(
+    (index) =>
+      index.key?.exam_number === 1 &&
+      index.unique === true &&
+      index.key?.student_phone === undefined
+  );
+
+  if (legacyUniqueExamIndex?.name) {
+    await collection.dropIndex(legacyUniqueExamIndex.name);
+    console.info(
+      `Dropped legacy Result index "${legacyUniqueExamIndex.name}" (exam_number unique)`
+    );
+  }
+
+  await ResultModel.syncIndexes();
+}

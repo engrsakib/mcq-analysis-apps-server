@@ -5,13 +5,13 @@ import { resultService } from "./result.service";
 
 class Controller extends BaseController {
   createResult = this.catchAsync(async (req: Request, res: Response) => {
-    const question = await resultService.createResult(req.body);
+    const result = await resultService.createResult(req.body, req.user);
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
       success: true,
       message:
         "results submitted successfully and You can check your result after exam is completed",
-      data: question,
+      data: result,
     });
   });
 

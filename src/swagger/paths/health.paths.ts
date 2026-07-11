@@ -1,4 +1,5 @@
 import { envConfig } from "../../config";
+import { PRODUCTION_API_BASE_URL } from "../constants";
 import { successResponse } from "../utils/helpers";
 
 const port = envConfig.app.port;
@@ -6,7 +7,14 @@ const port = envConfig.app.port;
 export const healthPaths = {
   "/": {
     servers: [
-      { url: `http://localhost:${port}`, description: "Application root" },
+      {
+        url: `http://localhost:${port}`,
+        description: "Local application root",
+      },
+      {
+        url: PRODUCTION_API_BASE_URL,
+        description: "Production application root (Render)",
+      },
     ],
     get: {
       tags: ["Health"],

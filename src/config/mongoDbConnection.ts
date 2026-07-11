@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { envConfig } from ".";
 import dotenv from "dotenv";
+import { syncResultIndexes } from "@/modules/results/result.model";
 
 dotenv.config();
 
@@ -12,6 +13,8 @@ const mongodbConnection = async (): Promise<void> => {
       retryWrites: true,
       serverSelectionTimeoutMS: 10000,
     });
+
+    await syncResultIndexes();
 
     console.log("MongoDB Connected Successfully!");
   } catch (error: any) {

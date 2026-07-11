@@ -81,7 +81,23 @@ const handleMongodbValidationError = (
 const handleDuplicateKeyError = (
   error: mongoose.mongo.MongoServerError
 ): ErrorResponse => {
-  const field = Object.keys(error.keyPattern || {})[0] || "field";
+  const keyPattern = error.keyPattern || {};
+  const fields = Object.keys(keyPattern);
+
+  if (fields.includes("exam_number") && fields.includes("student_phone")) {
+    return {
+      statusCode: HttpStatusCode.CONFLICT,
+      message: "You have already submitted this exam",
+      errorMessages: [
+        {
+          path: "exam_number",
+          message: "Duplicate submission for this exam",
+        },
+      ],
+    };
+  }
+
+  const field = fields[0] || "field";
 
   return {
     statusCode: HttpStatusCode.CONFLICT,
