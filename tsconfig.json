@@ -27,7 +27,8 @@
       "@/routes/*": ["routes/*"],
       "@/shared/*": ["shared/*"],
       "@/utils/*": ["utils/*"],
-      "@/events/*": ["events/*"]
+      "@/events/*": ["events/*"],
+      "@/swagger/*": ["swagger/*"]
     }
   },
   "files": ["./src/interfaces/index.d.ts"],

@@ -9,6 +9,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { corsOptions } from "./config/corsOptions";
 import { initWorker } from "./events/Worker";
+import { setupSwagger } from "./swagger";
 
 dotenv.config();
 
@@ -32,7 +33,18 @@ app.use(
   express.json({ type: "application/json" })
 );
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  })
+);
 // Allow 100MB to be uploaded
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
@@ -48,6 +60,10 @@ app.get("/", async (req, res) => {
   });
 });
 initWorker();
+
+// OpenAPI / Swagger documentation
+setupSwagger(app);
+
 // applications routes
 app.use("/api/v1", router);
 
