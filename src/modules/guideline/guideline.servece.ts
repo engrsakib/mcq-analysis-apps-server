@@ -2,6 +2,7 @@ import { BarcodeService } from "@/lib/barcode";
 import { GuidelineModel } from "./guideline.model";
 import { GUIDELINE_STATUS } from "./guideline.interface";
 import { eventBus } from "@/events/EventBus";
+import { searchHelpers } from "@/utils/searchHelpers";
 
 class Service {
   async createGuideline(guidelineData: any) {
@@ -34,7 +35,10 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition = {
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const guidelines = await GuidelineModel.find(searchCondition)
@@ -63,7 +67,10 @@ class Service {
 
     const searchCondition = {
       status: GUIDELINE_STATUS.ACTIVE,
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const guidelines = await GuidelineModel.find(searchCondition)

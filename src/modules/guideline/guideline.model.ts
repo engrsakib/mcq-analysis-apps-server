@@ -36,4 +36,6 @@ const GuidelineSchema = new Schema<IGuideline>({
   },
 });
 
+GuidelineSchema.index({ status: 1, title: 1 });
+
 export const GuidelineModel = model("Guideline", GuidelineSchema);

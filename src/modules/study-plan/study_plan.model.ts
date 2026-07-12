@@ -58,4 +58,6 @@ const studyPlanSchema = new Schema<IstudyPlan>(
   }
 );
 
+studyPlanSchema.index({ status: 1, title: 1 });
+
 export const StudyPlan = model<IstudyPlan>("StudyPlan", studyPlanSchema);

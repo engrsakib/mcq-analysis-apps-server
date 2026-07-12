@@ -1,6 +1,7 @@
 import { BarcodeService } from "@/lib/barcode";
 import { BooksModel } from "./books.model";
 import { eventBus } from "@/events/EventBus";
+import { searchHelpers } from "@/utils/searchHelpers";
 
 class Service {
   async create(bookData: any) {
@@ -30,7 +31,10 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition = {
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const books = await BooksModel.find(searchCondition)
@@ -59,7 +63,10 @@ class Service {
 
     const searchCondition = {
       is_published: true,
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const books = await BooksModel.find(searchCondition)

@@ -98,7 +98,7 @@ async function main() {
     phone_number: { $in: [USER_A_PHONE, USER_B_PHONE, USER_C_PHONE] },
   });
 
-  const [createdUserA] = await UserModel.insertMany([
+  const [createdUserA, , createdUserC] = await UserModel.insertMany([
     {
       name: "Verify User A",
       phone_number: USER_A_PHONE,
@@ -190,28 +190,28 @@ async function main() {
 
   const listForUserA = await examService.getAllExamsForUsers(
     { page: 1, limit: 50 },
-    USER_A_PHONE
+    userA.id.toString()
   );
   const userAExam = listForUserA.data.find(
     (exam: { exam_number?: number }) => exam.exam_number === TEST_EXAM_NUMBER
   );
   record(
     "Exam list marks submitted exam for User A",
-    Boolean(userAExam?.is_attends_exam),
-    `is_attends_exam=${String(userAExam?.is_attends_exam)}`
+    Boolean(userAExam?.isSubmitted),
+    `isSubmitted=${String(userAExam?.isSubmitted)}`
   );
 
   const listForUserC = await examService.getAllExamsForUsers(
     { page: 1, limit: 50 },
-    USER_C_PHONE
+    createdUserC._id.toString()
   );
   const userCExam = listForUserC.data.find(
     (exam: { exam_number?: number }) => exam.exam_number === TEST_EXAM_NUMBER
   );
   record(
     "Exam list shows unsubmitted exam for User C",
-    userCExam?.is_attends_exam === false,
-    `is_attends_exam=${String(userCExam?.is_attends_exam)}`
+    userCExam?.isSubmitted === false,
+    `isSubmitted=${String(userCExam?.isSubmitted)}`
   );
 
   await ResultModel.deleteMany({

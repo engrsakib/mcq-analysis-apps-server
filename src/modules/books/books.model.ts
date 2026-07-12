@@ -17,4 +17,6 @@ const booksSchema = new Schema<IBook>({
   buy_url: { type: String, required: true },
 });
 
+booksSchema.index({ is_published: 1, title: 1 });
+
 export const BooksModel = model("Books", booksSchema);

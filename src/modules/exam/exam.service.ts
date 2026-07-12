@@ -4,6 +4,8 @@ import { IExam } from "./exam.interface";
 import { eventBus } from "@/events/EventBus";
 import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
+import { UserModel } from "@/modules/user/user.model";
+import { searchHelpers } from "@/utils/searchHelpers";
 
 class Service {
   async createExam(payload: Partial<IExam>): Promise<IExam> {
@@ -46,7 +48,10 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition = {
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["exam_name"],
+        searchTerm,
+      }),
     };
 
     const exams = await ExamModel.find(searchCondition)
@@ -78,7 +83,10 @@ class Service {
     const searchCondition = {
       is_published: true,
       is_started: false,
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["exam_name"],
+        searchTerm,
+      }),
     };
 
     const exams = await ExamModel.find(searchCondition)
@@ -100,13 +108,23 @@ class Service {
     };
   }
 
-  async getAllExamsForUsers(query: any, userPhone: string) {
-    if (!userPhone) {
+  async getAllExamsForUsers(query: any, userId: string) {
+    if (!userId) {
       throw new ApiError(
         HttpStatusCode.UNAUTHORIZED,
-        "Authenticated user phone number is required"
+        "Authenticated user ID is required"
       );
     }
+
+    const userRecord = await UserModel.findById(userId)
+      .select("phone_number is_Deleted")
+      .lean();
+
+    if (!userRecord || userRecord.is_Deleted) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
+    }
+
+    const userPhone = userRecord.phone_number;
 
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
@@ -115,11 +133,12 @@ class Service {
 
     const searchCondition: Record<string, unknown> = {
       is_published: true,
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["exam_name"],
+        searchTerm,
+        numericIdField: "exam_number",
+      }),
     };
-
-    if (searchTerm) {
-      searchCondition.exam_name = { $regex: searchTerm, $options: "i" };
-    }
 
     const [aggregationResult] = await ExamModel.aggregate([
       { $match: searchCondition },
@@ -152,7 +171,7 @@ class Service {
             },
             {
               $addFields: {
-                is_attends_exam: {
+                isSubmitted: {
                   $gt: [{ $size: "$userSubmission" }, 0],
                 },
               },
@@ -244,20 +263,13 @@ class Service {
   }
 
   async getExamForSearch(search?: string) {
-    const query: any = {};
-
-    if (search) {
-      const searchRegex = new RegExp(search, "i");
-
-      const orConditions: any[] = [{ exam_name: { $regex: searchRegex } }];
-
-      // ২. যদি ইনপুটটি নাম্বার হয় (যেমন: 101), তবে exam_number দিয়েও খুঁজবে
-      if (!isNaN(Number(search))) {
-        orConditions.push({ exam_number: Number(search) });
-      }
-
-      query.$or = orConditions;
-    }
+    const query: Record<string, unknown> = {
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["exam_name"],
+        searchTerm: search,
+        numericIdField: "exam_number",
+      }),
+    };
 
     const exams = await ExamModel.find(query)
       .select("exam_number exam_name exam_date_time is_published, is_completed")

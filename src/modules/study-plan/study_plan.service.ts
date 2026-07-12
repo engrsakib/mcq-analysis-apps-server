@@ -3,6 +3,7 @@ import { StudyPlan } from "./study_plan.model";
 import { GUIDELINE_STATUS } from "./study_plan.interface";
 import { eventBus } from "@/events/EventBus";
 import { AnyBulkWriteOperation, Types } from "mongoose";
+import { searchHelpers } from "@/utils/searchHelpers";
 
 type ReorderStudyPlanItem = {
   id?: string | number;
@@ -50,7 +51,10 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition = {
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const guidelines = await StudyPlan.find(searchCondition)
@@ -79,7 +83,10 @@ class Service {
 
     const searchCondition = {
       status: GUIDELINE_STATUS.ACTIVE,
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const guidelines = await StudyPlan.find(searchCondition)

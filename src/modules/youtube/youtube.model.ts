@@ -10,4 +10,6 @@ const youtubeSchema = new Schema<IYoutube>({
   is_published: { type: Boolean, required: true, default: false },
 });
 
+youtubeSchema.index({ is_published: 1, title: 1 });
+
 export const YoutubeModel = model("Youtube", youtubeSchema);

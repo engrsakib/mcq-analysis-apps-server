@@ -1,6 +1,7 @@
 import { BarcodeService } from "@/lib/barcode";
 import { YoutubeModel } from "./youtube.model";
 import { eventBus } from "@/events/EventBus";
+import { searchHelpers } from "@/utils/searchHelpers";
 
 class Service {
   async createYoutubeVideo(videoData: any) {
@@ -32,7 +33,10 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition = {
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const videos = await YoutubeModel.find(searchCondition)
@@ -60,7 +64,10 @@ class Service {
 
     const searchCondition = {
       is_published: true,
-      ...(searchTerm && { title: { $regex: searchTerm, $options: "i" } }),
+      ...searchHelpers.buildSearchCondition({
+        searchFields: ["title"],
+        searchTerm,
+      }),
     };
 
     const videos = await YoutubeModel.find(searchCondition)

@@ -14,6 +14,7 @@ import { ExamRoutes } from "@/modules/exam/exam.router";
 import { ResultRoutes } from "@/modules/results/result.router";
 import { StudyPlanRoutes } from "@/modules/study-plan/study_plan.router";
 import { NotificationRoutes } from "@/modules/notification/notification.routes";
+import { SearchRoutes } from "@/modules/search/search.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -72,6 +73,10 @@ const moduleRoutes = [
   {
     path: "/notifications",
     route: NotificationRoutes,
+  },
+  {
+    path: "/search",
+    route: SearchRoutes,
   },
 ];
 

@@ -40,8 +40,8 @@ class Controller extends BaseController {
 
   getAllExamsForUsers = this.catchAsync(async (req: Request, res: Response) => {
     const query = req.query;
-    const userPhone = req.user.phone_number;
-    const exams = await examService.getAllExamsForUsers(query, userPhone);
+    const userId = req.user.id;
+    const exams = await examService.getAllExamsForUsers(query, userId);
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,

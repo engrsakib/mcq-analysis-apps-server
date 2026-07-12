@@ -19,4 +19,6 @@ const examSchema = new Schema<IExam>({
   },
 });
 
+examSchema.index({ is_published: 1, exam_name: 1 });
+
 export const ExamModel = model<IExam>("Exam", examSchema);
