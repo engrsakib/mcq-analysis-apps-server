@@ -60,6 +60,11 @@ export const openApiSpec = {
     { name: "YouTube", description: "YouTube video resource management" },
     { name: "Study Plan", description: "Study plan management" },
     { name: "Notification", description: "User notifications" },
+    {
+      name: "Search",
+      description:
+        "Global search across exams, books, YouTube, study plans, and guidelines",
+    },
   ],
   paths: {
     ...healthPaths,

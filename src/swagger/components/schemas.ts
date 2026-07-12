@@ -59,6 +59,33 @@ export const schemas = {
       data: { type: "array", items: {} },
     },
   },
+  GlobalSearchModuleResult: {
+    type: "object",
+    properties: {
+      data: { type: "array", items: {} },
+      meta: { $ref: "#/components/schemas/PaginationMeta" },
+    },
+    required: ["data", "meta"],
+  },
+  GlobalSearchResults: {
+    type: "object",
+    properties: {
+      exams: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
+      books: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
+      youtube: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
+      studyPlans: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
+      guidelines: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
+    },
+    required: ["exams", "books", "youtube", "studyPlans", "guidelines"],
+  },
+  GlobalSearchResponse: {
+    type: "object",
+    properties: {
+      query: { type: "string", example: "database" },
+      results: { $ref: "#/components/schemas/GlobalSearchResults" },
+    },
+    required: ["query", "results"],
+  },
   LoginRequest: {
     type: "object",
     properties: {

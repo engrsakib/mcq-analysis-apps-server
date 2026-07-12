@@ -15,6 +15,7 @@ import {
   studyPlanPaths,
   notificationPaths,
 } from "./content.paths";
+import { searchPaths } from "./search.paths";
 
 export const apiPaths = {
   ...adminPaths,
@@ -31,4 +32,5 @@ export const apiPaths = {
   ...youtubePaths,
   ...studyPlanPaths,
   ...notificationPaths,
+  ...searchPaths,
 };
