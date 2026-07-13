@@ -77,13 +77,17 @@ export const examPaths = {
     get: {
       tags: ["Exam"],
       summary: "Get all exams for users",
-      description: "Retrieves published exams for end users",
+      description:
+        "Retrieves published exams for authenticated users. Each item includes isSubmitted (per-user) and is_completed (admin exam status).",
       operationId: "getAllExamsForUsers",
+      security: securityRequirements.authenticated,
       parameters: paginationParams,
       responses: {
-        "200": successResponse(200, "Exams retrieved", {
-          $ref: "#/components/schemas/PaginatedResponse",
+        "200": successResponse(200, "Exam entries retrieved successfully", {
+          $ref: "#/components/schemas/UserExamPaginatedResponse",
         }),
+        "401": commonResponses.Unauthorized,
+        "404": commonResponses.NotFound,
       },
     },
   },

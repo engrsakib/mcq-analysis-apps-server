@@ -182,7 +182,6 @@ class Service {
                 duration_minutes: 0,
                 total_marks: 0,
                 is_started: 0,
-                is_completed: 0,
                 is_published: 0,
                 negative_mark: 0,
                 createdAt: 0,

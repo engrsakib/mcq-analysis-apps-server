@@ -59,6 +59,75 @@ export const schemas = {
       data: { type: "array", items: {} },
     },
   },
+  UserExamListItem: {
+    type: "object",
+    properties: {
+      _id: {
+        type: "string",
+        format: "objectId",
+        description: "MongoDB document identifier",
+        example: "665f1a2b3c4d5e6f7a8b9c0d",
+      },
+      exam_number: {
+        type: "integer",
+        description: "Public exam identifier (barcode number)",
+        example: 1234567890123,
+      },
+      exam_name: {
+        type: "string",
+        description: "Exam display name",
+        example: "BCS Preliminary Mock Test",
+      },
+      exam_date_time: {
+        type: "string",
+        format: "date-time",
+        description: "Scheduled exam start date and time",
+        example: "2026-07-15T10:00:00.000Z",
+      },
+      isSubmitted: {
+        type: "boolean",
+        description:
+          "Whether the authenticated user has submitted this exam (computed from results collection)",
+        example: false,
+      },
+      is_completed: {
+        type: "boolean",
+        description:
+          "Whether the admin has marked this exam as completed. When true, new submissions are blocked.",
+        example: false,
+      },
+    },
+    required: [
+      "_id",
+      "exam_number",
+      "exam_name",
+      "exam_date_time",
+      "isSubmitted",
+      "is_completed",
+    ],
+  },
+  UserExamPaginatedResponse: {
+    type: "object",
+    properties: {
+      meta: { $ref: "#/components/schemas/PaginationMeta" },
+      data: {
+        type: "array",
+        items: { $ref: "#/components/schemas/UserExamListItem" },
+      },
+    },
+    required: ["meta", "data"],
+  },
+  GlobalSearchExamModuleResult: {
+    type: "object",
+    properties: {
+      data: {
+        type: "array",
+        items: { $ref: "#/components/schemas/UserExamListItem" },
+      },
+      meta: { $ref: "#/components/schemas/PaginationMeta" },
+    },
+    required: ["data", "meta"],
+  },
   GlobalSearchModuleResult: {
     type: "object",
     properties: {
@@ -70,7 +139,7 @@ export const schemas = {
   GlobalSearchResults: {
     type: "object",
     properties: {
-      exams: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
+      exams: { $ref: "#/components/schemas/GlobalSearchExamModuleResult" },
       books: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
       youtube: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
       studyPlans: { $ref: "#/components/schemas/GlobalSearchModuleResult" },
