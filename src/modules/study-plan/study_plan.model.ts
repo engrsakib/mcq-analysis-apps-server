@@ -35,7 +35,7 @@ const studyPlanSchema = new Schema<IstudyPlan>(
     },
     thumbnail_url: {
       type: String,
-      default: "",
+      required: false,
     },
     study_plan_url: {
       type: String,
