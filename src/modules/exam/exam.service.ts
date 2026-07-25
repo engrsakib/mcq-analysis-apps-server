@@ -47,12 +47,18 @@ class Service {
     const skip = (page - 1) * limit;
     const searchTerm = query.searchTerm || "";
 
-    const searchCondition = {
+    const searchCondition: Record<string, unknown> = {
       ...searchHelpers.buildSearchCondition({
         searchFields: ["exam_name"],
         searchTerm,
       }),
     };
+
+    if (query.is_completed === "true") {
+      searchCondition.is_completed = true;
+    } else if (query.is_completed === "false") {
+      searchCondition.is_completed = false;
+    }
 
     const exams = await ExamModel.find(searchCondition)
       .skip(skip)

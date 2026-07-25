@@ -72,6 +72,46 @@ class Controller extends BaseController {
     });
   });
 
+  reorderYoutubeVideos = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const items = Array.isArray(req.body) ? req.body : req.body?.items;
+
+      if (!Array.isArray(items) || !items.length) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "YouTube reorder items are required",
+        });
+      }
+
+      const hasInvalidItem = items.some((item) => {
+        const identifier = item?.id || item?._id || item?.video_number;
+        return (
+          !identifier ||
+          !Number.isInteger(Number(item?.position)) ||
+          Number(item?.position) < 0
+        );
+      });
+
+      if (hasInvalidItem) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "Each item must have a valid ID and position",
+        });
+      }
+
+      const result = await YoutubeService.reorderYoutubeVideos(items);
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "YouTube video order updated successfully",
+        data: result,
+      });
+    }
+  );
+
   updateYouTubeById = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     const updateData = req.body;

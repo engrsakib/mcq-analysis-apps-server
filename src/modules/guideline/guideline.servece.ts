@@ -3,11 +3,30 @@ import { GuidelineModel } from "./guideline.model";
 import { GUIDELINE_STATUS } from "./guideline.interface";
 import { eventBus } from "@/events/EventBus";
 import { searchHelpers } from "@/utils/searchHelpers";
+import { AnyBulkWriteOperation, Types } from "mongoose";
+
+type ReorderGuidelineItem = {
+  id?: string | number;
+  _id?: string;
+  guideline_number?: string | number;
+  position: number;
+};
 
 class Service {
   async createGuideline(guidelineData: any) {
-    guidelineData.is_published = false; // Default value
-    guidelineData.guideline_number = await BarcodeService.generateEAN13(); // Auto-increment guideline_number
+    guidelineData.is_published = false;
+    guidelineData.guideline_number = await BarcodeService.generateEAN13();
+
+    if (
+      guidelineData.position === undefined ||
+      guidelineData.position === null
+    ) {
+      const lastGuideline = await GuidelineModel.findOne()
+        .sort({ position: -1 })
+        .select("position");
+
+      guidelineData.position = (lastGuideline?.position || 0) + 1;
+    }
 
     const guideline = await GuidelineModel.create(guidelineData);
 
@@ -44,7 +63,7 @@ class Service {
     const guidelines = await GuidelineModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ position: 1, createdAt: -1 });
 
     const total = await GuidelineModel.countDocuments(searchCondition);
 
@@ -76,7 +95,7 @@ class Service {
     const guidelines = await GuidelineModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ position: 1, createdAt: -1 });
 
     const total = await GuidelineModel.countDocuments(searchCondition);
 
@@ -120,6 +139,47 @@ class Service {
     }
 
     return updatedGuideline;
+  }
+
+  async reorderGuidelines(items: ReorderGuidelineItem[]) {
+    const operations = items.reduce<AnyBulkWriteOperation<any>[]>(
+      (acc, item) => {
+        const identifier = item.id || item._id || item.guideline_number;
+        const position = Number(item.position);
+
+        if (!identifier || !Number.isInteger(position) || position < 0) {
+          return acc;
+        }
+
+        const filter =
+          typeof identifier === "string" && Types.ObjectId.isValid(identifier)
+            ? { _id: identifier }
+            : { guideline_number: Number(identifier) };
+
+        if (
+          "guideline_number" in filter &&
+          !Number.isFinite(filter.guideline_number)
+        ) {
+          return acc;
+        }
+
+        acc.push({
+          updateOne: {
+            filter,
+            update: { $set: { position } },
+          },
+        });
+
+        return acc;
+      },
+      []
+    );
+
+    if (!operations.length) {
+      return { matchedCount: 0, modifiedCount: 0 };
+    }
+
+    return GuidelineModel.bulkWrite(operations);
   }
 
   async deleteGuidelineById(id: string) {

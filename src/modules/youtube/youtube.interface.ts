@@ -1,5 +1,6 @@
 export type IYoutube = {
   video_number?: number;
+  position?: number;
   thumbnail_url?: string;
   title?: string;
   video_url: string;

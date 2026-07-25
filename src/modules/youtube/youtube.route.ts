@@ -26,6 +26,12 @@ router.put(
   JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
   YoutubeController.updateYouTubeById
 );
+router.patch(
+  "/reorder",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  YoutubeController.reorderYoutubeVideos
+);
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),

@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { IRoles } from "@/constants/roles";
 import { ADMIN_ENUMS, IAdmin } from "./admin.interface";
 import { AdminModel } from "./admin.model";
 import { BcryptInstance } from "@/lib/bcrypt";
@@ -161,7 +162,7 @@ class Service {
       id: admin?._id.toString(),
       phone_number: admin?.phone_number as string,
       name: admin?.name as string,
-      role: admin?.role as string,
+      role: admin?.role as IRoles,
     };
     const { access_token, refresh_token } =
       await JwtHelper.generateTokens(payload);

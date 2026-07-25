@@ -26,6 +26,12 @@ router.put(
   JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
   BooksController.updateBookById
 );
+router.patch(
+  "/reorder",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  BooksController.reorderBooks
+);
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),

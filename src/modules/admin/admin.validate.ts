@@ -1,4 +1,7 @@
 import z from "zod";
+import { ADMIN_ROLE_VALUES } from "@/constants/roles";
+
+const adminRoleSchema = z.enum(ADMIN_ROLE_VALUES as [string, ...string[]]);
 
 const create = z.object({
   body: z
@@ -10,7 +13,7 @@ const create = z.object({
       password: z.string().min(6, "Password must be at least 6 characters"),
       image: z.string().url("Invalid image URL").optional(),
       designation: z.string().optional(),
-      role: z.string().optional(),
+      role: adminRoleSchema.optional(),
       bio: z.string().optional(),
     })
     .strict(),
@@ -22,7 +25,7 @@ const update = z.object({
       name: z.string().min(1).optional(),
       image: z.any().optional(),
       phone_number: z.string().optional(),
-      role: z.string().optional(),
+      role: adminRoleSchema.optional(),
       password: z.string().optional(),
       designation: z.string().optional(),
       bio: z.string().optional(),

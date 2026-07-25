@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 import { IAdmin } from "./admin.interface";
 import { schemaOptions } from "@/utils/schemaOptions";
-import { ROLES } from "@/constants/roles";
+import { ROLES, ADMIN_ROLE_VALUES } from "@/constants/roles";
 
 const adminSchema = new Schema<IAdmin>(
   {
@@ -39,6 +39,7 @@ const adminSchema = new Schema<IAdmin>(
     },
     role: {
       type: String,
+      enum: ADMIN_ROLE_VALUES,
       default: ROLES.ADMIN,
     },
     image: {

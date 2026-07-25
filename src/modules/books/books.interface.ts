@@ -1,5 +1,6 @@
 export type IBook = {
   book_number?: number;
+  position?: number;
   title: string;
   thumbnail_url: string;
   description?: string;

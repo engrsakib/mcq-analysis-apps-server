@@ -24,12 +24,12 @@ export enum PermissionEnum {
   UPDATE_GUIDELINE = "update_guideline",
   DELETE_GUIDELINE = "delete_guideline",
 
+  CHECK_RESULT = "check_result",
+
   CREATE_STAFF = "create_staff",
   VIEW_STAFF = "view_staff",
   UPDATE_STAFF = "update_staff",
   DELETE_STAFF = "delete_staff",
-
-  CHECK_RESULT = "check_result",
 
   MANAGE_PERMISSIONS = "manage_permissions",
 }

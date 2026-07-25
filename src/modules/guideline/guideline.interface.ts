@@ -1,5 +1,6 @@
 export type IGuideline = {
   guideline_number?: number;
+  position?: number;
   title: string;
   category: GUIDELINE_CATEGORY_ENUMS;
   description: string;

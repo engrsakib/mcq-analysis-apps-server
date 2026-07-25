@@ -13,7 +13,7 @@ import {
   IResetPassword,
 } from "@/interfaces/common.interface";
 import { emitter } from "@/events/eventEmitter";
-import { ROLES } from "@/constants/roles";
+import { IRoles, ROLES } from "@/constants/roles";
 import { IPaginationOptions } from "@/interfaces/pagination.interfaces";
 import { paginationHelpers } from "@/helpers/paginationHelpers";
 
@@ -285,7 +285,7 @@ class Service {
     }
 
     // send verification sms with OTP
-    await OTPService.sendVerificationOtp(phone_number, "user");
+    await OTPService.sendVerificationOtp(phone_number, user.role as IRoles);
   }
 
   async login(data: ILoginCredentials): Promise<{
@@ -312,7 +312,10 @@ class Service {
 
     if (user.status === USER_STATUS.INACTIVE) {
       // send a verification otp
-      await OTPService.sendVerificationOtp(data.phone_number, "user");
+      await OTPService.sendVerificationOtp(
+        data.phone_number,
+        user.role as IRoles
+      );
       throw new ApiError(
         HttpStatusCode.UNAUTHORIZED,
         "Your account is not verified yet. We've sent a verification otp. Please check SMS & verify to access your account"

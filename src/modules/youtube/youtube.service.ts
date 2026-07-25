@@ -2,11 +2,26 @@ import { BarcodeService } from "@/lib/barcode";
 import { YoutubeModel } from "./youtube.model";
 import { eventBus } from "@/events/EventBus";
 import { searchHelpers } from "@/utils/searchHelpers";
+import { AnyBulkWriteOperation, Types } from "mongoose";
+
+type ReorderYoutubeItem = {
+  id?: string | number;
+  _id?: string;
+  video_number?: string | number;
+  position: number;
+};
 
 class Service {
   async createYoutubeVideo(videoData: any) {
-    // Default value
-    videoData.video_number = await BarcodeService.generateEAN13(); // Auto-increment video_number
+    videoData.video_number = await BarcodeService.generateEAN13();
+
+    if (videoData.position === undefined || videoData.position === null) {
+      const lastVideo = await YoutubeModel.findOne()
+        .sort({ position: -1 })
+        .select("position");
+
+      videoData.position = (lastVideo?.position || 0) + 1;
+    }
 
     const video = await YoutubeModel.create(videoData);
 
@@ -42,7 +57,7 @@ class Service {
     const videos = await YoutubeModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ position: 1, createdAt: -1 });
 
     const total = await YoutubeModel.countDocuments(searchCondition);
 
@@ -73,7 +88,7 @@ class Service {
     const videos = await YoutubeModel.find(searchCondition)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ position: 1, createdAt: -1 });
 
     const total = await YoutubeModel.countDocuments(searchCondition);
 
@@ -117,6 +132,44 @@ class Service {
     }
 
     return updatedVideo;
+  }
+
+  async reorderYoutubeVideos(items: ReorderYoutubeItem[]) {
+    const operations = items.reduce<AnyBulkWriteOperation<any>[]>(
+      (acc, item) => {
+        const identifier = item.id || item._id || item.video_number;
+        const position = Number(item.position);
+
+        if (!identifier || !Number.isInteger(position) || position < 0) {
+          return acc;
+        }
+
+        const filter =
+          typeof identifier === "string" && Types.ObjectId.isValid(identifier)
+            ? { _id: identifier }
+            : { video_number: Number(identifier) };
+
+        if ("video_number" in filter && !Number.isFinite(filter.video_number)) {
+          return acc;
+        }
+
+        acc.push({
+          updateOne: {
+            filter,
+            update: { $set: { position } },
+          },
+        });
+
+        return acc;
+      },
+      []
+    );
+
+    if (!operations.length) {
+      return { matchedCount: 0, modifiedCount: 0 };
+    }
+
+    return YoutubeModel.bulkWrite(operations);
   }
 
   async deleteYoutubeVideoById(id: string) {
