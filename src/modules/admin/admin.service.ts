@@ -17,6 +17,12 @@ import {
 import { OTPService } from "../otp/otp.service";
 import { IOtpVerify } from "../otp/otp.interface";
 import { SMSService } from "../sms/sms.service";
+import { PermissionService } from "../permission/permission.service";
+import {
+  getPermissionsForRole,
+  isSystemRole,
+} from "../permission/role-permissions";
+import { IAdminRole } from "@/constants/roles";
 
 class Service {
   async create(data: IAdmin) {
@@ -75,10 +81,28 @@ class Service {
           },
           { new: true }
         );
+
+        if (admin?.role && isSystemRole(admin.role)) {
+          await PermissionService.CreateAndUpdatePermissions(
+            admin._id.toString(),
+            getPermissionsForRole(admin.role as IAdminRole),
+            `Auto-assigned for ${admin.role} role`
+          );
+        }
+
         return admin;
       }
 
       const admin = await AdminModel.create(data);
+
+      if (admin.role && isSystemRole(admin.role)) {
+        await PermissionService.CreateAndUpdatePermissions(
+          admin._id.toString(),
+          getPermissionsForRole(admin.role as IAdminRole),
+          `Auto-assigned for ${admin.role} role`
+        );
+      }
+
       return admin;
     } catch (error) {
       console.log(error, "createAdminByAdmin error");
@@ -402,7 +426,26 @@ class Service {
       }
     }
 
-    return await AdminModel.findByIdAndUpdate(id, { ...data }, { new: true });
+    const roleChanged = Boolean(data.role && data.role !== isExist.role);
+    const updatedAdmin = await AdminModel.findByIdAndUpdate(
+      id,
+      { ...data },
+      { new: true }
+    );
+
+    if (
+      updatedAdmin?.role &&
+      isSystemRole(updatedAdmin.role) &&
+      (roleChanged || !isExist.permissions)
+    ) {
+      await PermissionService.CreateAndUpdatePermissions(
+        id,
+        getPermissionsForRole(updatedAdmin.role as IAdminRole),
+        `Auto-assigned for ${updatedAdmin.role} role`
+      );
+    }
+
+    return updatedAdmin;
   }
 
   async changePassword(id: string, payload: IChangePassword) {

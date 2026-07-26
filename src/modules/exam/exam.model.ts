@@ -11,6 +11,7 @@ const examSchema = new Schema<IExam>({
   is_completed: { type: Boolean, required: true, default: false },
   questions: [{ type: Schema.Types.ObjectId, ref: "Question", required: true }],
   is_published: { type: Boolean, required: true, default: false },
+  results_published: { type: Boolean, required: true, default: false },
   negative_mark: {
     type: Number,
     enum: Object.values(NegativeMark),
@@ -20,5 +21,7 @@ const examSchema = new Schema<IExam>({
 });
 
 examSchema.index({ is_published: 1, exam_name: 1 });
+examSchema.index({ is_published: 1, is_started: 1, exam_date_time: 1 });
+examSchema.index({ is_started: 1, is_completed: 1 });
 
 export const ExamModel = model<IExam>("Exam", examSchema);

@@ -98,7 +98,8 @@ class Controller extends BaseController {
     const result = await resultService.getExamLeaderboard(
       loggedInUserPhone,
       examNum,
-      query
+      query,
+      req.user.role
     );
 
     this.sendResponse(res, {

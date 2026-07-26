@@ -1,13 +1,12 @@
 import mongoose from "mongoose";
 import { envConfig } from "../config";
 import { ResultModel, syncResultIndexes } from "@/modules/results/result.model";
+import { ExamAttemptModel } from "@/modules/exam-attempt/exam-attempt.model";
 import { ExamModel } from "@/modules/exam/exam.model";
 import { resultService } from "@/modules/results/result.service";
 import { examService } from "@/modules/exam/exam.service";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { ROLES } from "@/constants/roles";
-import ApiError from "@/middlewares/error";
-import { HttpStatusCode } from "@/lib/httpStatus";
 
 import { UserModel } from "@/modules/user/user.model";
 
@@ -42,17 +41,6 @@ const results: TestResult[] = [];
 function record(name: string, passed: boolean, detail: string) {
   results.push({ name, passed, detail });
   console.log(`${passed ? "PASS" : "FAIL"} - ${name}: ${detail}`);
-}
-
-async function expectConflict(fn: () => Promise<unknown>) {
-  try {
-    await fn();
-    return false;
-  } catch (error) {
-    return (
-      error instanceof ApiError && error.statusCode === HttpStatusCode.CONFLICT
-    );
-  }
 }
 
 async function main() {
@@ -90,6 +78,10 @@ async function main() {
   );
 
   await ResultModel.deleteMany({
+    exam_number: TEST_EXAM_NUMBER,
+    student_phone: { $in: [USER_A_PHONE, USER_B_PHONE, USER_C_PHONE] },
+  });
+  await ExamAttemptModel.deleteMany({
     exam_number: TEST_EXAM_NUMBER,
     student_phone: { $in: [USER_A_PHONE, USER_B_PHONE, USER_C_PHONE] },
   });
@@ -179,13 +171,24 @@ async function main() {
     `found ${sameExamCount} submissions for exam ${TEST_EXAM_NUMBER}`
   );
 
-  const duplicateBlocked = await expectConflict(() =>
-    resultService.createResult(basePayload, userA)
+  const duplicateRetry = await resultService.createResult(
+    { ...basePayload, score: 90 },
+    userA
   );
+  const officialAfterRetry = await ResultModel.findOne({
+    exam_number: TEST_EXAM_NUMBER,
+    student_phone: USER_A_PHONE,
+  }).lean();
+  const attemptCount = await ExamAttemptModel.countDocuments({
+    exam_number: TEST_EXAM_NUMBER,
+    student_phone: USER_A_PHONE,
+  });
   record(
-    "Duplicate submission blocked for same user",
-    duplicateBlocked,
-    "expected 409 conflict"
+    "Duplicate submission succeeds without overwriting official result",
+    Boolean(duplicateRetry) &&
+      officialAfterRetry?.score === 70 &&
+      attemptCount >= 1,
+    `officialScore=${officialAfterRetry?.score}, attempts=${attemptCount}`
   );
 
   const listForUserA = await examService.getAllExamsForUsers(
@@ -215,6 +218,10 @@ async function main() {
   );
 
   await ResultModel.deleteMany({
+    exam_number: TEST_EXAM_NUMBER,
+    student_phone: { $in: [USER_A_PHONE, USER_B_PHONE, USER_C_PHONE] },
+  });
+  await ExamAttemptModel.deleteMany({
     exam_number: TEST_EXAM_NUMBER,
     student_phone: { $in: [USER_A_PHONE, USER_B_PHONE, USER_C_PHONE] },
   });

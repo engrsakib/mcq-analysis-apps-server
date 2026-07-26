@@ -1,11 +1,43 @@
+import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
 import { ICreateResultInput, IUpdateMarkPayload } from "./result.interface";
 import { ResultModel } from "./result.model";
+import { ExamAttemptModel } from "../exam-attempt/exam-attempt.model";
+import { IExamAttempt } from "../exam-attempt/exam-attempt.interface";
 import { eventBus } from "@/events/EventBus";
 import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { ExamModel } from "../exam/exam.model";
 import { UserModel } from "../user/user.model";
 import { IJWtPayload } from "@/interfaces/common.interface";
+import { IRoles } from "@/constants/roles";
+import { hasExamStarted, isExamWithinWindow } from "../exam/exam.utils";
+
+function toResultResponse(
+  attempt: IExamAttempt,
+  studentName: string,
+  studentPhone: string,
+  examNumber: number
+) {
+  return {
+    _id: attempt._id,
+    student_name: studentName,
+    student_phone: studentPhone,
+    exam_number: examNumber,
+    total_score: attempt.total_score,
+    score: attempt.score,
+    totalQuestions: attempt.totalQuestions,
+    correctAnswers: attempt.correctAnswers,
+    wrongAnswers: attempt.wrongAnswers,
+    unanswered: attempt.unanswered,
+    is_cheated: attempt.is_cheated,
+    is_on_time: attempt.is_on_time,
+    dateTaken: attempt.dateTaken,
+    writtenExam: attempt.writtenExam,
+    is_written_mark_updated: false,
+    createdAt: attempt.createdAt,
+    updatedAt: attempt.updatedAt,
+  };
+}
 
 class service {
   createResult = async (resultData: ICreateResultInput, user: IJWtPayload) => {
@@ -18,7 +50,6 @@ class service {
       wrongAnswers,
       unanswered,
       is_cheated,
-      is_on_time,
       writtenExam,
     } = resultData;
 
@@ -26,22 +57,25 @@ class service {
       throw new ApiError(HttpStatusCode.BAD_REQUEST, "Exam number is required");
     }
 
-    const [exam, existingResult, userRecord] = await Promise.all([
-      ExamModel.findOne({ exam_number })
-        .select(
-          "exam_name exam_date_time duration_minutes is_published is_started is_completed questions"
-        )
-        .lean(),
-      ResultModel.findOne({
-        exam_number,
-        student_phone: user.phone_number,
-      })
-        .select("_id")
-        .lean(),
-      UserModel.findById(user.id)
-        .select("name phone_number status is_Deleted")
-        .lean(),
-    ]);
+    const [exam, existingResult, userRecord, priorAttemptCount] =
+      await Promise.all([
+        ExamModel.findOne({ exam_number })
+          .select(
+            "exam_name exam_date_time duration_minutes is_published is_started is_completed questions"
+          )
+          .lean(),
+        ResultModel.findOne({
+          exam_number,
+          student_phone: user.phone_number,
+        }).lean(),
+        UserModel.findById(user.id)
+          .select("name phone_number status is_Deleted")
+          .lean(),
+        ExamAttemptModel.countDocuments({
+          exam_number,
+          student_phone: user.phone_number,
+        }),
+      ]);
 
     if (!userRecord || userRecord.is_Deleted) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
@@ -59,29 +93,8 @@ class service {
       throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam is not published");
     }
 
-    if (!exam.is_started) {
+    if (!hasExamStarted(exam)) {
       throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam has not started yet");
-    }
-
-    if (exam.is_completed) {
-      throw new ApiError(
-        HttpStatusCode.FORBIDDEN,
-        "Exam has already been completed"
-      );
-    }
-
-    const examEndTime = new Date(exam.exam_date_time);
-    examEndTime.setMinutes(examEndTime.getMinutes() + exam.duration_minutes);
-
-    if (new Date() > examEndTime) {
-      throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam has expired");
-    }
-
-    if (existingResult) {
-      throw new ApiError(
-        HttpStatusCode.CONFLICT,
-        "You have already submitted this exam"
-      );
     }
 
     if (exam.questions.length !== totalQuestions) {
@@ -102,10 +115,17 @@ class service {
       throw new ApiError(HttpStatusCode.BAD_REQUEST, "Invalid score");
     }
 
-    const result = await ResultModel.create({
-      student_name: userRecord.name || user.name || "",
+    const studentName = userRecord.name || user.name || "";
+    const withinWindow = isExamWithinWindow(exam);
+    const attemptNumber = priorAttemptCount + 1;
+    const attemptIsOnTime = withinWindow;
+
+    const attempt = await ExamAttemptModel.create({
+      student_name: studentName,
       student_phone: user.phone_number,
       exam_number,
+      attempt_number: attemptNumber,
+      is_official: false,
       total_score,
       score,
       totalQuestions,
@@ -113,23 +133,55 @@ class service {
       wrongAnswers,
       unanswered,
       is_cheated: is_cheated ?? false,
-      is_on_time: is_on_time ?? true,
+      is_on_time: attemptIsOnTime,
       writtenExam: writtenExam ?? [],
     });
 
-    await eventBus.publish({
-      type: "RESULT_PUBLISHED",
-      payload: {
-        userId: user.phone_number,
-        title: exam.exam_name || "Result",
-        description: "Created successfully",
-        module: "result",
-        time: new Date().toISOString(),
-        resultId: result._id.toString(),
-      },
-    });
+    const shouldCreateOfficialResult =
+      !existingResult && withinWindow && !exam.is_completed;
 
-    return result;
+    if (shouldCreateOfficialResult) {
+      const result = await ResultModel.create({
+        student_name: studentName,
+        student_phone: user.phone_number,
+        exam_number,
+        total_score,
+        score,
+        totalQuestions,
+        correctAnswers,
+        wrongAnswers,
+        unanswered,
+        is_cheated: is_cheated ?? false,
+        is_on_time: true,
+        writtenExam: writtenExam ?? [],
+      });
+
+      await ExamAttemptModel.updateOne(
+        { _id: attempt._id },
+        { $set: { is_official: true } }
+      );
+
+      await eventBus.publish({
+        type: "RESULT_PUBLISHED",
+        payload: {
+          userId: user.phone_number,
+          title: exam.exam_name || "Result",
+          description: "Created successfully",
+          module: "result",
+          time: new Date().toISOString(),
+          resultId: result._id.toString(),
+        },
+      });
+
+      return result;
+    }
+
+    return toResultResponse(
+      attempt,
+      studentName,
+      user.phone_number,
+      exam_number
+    );
   };
 
   getResultsBySearch = async (
@@ -334,10 +386,38 @@ class service {
   getExamLeaderboard = async (
     loggedInUserPhone: string,
     examNum: number,
-    query: any
+    query: any,
+    userRole?: IRoles
   ) => {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
+
+    const isAdmin = userRole
+      ? ADMIN_ROLE_VALUES.includes(userRole as IAdminRole)
+      : false;
+
+    const exam = await ExamModel.findOne({ exam_number: examNum })
+      .select("results_published")
+      .lean();
+
+    if (!exam) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "Exam not found");
+    }
+
+    const canViewResults = isAdmin || exam.results_published === true;
+
+    if (!canViewResults) {
+      return {
+        meta: {
+          page,
+          limit,
+          totalResult: 0,
+          totalPages: 0,
+        },
+        current_user: null,
+        data: [],
+      };
+    }
 
     const allResults = await ResultModel.find({ exam_number: examNum })
       .sort({

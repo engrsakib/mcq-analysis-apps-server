@@ -2,6 +2,7 @@ import { Server } from "http";
 import app from "./app";
 import { envConfig } from "./config";
 import mongodbConnection from "./config/mongoDbConnection";
+import { initExamScheduler } from "./modules/exam/examScheduler.service";
 
 process.on("uncaughtException", (error) => {
   console.error(`Uncaught Exception: ${error.message}`, { stack: error.stack });
@@ -14,6 +15,7 @@ const port = envConfig.app.port;
 async function main() {
   try {
     await mongodbConnection();
+    await initExamScheduler();
     server = app.listen(port, async () => {
       console.info(`🚀 Application is running on port ${port}`);
     });

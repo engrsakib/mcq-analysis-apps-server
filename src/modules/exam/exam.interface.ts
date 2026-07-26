@@ -11,6 +11,7 @@ export interface IExam {
   is_started: boolean;
   is_completed: boolean;
   is_published: boolean;
+  results_published?: boolean;
   negative_mark: NegativeMark;
   questions: ObjectId[];
 }
