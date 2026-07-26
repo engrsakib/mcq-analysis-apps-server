@@ -13,20 +13,44 @@ let server: Server;
 const port = envConfig.app.port;
 
 async function main() {
+  // Safety: isolate boot-time DB work so one failure does not exit the whole process.
   try {
-    await mongodbConnection();
+    const connected = await mongodbConnection();
+    if (!connected) {
+      console.warn(
+        "Server starting without an active MongoDB connection. API routes that need the database will fail until MONGODB_URL is configured."
+      );
+    }
+  } catch (error: any) {
+    console.error(`MongoDB boot initialization failed: ${error?.message}`, {
+      stack: error?.stack,
+    });
+  }
+
+  try {
     await initExamScheduler();
-    server = app.listen(port, async () => {
+  } catch (error: any) {
+    console.error(
+      `Exam scheduler boot initialization failed: ${error?.message}`,
+      {
+        stack: error?.stack,
+      }
+    );
+  }
+
+  try {
+    server = app.listen(port, () => {
       console.info(`🚀 Application is running on port ${port}`);
     });
   } catch (error: any) {
-    console.error(`❌ Failed to start server: ${error.message}`, {
+    console.error(`❌ Failed to bind HTTP server: ${error.message}`, {
       stack: error.stack,
     });
     process.exit(1);
   }
 
   process.on("unhandledRejection", (error: any) => {
+    // Safety: log background job failures without terminating the process.
     console.error(`Unhandled Promise Rejection: ${error?.message}`, {
       stack: error?.stack,
     });

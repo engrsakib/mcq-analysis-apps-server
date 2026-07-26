@@ -87,22 +87,28 @@ ResultSchema.index({ exam_number: 1, student_phone: 1 }, { unique: true });
 export const ResultModel = model<IResult>("Result", ResultSchema);
 
 export async function syncResultIndexes(): Promise<void> {
-  const collection = ResultModel.collection;
-  const indexes = await collection.indexes();
+  try {
+    const collection = ResultModel.collection;
+    const indexes = await collection.indexes();
 
-  const legacyUniqueExamIndex = indexes.find(
-    (index) =>
-      index.key?.exam_number === 1 &&
-      index.unique === true &&
-      index.key?.student_phone === undefined
-  );
-
-  if (legacyUniqueExamIndex?.name) {
-    await collection.dropIndex(legacyUniqueExamIndex.name);
-    console.info(
-      `Dropped legacy Result index "${legacyUniqueExamIndex.name}" (exam_number unique)`
+    const legacyUniqueExamIndex = indexes.find(
+      (index) =>
+        index.key?.exam_number === 1 &&
+        index.unique === true &&
+        index.key?.student_phone === undefined
     );
-  }
 
-  await ResultModel.syncIndexes();
+    if (legacyUniqueExamIndex?.name) {
+      await collection.dropIndex(legacyUniqueExamIndex.name);
+      console.info(
+        `Dropped legacy Result index "${legacyUniqueExamIndex.name}" (exam_number unique)`
+      );
+    }
+
+    await ResultModel.syncIndexes();
+  } catch (error) {
+    // Safety: rethrow so mongoDbConnection can log; caller treats this as non-fatal.
+    console.error("[ResultModel] syncResultIndexes failed:", error);
+    throw error;
+  }
 }

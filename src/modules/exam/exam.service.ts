@@ -6,6 +6,9 @@ import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { UserModel } from "@/modules/user/user.model";
 import { searchHelpers } from "@/utils/searchHelpers";
+import { syncExamLifecycle } from "./examScheduler.service";
+import { IJWtPayload } from "@/interfaces/common.interface";
+import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
 
 class Service {
   async createExam(payload: Partial<IExam>): Promise<IExam> {
@@ -15,9 +18,10 @@ class Service {
       const examData = {
         ...payload,
         exam_number: examNumber,
-        is_published: false,
+        is_published: Boolean(payload.exam_date_time),
         is_started: false,
         is_completed: false,
+        results_published: false,
       };
 
       const result = await ExamModel.create(examData);
@@ -42,6 +46,8 @@ class Service {
   }
 
   async getAllExams(query: any) {
+    await syncExamLifecycle();
+
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -79,16 +85,21 @@ class Service {
     };
   }
 
-  // get upcoming exams for users
+  // get upcoming exams for users — published, not started, not completed
   async getUpcomingExamsForUsers(query: any) {
+    await syncExamLifecycle();
+
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
     const searchTerm = query.searchTerm || "";
+    const now = new Date();
 
     const searchCondition = {
       is_published: true,
       is_started: false,
+      is_completed: false,
+      exam_date_time: { $gt: now },
       ...searchHelpers.buildSearchCondition({
         searchFields: ["exam_name"],
         searchTerm,
@@ -114,23 +125,36 @@ class Service {
     };
   }
 
-  async getAllExamsForUsers(query: any, userId: string) {
-    if (!userId) {
+  async getAllExamsForUsers(query: any, user: IJWtPayload) {
+    await syncExamLifecycle();
+
+    if (!user?.phone_number) {
       throw new ApiError(
         HttpStatusCode.UNAUTHORIZED,
-        "Authenticated user ID is required"
+        "Authenticated user phone number is required"
       );
     }
 
-    const userRecord = await UserModel.findById(userId)
-      .select("phone_number is_Deleted")
-      .lean();
+    const isAdmin = ADMIN_ROLE_VALUES.includes(user.role as IAdminRole);
 
-    if (!userRecord || userRecord.is_Deleted) {
-      throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
+    if (!isAdmin) {
+      const userRecord = await UserModel.findById(user.id)
+        .select("phone_number is_Deleted status")
+        .lean();
+
+      if (!userRecord || userRecord.is_Deleted) {
+        throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
+      }
+
+      if (userRecord.status === "inactive") {
+        throw new ApiError(
+          HttpStatusCode.FORBIDDEN,
+          "User account is inactive"
+        );
+      }
     }
 
-    const userPhone = userRecord.phone_number;
+    const userPhone = user.phone_number;
 
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
@@ -138,7 +162,7 @@ class Service {
     const searchTerm = query.searchTerm || "";
 
     const searchCondition: Record<string, unknown> = {
-      is_published: true,
+      $or: [{ is_published: true }, { is_started: true }],
       ...searchHelpers.buildSearchCondition({
         searchFields: ["exam_name"],
         searchTerm,
@@ -185,13 +209,7 @@ class Service {
             {
               $project: {
                 questions: 0,
-                duration_minutes: 0,
-                total_marks: 0,
-                is_started: 0,
-                is_published: 0,
                 negative_mark: 0,
-                createdAt: 0,
-                updatedAt: 0,
                 __v: 0,
                 userSubmission: 0,
               },
@@ -216,6 +234,8 @@ class Service {
   }
 
   async getExamById(id: string) {
+    await syncExamLifecycle();
+
     const exam = await ExamModel.findOne({ exam_number: id }).populate(
       "questions"
     );
@@ -223,9 +243,13 @@ class Service {
   }
 
   async getExamByIdForUsers(id: string) {
+    await syncExamLifecycle();
+
     const exam = await ExamModel.findOne({
       exam_number: id,
       is_started: true,
+      is_completed: false,
+      $or: [{ is_published: true }, { is_started: true }],
     }).populate("questions");
     return exam;
   }

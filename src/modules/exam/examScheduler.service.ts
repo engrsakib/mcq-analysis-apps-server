@@ -1,9 +1,15 @@
 import cron from "node-cron";
+import mongoose from "mongoose";
 import { ExamModel } from "./exam.model";
 import { eventBus } from "@/events/EventBus";
 import { getExamEndTime } from "./exam.utils";
 
 let schedulerInitialized = false;
+
+/** Safety: skip lifecycle queries when MongoDB is not connected (e.g. empty/missing env on boot). */
+function isDatabaseReady(): boolean {
+  return mongoose.connection.readyState === 1;
+}
 
 async function backfillLegacyCompletedExams(): Promise<void> {
   const result = await ExamModel.updateMany(
@@ -21,15 +27,35 @@ async function backfillLegacyCompletedExams(): Promise<void> {
   }
 }
 
+async function autoPublishScheduledExams(): Promise<void> {
+  const now = new Date();
+
+  const result = await ExamModel.updateMany(
+    {
+      is_published: false,
+      is_started: false,
+      is_completed: false,
+      exam_date_time: { $gt: now },
+    },
+    { $set: { is_published: true } }
+  );
+
+  if (result.modifiedCount > 0) {
+    console.info(
+      `[ExamScheduler] Auto-published ${result.modifiedCount} scheduled exam(s)`
+    );
+  }
+}
+
 async function autoStartExams(): Promise<void> {
   const now = new Date();
 
   const examsToStart = await ExamModel.find({
-    is_published: true,
     is_started: false,
+    is_completed: false,
     exam_date_time: { $lte: now },
   })
-    .select("exam_number exam_name")
+    .select("exam_number exam_name is_published")
     .lean();
 
   if (examsToStart.length === 0) {
@@ -38,25 +64,33 @@ async function autoStartExams(): Promise<void> {
 
   await ExamModel.updateMany(
     {
-      is_published: true,
       is_started: false,
+      is_completed: false,
       exam_date_time: { $lte: now },
     },
-    { $set: { is_started: true } }
+    { $set: { is_started: true, is_published: true } }
   );
 
   for (const exam of examsToStart) {
-    await eventBus.publish({
-      type: "EXAM_UPDATED",
-      payload: {
-        userId: "system",
-        title: exam.exam_name || "Exam",
-        description: "Exam started automatically",
-        module: "exam",
-        time: now.toISOString(),
-        examId: exam.exam_number?.toString() || "",
-      },
-    });
+    try {
+      await eventBus.publish({
+        type: "EXAM_UPDATED",
+        payload: {
+          // "system" is intentional — notification handler skips FCM lookup for non-ObjectId ids.
+          userId: "system",
+          title: exam.exam_name || "Exam",
+          description: "Exam started automatically",
+          module: "exam",
+          time: now.toISOString(),
+          examId: exam.exam_number?.toString() || "",
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[ExamScheduler] Failed to publish auto-start event for exam ${exam.exam_number}:`,
+        error
+      );
+    }
   }
 
   console.info(`[ExamScheduler] Auto-started ${examsToStart.length} exam(s)`);
@@ -80,7 +114,19 @@ async function autoEndAndPublishExams(): Promise<void> {
     return;
   }
 
-  const examNumbers = examsToComplete.map((exam) => exam.exam_number);
+  // Safety: never pass undefined/null exam numbers into an $in query.
+  const examNumbers = examsToComplete
+    .map((exam) => exam.exam_number)
+    .filter(
+      (examNumber): examNumber is number =>
+        examNumber !== undefined &&
+        examNumber !== null &&
+        !Number.isNaN(Number(examNumber))
+    );
+
+  if (examNumbers.length === 0) {
+    return;
+  }
 
   await ExamModel.updateMany(
     { exam_number: { $in: examNumbers } },
@@ -88,17 +134,24 @@ async function autoEndAndPublishExams(): Promise<void> {
   );
 
   for (const exam of examsToComplete) {
-    await eventBus.publish({
-      type: "EXAM_UPDATED",
-      payload: {
-        userId: "system",
-        title: exam.exam_name || "Exam",
-        description: "Exam completed and results published automatically",
-        module: "exam",
-        time: now.toISOString(),
-        examId: exam.exam_number?.toString() || "",
-      },
-    });
+    try {
+      await eventBus.publish({
+        type: "EXAM_UPDATED",
+        payload: {
+          userId: "system",
+          title: exam.exam_name || "Exam",
+          description: "Exam completed and results published automatically",
+          module: "exam",
+          time: now.toISOString(),
+          examId: exam.exam_number?.toString() || "",
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[ExamScheduler] Failed to publish auto-complete event for exam ${exam.exam_number}:`,
+        error
+      );
+    }
   }
 
   console.info(
@@ -107,7 +160,15 @@ async function autoEndAndPublishExams(): Promise<void> {
 }
 
 async function runExamLifecycleTick(): Promise<void> {
+  if (!isDatabaseReady()) {
+    console.warn(
+      "[ExamScheduler] Skipping lifecycle tick — database is not connected."
+    );
+    return;
+  }
+
   try {
+    await autoPublishScheduledExams();
     await autoStartExams();
     await autoEndAndPublishExams();
   } catch (error) {
@@ -115,13 +176,29 @@ async function runExamLifecycleTick(): Promise<void> {
   }
 }
 
+/** Runs auto-start/end immediately — used by cron and exam read APIs. */
+export async function syncExamLifecycle(): Promise<void> {
+  await runExamLifecycleTick();
+}
+
 export async function initExamScheduler(): Promise<void> {
   if (schedulerInitialized) {
     return;
   }
 
-  await backfillLegacyCompletedExams();
-  await runExamLifecycleTick();
+  try {
+    if (!isDatabaseReady()) {
+      console.warn(
+        "[ExamScheduler] Database not connected — skipping boot lifecycle sync."
+      );
+    } else {
+      await backfillLegacyCompletedExams();
+      await runExamLifecycleTick();
+    }
+  } catch (error) {
+    // Safety: scheduler failure must not prevent the HTTP server from starting.
+    console.error("[ExamScheduler] Boot initialization failed:", error);
+  }
 
   cron.schedule("* * * * *", () => {
     void runExamLifecycleTick();

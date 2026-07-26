@@ -17,7 +17,7 @@ class Controller extends BaseController {
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 10,
       },
-      req.user.id
+      req.user
     );
 
     this.sendResponse(res, {

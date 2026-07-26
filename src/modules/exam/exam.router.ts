@@ -5,49 +5,49 @@ import { PermissionEnum } from "../permission/permission.enum";
 import { ExamController } from "./exam.controller";
 
 const router = Router();
+const authenticate = JwtInstance.authenticate(Object.values(ROLES));
 
-router.get(
-  "/exam-search",
-  JwtInstance.authenticate(Object.values(ROLES)),
-  ExamController.getExamForSearch
-);
+router.get("/exam-search", authenticate, ExamController.getExamForSearch);
 
 router.post(
   "/",
-  // JwtInstance.authenticate(Object.values(ROLES)),
+  // authenticate,
   // JwtInstance.hasPermissions(PermissionEnum.CREATE_EXAM),
   ExamController.createExam
 );
+
 router.get(
   "/",
-  JwtInstance.authenticate(Object.values(ROLES)),
+  authenticate,
   JwtInstance.hasPermissions(PermissionEnum.VIEW_EXAM),
   ExamController.getAllExams
 );
 
-router.get(
-  "/user",
-  JwtInstance.authenticate(Object.values(ROLES)),
-  ExamController.getAllExamsForUsers
-);
-router.get("/upcoming", ExamController.getUpcomingExamsForUsers);
+router.get("/user", authenticate, ExamController.getAllExamsForUsers);
+
+router.get("/upcoming", authenticate, ExamController.getUpcomingExamsForUsers);
+
+router.get("/user/:id", authenticate, ExamController.getExamByIdForUsers);
+
 router.get("/:id", ExamController.getExamById);
-router.get("/user/:id", ExamController.getExamByIdForUsers);
+
 router.put(
   "/:id",
-  JwtInstance.authenticate(Object.values(ROLES)),
+  authenticate,
   JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamController.updateExamById
 );
+
 router.delete(
   "/:id",
-  JwtInstance.authenticate(Object.values(ROLES)),
+  authenticate,
   JwtInstance.hasPermissions(PermissionEnum.DELETE_EXAM),
   ExamController.deleteExamById
 );
+
 router.patch(
   "/:id",
-  JwtInstance.authenticate(Object.values(ROLES)),
+  authenticate,
   JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamController.updateStatus
 );

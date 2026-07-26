@@ -193,7 +193,7 @@ async function main() {
 
   const listForUserA = await examService.getAllExamsForUsers(
     { page: 1, limit: 50 },
-    userA.id.toString()
+    userA
   );
   const userAExam = listForUserA.data.find(
     (exam: { exam_number?: number }) => exam.exam_number === TEST_EXAM_NUMBER
@@ -206,7 +206,12 @@ async function main() {
 
   const listForUserC = await examService.getAllExamsForUsers(
     { page: 1, limit: 50 },
-    createdUserC._id.toString()
+    {
+      id: createdUserC._id.toString(),
+      phone_number: USER_C_PHONE,
+      name: "Verify User C",
+      role: ROLES.STUDENT,
+    }
   );
   const userCExam = listForUserC.data.find(
     (exam: { exam_number?: number }) => exam.exam_number === TEST_EXAM_NUMBER

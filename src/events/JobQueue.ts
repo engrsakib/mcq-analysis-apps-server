@@ -12,7 +12,7 @@ export class JobQueue {
 
   enqueue(event: AppEvent) {
     this.queue.push(event);
-    this.process();
+    void this.process();
   }
 
   private async process() {
@@ -21,7 +21,12 @@ export class JobQueue {
 
     while (this.queue.length) {
       const job = this.queue.shift()!;
-      await this.handler(job);
+      try {
+        await this.handler(job);
+      } catch (error) {
+        // Safety: notification/DB errors in background jobs must not crash the server.
+        console.error("[JobQueue] Event handler failed:", error);
+      }
     }
 
     this.processing = false;

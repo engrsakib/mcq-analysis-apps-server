@@ -12,6 +12,7 @@ import {
   SearchModuleResult,
 } from "./search.interface";
 import { SearchProvider, searchProviders } from "./search.registry";
+import { IJWtPayload } from "@/interfaces/common.interface";
 
 class Service {
   private buildModuleQuery(searchTerm: string, page: number, limit: number) {
@@ -68,13 +69,13 @@ class Service {
 
   async globalSearch(
     { q, page = 1, limit = 10 }: GlobalSearchQuery,
-    userId: string
+    user: IJWtPayload
   ): Promise<GlobalSearchResponse> {
     const searchTerm = q.trim().slice(0, searchHelpers.MAX_SEARCH_TERM_LENGTH);
     const moduleQuery = this.buildModuleQuery(searchTerm, page, limit);
 
     const [exams, books, youtube, studyPlans, guidelines] = await Promise.all([
-      examService.getAllExamsForUsers(moduleQuery, userId),
+      examService.getAllExamsForUsers(moduleQuery, user),
       BooksService.getAllBooksForUsers(moduleQuery),
       YoutubeService.getAllYoutubeVideosForUsers(moduleQuery),
       StudyPlanService.getAllStudyPlansForUsers(moduleQuery),
