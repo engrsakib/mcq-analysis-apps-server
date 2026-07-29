@@ -1,5 +1,6 @@
 import { envConfig } from "../../config";
 import { PRODUCTION_API_BASE_URL } from "../constants";
+import { securityRequirements } from "../components/security";
 import { successResponse } from "../utils/helpers";
 
 const port = envConfig.app.port;
@@ -22,6 +23,7 @@ export const healthPaths = {
       description:
         "Returns application health status. This endpoint is mounted at the application root, not under /api/v1.",
       operationId: "healthCheck",
+      security: securityRequirements.public,
       responses: {
         "200": successResponse(200, "Application is running", undefined, {
           statusCode: 200,

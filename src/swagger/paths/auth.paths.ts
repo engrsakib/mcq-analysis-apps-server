@@ -9,6 +9,7 @@ export const otpPaths = {
       summary: "Verify OTP",
       description: "Standalone OTP verification endpoint",
       operationId: "verifyOtp",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/OtpVerifyRequest",
         "OTP verification payload"
@@ -29,6 +30,7 @@ export const forgetPasswordPaths = {
       description:
         "Sends verification code to admin phone number for password reset",
       operationId: "adminForgetPassword",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/ForgetPasswordRequest",
         "Phone number"
@@ -46,6 +48,7 @@ export const forgetPasswordPaths = {
       description:
         "Sends verification code to user phone number for password reset",
       operationId: "userForgetPassword",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/ForgetPasswordRequest",
         "Phone number"

@@ -1,6 +1,6 @@
 import { envConfig } from "../config";
 import { schemas } from "./components/schemas";
-import { securitySchemes } from "./components/security";
+import { securityRequirements, securitySchemes } from "./components/security";
 import { PRODUCTION_API_BASE_URL } from "./constants";
 import { healthPaths } from "./paths/health.paths";
 import { apiPaths } from "./paths";
@@ -25,8 +25,8 @@ export const openApiSpec = {
     description:
       "Production API documentation for the MCQ Analyzer Backend (Cloudy BD). " +
       "All endpoints are prefixed with `/api/v1`. " +
-      "Authentication uses JWT tokens passed in the `authorization` header (raw token value, no Bearer prefix). " +
-      "Optionally pass refresh token via `x-refresh-token` header.",
+      "Protected routes require a JWT access token. Click **Authorize** once and paste your token from login/verify responses; " +
+      "Swagger applies it to all secured endpoints automatically. Optionally pass a refresh token via `x-refresh-token`.",
     contact: {
       name: "MCQ Analyzer Team",
     },
@@ -74,4 +74,5 @@ export const openApiSpec = {
     securitySchemes,
     schemas,
   },
+  security: securityRequirements.authenticated,
 };

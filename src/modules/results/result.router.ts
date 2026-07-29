@@ -1,5 +1,6 @@
 import { ROLES } from "@/constants/roles";
 import { JwtInstance } from "@/lib/jwt";
+import { PermissionEnum } from "@/modules/permission/permission.enum";
 import { Router } from "express";
 import { ResultController } from "./result.controller";
 
@@ -14,6 +15,13 @@ router.get(
   "/:exam_number/leaderboard",
   JwtInstance.authenticate(Object.values(ROLES)),
   ResultController.getExamLeaderboard
+);
+
+router.get(
+  "/:exam_number/merit-export",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.CHECK_RESULT),
+  ResultController.getMeritListForExport
 );
 
 router.get(

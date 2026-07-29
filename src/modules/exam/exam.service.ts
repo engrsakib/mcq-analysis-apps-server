@@ -246,7 +246,7 @@ class Service {
     await syncExamLifecycle();
 
     const exam = await ExamModel.findOne({
-      exam_number: id,
+      _id: id,
       is_started: true,
       is_completed: false,
       $or: [{ is_published: true }, { is_started: true }],

@@ -42,3 +42,28 @@ export interface IUpdateMarkPayload {
   amount: number;
   action: UpdateMarkAction;
 }
+
+export interface IRankedLeaderboardRow {
+  rank: string | number | null;
+  student_name: string;
+  student_phone: string;
+  exam_number: number;
+  score: number;
+}
+
+export type MeritExportPhoneMode = "half" | "full";
+
+export interface IMeritExportRow {
+  rank: number;
+  student_name: string;
+  student_phone?: string;
+  score: number;
+}
+
+export interface IMeritExportResult {
+  exam_name: string;
+  exam_date_time: string;
+  exam_number: number;
+  totalRanked: number;
+  rows: IMeritExportRow[];
+}

@@ -33,6 +33,7 @@ export const adminPaths = {
       description:
         "Authenticates admin with phone number and password. Sets access and refresh tokens as HTTP-only cookies.",
       operationId: "adminLogin",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/LoginRequest",
         "Login credentials"
@@ -55,6 +56,7 @@ export const adminPaths = {
       summary: "Verify admin account",
       description: "Verifies admin account using OTP sent to phone number",
       operationId: "verifyAdminAccount",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/OtpVerifyRequest",
         "OTP verification payload"
@@ -70,6 +72,7 @@ export const adminPaths = {
       tags: ["Admin"],
       summary: "Resend admin verification OTP",
       operationId: "resendAdminVerificationOtp",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/OtpResendRequest",
         "Phone number for OTP resend"
@@ -86,6 +89,7 @@ export const adminPaths = {
       summary: "Approve admin account",
       description: "Activates an admin account pending approval",
       operationId: "approveAdminAccount",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/ApproveAdminRequest",
         "Admin phone number to approve"
@@ -230,6 +234,7 @@ export const adminPaths = {
       summary: "Reset admin password",
       description: "Resets admin password using phone number (after OTP flow)",
       operationId: "resetAdminPassword",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/ResetPasswordRequest",
         "Reset password payload"
@@ -275,6 +280,7 @@ export const adminPaths = {
       summary: "Admin logout",
       description: "Clears authentication cookies",
       operationId: "adminLogout",
+      security: securityRequirements.public,
       responses: {
         "200": successResponse(200, "Logged out successfully"),
       },

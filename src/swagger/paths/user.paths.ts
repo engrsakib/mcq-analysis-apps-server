@@ -10,6 +10,7 @@ export const userPaths = {
       description:
         "Creates a new user account and sends verification OTP via SMS",
       operationId: "createUser",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/CreateUserRequest",
         "User registration payload"
@@ -187,6 +188,7 @@ export const userPaths = {
       tags: ["User"],
       summary: "Create user by admin",
       operationId: "createUserByAdmin",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/CreateUserRequest",
         "User creation payload"
@@ -203,6 +205,7 @@ export const userPaths = {
       tags: ["User"],
       summary: "Verify user account",
       operationId: "verifyUserAccount",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/OtpVerifyRequest",
         "OTP verification payload"
@@ -218,6 +221,7 @@ export const userPaths = {
       tags: ["User"],
       summary: "Resend user verification OTP",
       operationId: "resendUserVerificationOtp",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/OtpResendRequest",
         "Phone number for OTP resend"
@@ -233,6 +237,7 @@ export const userPaths = {
       tags: ["User"],
       summary: "User login",
       operationId: "userLogin",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/LoginRequest",
         "Login credentials"
@@ -254,6 +259,7 @@ export const userPaths = {
       tags: ["User"],
       summary: "Reset user password",
       operationId: "resetUserPassword",
+      security: securityRequirements.public,
       requestBody: jsonRequestBody(
         "#/components/schemas/ResetPasswordRequest",
         "Reset password payload"
@@ -286,6 +292,7 @@ export const userPaths = {
       tags: ["User"],
       summary: "User logout",
       operationId: "userLogout",
+      security: securityRequirements.public,
       responses: {
         "200": successResponse(200, "Logged out"),
       },

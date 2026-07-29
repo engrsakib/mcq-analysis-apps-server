@@ -109,6 +109,66 @@ class Controller extends BaseController {
       data: result,
     });
   });
+
+  getMeritListForExport = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const examNum = Number(req.params.exam_number);
+      const from = req.query.from ? Number(req.query.from) : 1;
+      const to = req.query.to ? Number(req.query.to) : undefined;
+      const includePhone = req.query.includePhone !== "false";
+      const phoneMode =
+        req.query.phoneMode === "full" ? "full" : ("half" as const);
+
+      if (!examNum || Number.isNaN(examNum)) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "Valid exam number is required",
+        });
+      }
+
+      if (!to || Number.isNaN(to)) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "Merit range 'to' is required",
+        });
+      }
+
+      if (from < 1 || to < from) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message:
+            "Invalid merit range. 'from' must be >= 1 and 'to' must be >= 'from'",
+        });
+      }
+
+      if (to - from > 5000) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message: "Merit range cannot exceed 5000 positions",
+        });
+      }
+
+      const result = await resultService.getMeritListForExport(
+        examNum,
+        from,
+        to,
+        includePhone,
+        phoneMode,
+        req.user.role
+      );
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Merit list retrieved successfully",
+        data: result,
+      });
+    }
+  );
 }
 
 export const ResultController = new Controller();

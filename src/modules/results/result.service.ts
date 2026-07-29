@@ -1,5 +1,12 @@
 import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
-import { ICreateResultInput, IUpdateMarkPayload } from "./result.interface";
+import {
+  ICreateResultInput,
+  IMeritExportResult,
+  IRankedLeaderboardRow,
+  IUpdateMarkPayload,
+  MeritExportPhoneMode,
+} from "./result.interface";
+import { maskPhoneNumber } from "./result.utils";
 import { ResultModel } from "./result.model";
 import { ExamAttemptModel } from "../exam-attempt/exam-attempt.model";
 import { IExamAttempt } from "../exam-attempt/exam-attempt.interface";
@@ -383,6 +390,44 @@ class service {
     return result;
   };
 
+  private buildRankedLeaderboard = async (
+    examNum: number
+  ): Promise<IRankedLeaderboardRow[]> => {
+    const allResults = await ResultModel.find({ exam_number: examNum })
+      .sort({
+        is_cheated: 1,
+        is_on_time: -1,
+        score: -1,
+        dateTaken: 1,
+      })
+      .select(
+        "student_name student_phone score exam_number dateTaken is_cheated is_on_time"
+      )
+      .lean();
+
+    let currentRank = 1;
+
+    return allResults.map((student) => {
+      let rankDisplay: string | number | null = null;
+
+      if (student.is_cheated) {
+        rankDisplay = "Cheater";
+      } else if (!student.is_on_time) {
+        rankDisplay = null;
+      } else {
+        rankDisplay = currentRank++;
+      }
+
+      return {
+        rank: rankDisplay,
+        student_name: student.student_name,
+        student_phone: student.student_phone,
+        exam_number: student.exam_number ?? examNum,
+        score: student.score,
+      };
+    });
+  };
+
   getExamLeaderboard = async (
     loggedInUserPhone: string,
     examNum: number,
@@ -419,40 +464,7 @@ class service {
       };
     }
 
-    const allResults = await ResultModel.find({ exam_number: examNum })
-      .sort({
-        is_cheated: 1,
-        is_on_time: -1,
-        score: -1,
-        dateTaken: 1,
-      })
-      .select(
-        "student_name student_phone score exam_number dateTaken is_cheated is_on_time"
-      )
-      .lean();
-
-    let currentRank = 1;
-
-    const processedLeaderboard = allResults.map((student) => {
-      let rankDisplay: string | number | null = null;
-
-      if (student.is_cheated) {
-        rankDisplay = "Cheater";
-      } else if (!student.is_on_time) {
-        rankDisplay = null;
-      } else {
-        rankDisplay = currentRank++;
-      }
-
-      return {
-        rank: rankDisplay,
-        student_name: student.student_name,
-        student_phone: student.student_phone,
-        exam_number: student.exam_number,
-        score: student.score,
-        // date: student.dateTaken,
-      };
-    });
+    const processedLeaderboard = await this.buildRankedLeaderboard(examNum);
 
     const currentUserData =
       processedLeaderboard.find(
@@ -476,6 +488,72 @@ class service {
       },
       current_user: currentUserData,
       data: paginatedData,
+    };
+  };
+
+  getMeritListForExport = async (
+    examNum: number,
+    from: number,
+    to: number,
+    includePhone: boolean,
+    phoneMode: MeritExportPhoneMode,
+    userRole?: IRoles
+  ): Promise<IMeritExportResult> => {
+    const isAdmin = userRole
+      ? ADMIN_ROLE_VALUES.includes(userRole as IAdminRole)
+      : false;
+
+    const exam = await ExamModel.findOne({ exam_number: examNum })
+      .select("exam_name exam_date_time results_published")
+      .lean();
+
+    if (!exam) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "Exam not found");
+    }
+
+    const canViewResults = isAdmin || exam.results_published === true;
+
+    if (!canViewResults) {
+      throw new ApiError(
+        HttpStatusCode.FORBIDDEN,
+        "Results are not published for this exam"
+      );
+    }
+
+    const processedLeaderboard = await this.buildRankedLeaderboard(examNum);
+
+    const rankedRows = processedLeaderboard.filter(
+      (row): row is IRankedLeaderboardRow & { rank: number } =>
+        typeof row.rank === "number"
+    );
+
+    const totalRanked = rankedRows.length;
+
+    const filteredRows = rankedRows
+      .filter((row) => row.rank >= from && row.rank <= to)
+      .map((row) => {
+        const exportRow: IMeritExportResult["rows"][number] = {
+          rank: row.rank,
+          student_name: row.student_name,
+          score: row.score,
+        };
+
+        if (includePhone) {
+          exportRow.student_phone =
+            phoneMode === "full"
+              ? row.student_phone
+              : maskPhoneNumber(row.student_phone);
+        }
+
+        return exportRow;
+      });
+
+    return {
+      exam_name: exam.exam_name,
+      exam_date_time: new Date(exam.exam_date_time).toISOString(),
+      exam_number: examNum,
+      totalRanked,
+      rows: filteredRows,
     };
   };
 

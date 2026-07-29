@@ -23,6 +23,16 @@ export const setupSwagger = (app: Express): void => {
         filter: true,
         showExtensions: true,
         url: SWAGGER_JSON_PATH,
+        // Backend reads the raw JWT from `authorization`; strip Swagger's Bearer prefix.
+        requestInterceptor: (request: { headers: Record<string, string> }) => {
+          const authorization = request.headers.Authorization;
+          if (authorization?.startsWith("Bearer ")) {
+            request.headers.Authorization = authorization.slice(
+              "Bearer ".length
+            );
+          }
+          return request;
+        },
       },
     })
   );

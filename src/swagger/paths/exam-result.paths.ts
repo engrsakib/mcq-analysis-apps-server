@@ -320,4 +320,69 @@ export const resultPaths = {
       },
     },
   },
+  "/results/{exam_number}/merit-export": {
+    get: {
+      tags: ["Result"],
+      summary: "Export merit list data",
+      description:
+        "Retrieves ranked merit list rows for CSV/PDF export with optional masked phone numbers",
+      operationId: "getMeritListForExport",
+      security: securityRequirements.authenticated,
+      parameters: [
+        {
+          name: "exam_number",
+          in: "path",
+          required: true,
+          schema: { type: "integer" },
+        },
+        {
+          name: "from",
+          in: "query",
+          schema: { type: "integer", default: 1, minimum: 1 },
+        },
+        {
+          name: "to",
+          in: "query",
+          required: true,
+          schema: { type: "integer", minimum: 1 },
+        },
+        {
+          name: "includePhone",
+          in: "query",
+          schema: { type: "boolean", default: true },
+        },
+        {
+          name: "phoneMode",
+          in: "query",
+          schema: { type: "string", enum: ["half", "full"], default: "half" },
+        },
+      ],
+      responses: {
+        "200": successResponse(200, "Merit list retrieved", {
+          type: "object",
+          properties: {
+            exam_name: { type: "string" },
+            exam_date_time: { type: "string", format: "date-time" },
+            exam_number: { type: "integer" },
+            totalRanked: { type: "integer" },
+            rows: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  rank: { type: "integer" },
+                  student_name: { type: "string" },
+                  student_phone: { type: "string" },
+                  score: { type: "number" },
+                },
+              },
+            },
+          },
+        }),
+        "400": commonResponses.ValidationError,
+        "401": commonResponses.Unauthorized,
+        "403": commonResponses.Forbidden,
+      },
+    },
+  },
 };
