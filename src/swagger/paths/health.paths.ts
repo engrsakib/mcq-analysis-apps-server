@@ -34,4 +34,32 @@ export const healthPaths = {
       },
     },
   },
+  "/health": {
+    servers: [
+      {
+        url: `http://localhost:${port}`,
+        description: "Local application root",
+      },
+      {
+        url: PRODUCTION_API_BASE_URL,
+        description: "Production application root (Render)",
+      },
+    ],
+    get: {
+      tags: ["Health"],
+      summary: "Health check (uptime monitor alias)",
+      description:
+        "Same payload as GET /. Prefer this path for uptime monitors (Checkly, Render health checks, etc.).",
+      operationId: "healthCheckAlias",
+      security: securityRequirements.public,
+      responses: {
+        "200": successResponse(200, "Application is running", undefined, {
+          statusCode: 200,
+          success: true,
+          message: "Cloudy BD application is running...",
+          data: null,
+        }),
+      },
+    },
+  },
 };

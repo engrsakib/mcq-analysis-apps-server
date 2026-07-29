@@ -1,14 +1,18 @@
 import { defineConfig } from "checkly";
 import { Frequency } from "checkly/constructs";
 
+/**
+ * Checkly project config for basic API uptime monitoring.
+ * Deploy with: npx checkly deploy
+ * Test locally: npx checkly test
+ */
 export default defineConfig({
-  projectName: "API Monitoring",
-  logicalId: "api-monitoring-1",
-  repoUrl: "https://github.com/Zaagsystem/restuarant-server",
+  projectName: "MCQ Analysis API Monitoring",
+  logicalId: "mcq-analysis-api-monitoring",
   checks: {
     activated: true,
     muted: false,
-    runtimeId: "2022.10",
+    runtimeId: "2024.02",
     frequency: Frequency.EVERY_5M,
     locations: ["ap-south-1"],
     tags: ["api", "monitoring"],

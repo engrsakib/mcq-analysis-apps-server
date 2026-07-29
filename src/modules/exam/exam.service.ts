@@ -8,6 +8,10 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 import { UserModel } from "@/modules/user/user.model";
 import { searchHelpers } from "@/utils/searchHelpers";
 import { syncExamLifecycle } from "./examScheduler.service";
+import {
+  mapExamsWithBangladeshDateTime,
+  withBangladeshExamDateTime,
+} from "./exam.utils";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
 
@@ -142,7 +146,7 @@ class Service {
         total,
         totalPage: Math.ceil(total / limit),
       },
-      data: exams,
+      data: mapExamsWithBangladeshDateTime(exams),
     };
   }
 
@@ -250,7 +254,7 @@ class Service {
         total,
         totalPage: Math.ceil(total / limit),
       },
-      data: aggregationResult?.data || [],
+      data: mapExamsWithBangladeshDateTime(aggregationResult?.data || []),
     };
   }
 
@@ -272,7 +276,7 @@ class Service {
       is_completed: false,
       $or: [{ is_published: true }, { is_started: true }],
     }).populate("questions");
-    return exam;
+    return withBangladeshExamDateTime(exam);
   }
 
   async updateExamById(id: string, payload: Partial<IExam>) {

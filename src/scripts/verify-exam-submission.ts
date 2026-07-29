@@ -36,6 +36,11 @@ type TestResult = {
   detail: string;
 };
 
+type UserExamListItem = {
+  exam_number?: number;
+  isSubmitted?: boolean;
+};
+
 const results: TestResult[] = [];
 
 function record(name: string, passed: boolean, detail: string) {
@@ -195,8 +200,8 @@ async function main() {
     { page: 1, limit: 50 },
     userA
   );
-  const userAExam = listForUserA.data.find(
-    (exam: { exam_number?: number }) => exam.exam_number === TEST_EXAM_NUMBER
+  const userAExam = (listForUserA.data as UserExamListItem[]).find(
+    (exam) => exam.exam_number === TEST_EXAM_NUMBER
   );
   record(
     "Exam list marks submitted exam for User A",
@@ -213,8 +218,8 @@ async function main() {
       role: ROLES.STUDENT,
     }
   );
-  const userCExam = listForUserC.data.find(
-    (exam: { exam_number?: number }) => exam.exam_number === TEST_EXAM_NUMBER
+  const userCExam = (listForUserC.data as UserExamListItem[]).find(
+    (exam) => exam.exam_number === TEST_EXAM_NUMBER
   );
   record(
     "Exam list shows unsubmitted exam for User C",
