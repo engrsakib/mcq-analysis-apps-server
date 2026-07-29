@@ -59,11 +59,20 @@ const handleGenericError = (error: Error): ErrorResponse => ({
   errorMessages: error?.message ? [{ path: "", message: error.message }] : [],
 });
 
-const handleCastError = (error: mongoose.Error.CastError): ErrorResponse => ({
-  statusCode: HttpStatusCode.BAD_REQUEST,
-  message: "Invalid MongoDB ObjectId",
-  errorMessages: [{ path: error.path, message: "Invalid id!" }],
-});
+const handleCastError = (error: mongoose.Error.CastError): ErrorResponse => {
+  const expectedType = error.kind || "value";
+
+  return {
+    statusCode: HttpStatusCode.BAD_REQUEST,
+    message: `Invalid value for "${error.path}"`,
+    errorMessages: [
+      {
+        path: error.path,
+        message: `"${String(error.value)}" is not a valid ${expectedType} for ${error.path}.`,
+      },
+    ],
+  };
+};
 
 const handleMongodbValidationError = (
   error: mongoose.Error.ValidationError

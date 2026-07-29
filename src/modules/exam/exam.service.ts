@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { BarcodeService } from "@/lib/barcode";
 import { ExamModel } from "./exam.model";
 import { IExam } from "./exam.interface";
@@ -9,6 +10,26 @@ import { searchHelpers } from "@/utils/searchHelpers";
 import { syncExamLifecycle } from "./examScheduler.service";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
+
+// Exams are addressable by either their Mongo _id or their numeric exam_number,
+// so callers may pass whichever identifier they have at hand.
+const buildExamFilter = (id: string): Record<string, unknown> => {
+  const trimmedId = String(id ?? "").trim();
+
+  if (/^[0-9a-fA-F]{24}$/.test(trimmedId)) {
+    return { _id: new mongoose.Types.ObjectId(trimmedId) };
+  }
+
+  const examNumber = Number(trimmedId);
+  if (!trimmedId || !Number.isFinite(examNumber)) {
+    throw new ApiError(
+      HttpStatusCode.BAD_REQUEST,
+      "Invalid exam identifier. Provide an exam _id or an exam_number."
+    );
+  }
+
+  return { exam_number: examNumber };
+};
 
 class Service {
   async createExam(payload: Partial<IExam>): Promise<IExam> {
@@ -236,7 +257,7 @@ class Service {
   async getExamById(id: string) {
     await syncExamLifecycle();
 
-    const exam = await ExamModel.findOne({ exam_number: id }).populate(
+    const exam = await ExamModel.findOne(buildExamFilter(id)).populate(
       "questions"
     );
     return exam;
@@ -246,7 +267,7 @@ class Service {
     await syncExamLifecycle();
 
     const exam = await ExamModel.findOne({
-      _id: id,
+      ...buildExamFilter(id),
       is_started: true,
       is_completed: false,
       $or: [{ is_published: true }, { is_started: true }],
@@ -256,7 +277,7 @@ class Service {
 
   async updateExamById(id: string, payload: Partial<IExam>) {
     const updatedExam = await ExamModel.findOneAndUpdate(
-      { exam_number: id },
+      buildExamFilter(id),
       payload,
       {
         new: true,
@@ -285,9 +306,7 @@ class Service {
   }
 
   async deleteExamById(id: string) {
-    const deletedExam = await ExamModel.findOneAndDelete({
-      exam_number: id,
-    });
+    const deletedExam = await ExamModel.findOneAndDelete(buildExamFilter(id));
     return deletedExam;
   }
 
@@ -311,7 +330,7 @@ class Service {
 
   async updateExamStatus(id: string, payload: Partial<IExam>) {
     const updatedExam = await ExamModel.findOneAndUpdate(
-      { exam_number: id },
+      buildExamFilter(id),
       payload,
       { new: true, runValidators: true }
     );
