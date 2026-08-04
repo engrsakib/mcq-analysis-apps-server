@@ -49,10 +49,14 @@ class Service {
   };
 
   getAllQuestions = async (
-    filters: { searchTerm?: string; category_number?: number },
+    filters: {
+      searchTerm?: string;
+      category_number?: number;
+      category_id?: string;
+    },
     paginationOptions: IPaginationOptions
   ) => {
-    const { searchTerm, category_number } = filters;
+    const { searchTerm, category_number, category_id } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
       paginationHelpers.calculatePagination(paginationOptions);
 
@@ -69,6 +73,14 @@ class Service {
 
     if (category_number && Number.isFinite(category_number)) {
       const topic = await QuestionStudyTopicModel.findOne({ category_number });
+
+      if (topic) {
+        andConditions.push({ category_id: topic._id });
+      } else {
+        andConditions.push({ category_id: null });
+      }
+    } else if (category_id && Types.ObjectId.isValid(category_id)) {
+      const topic = await QuestionStudyTopicModel.findById(category_id);
 
       if (topic) {
         andConditions.push({ category_id: topic._id });

@@ -16,17 +16,17 @@ router.post(
 );
 
 router.get(
-  "/:id",
-  JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.VIEW_QUESTION),
-  QuestionController.getQuestionById
-);
-
-router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
   JwtInstance.hasPermissions(PermissionEnum.VIEW_QUESTION),
   QuestionController.getAllQuestions
+);
+
+router.get(
+  "/:id",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_QUESTION),
+  QuestionController.getQuestionById
 );
 
 router.patch(

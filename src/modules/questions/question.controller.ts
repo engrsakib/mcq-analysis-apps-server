@@ -15,11 +15,19 @@ class Controller extends BaseController {
   });
 
   getAllQuestions = this.catchAsync(async (req: Request, res: Response) => {
+    const categoryNumberRaw = req.query.category_number as string | undefined;
+    const categoryIdRaw = req.query.category_id as string | undefined;
+
     const filters = {
       searchTerm: req.query.searchTerm as string,
-      category_number: req.query.category_number
-        ? Number(req.query.category_number)
-        : undefined,
+      category_number:
+        categoryNumberRaw && categoryNumberRaw.trim() !== ""
+          ? Number(categoryNumberRaw)
+          : undefined,
+      category_id:
+        categoryIdRaw && categoryIdRaw.trim() !== ""
+          ? categoryIdRaw
+          : undefined,
     };
 
     const paginationOptions = {
