@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Types } from "mongoose";
 import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
@@ -6,75 +5,92 @@ import { IPaginationOptions } from "@/interfaces/pagination.interfaces";
 import { paginationHelpers } from "@/helpers/paginationHelpers";
 import { QuestionModel } from "./questuon.model";
 import { BarcodeService } from "@/lib/barcode";
+import { QuestionStudyTopicModel } from "../question-study-topic/question-study-topic.model";
+
+const CATEGORY_POPULATE_FIELDS = "name category_number type position";
 
 class Service {
-  createQuestion = async (questionData: any) => {
-    const quesId = BarcodeService.generateEAN13();
-    questionData.questionId = quesId;
+  private validateCategoryId = async (categoryId: unknown) => {
+    if (!categoryId) {
+      throw new ApiError(HttpStatusCode.BAD_REQUEST, "category_id is required");
+    }
 
-    const question = await QuestionModel.create(questionData);
-    return question;
+    if (!Types.ObjectId.isValid(String(categoryId))) {
+      throw new ApiError(HttpStatusCode.BAD_REQUEST, "Invalid category_id");
+    }
+
+    const topic = await QuestionStudyTopicModel.findById(categoryId);
+
+    if (!topic) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "Study topic not found for category_id"
+      );
+    }
+
+    return topic;
   };
-  // getAllQuestions = async (paginationOptions: IPaginationOptions) => {
-  //   const { page, limit, skip, sortBy, sortOrder } =
-  //     paginationHelpers.calculatePagination(paginationOptions);
-  //   const sortConditions: { [key: string]: 1 | -1 } = {};
 
-  //   if (sortBy && sortOrder) {
-  //     sortConditions[sortBy] = sortOrder === "asc" ? 1 : -1;
-  //   }
-  //   const questions = await QuestionModel.find()
-  //     .sort(sortConditions)
-  //     .skip(skip)
-  //     .limit(limit);
-  //   const total = await QuestionModel.countDocuments();
-  //   return { meta: { page, limit, total }, data: questions };
-  // };
+  private sanitizeQuestionPayload = (data: Record<string, unknown>) => {
+    const payload = { ...data };
+    delete payload.questionId;
+    delete payload.category_number;
+    return payload;
+  };
 
-  // ১. এখানে searchTerm আর্গুমেন্ট হিসেবে রিসিভ করবেন (paginationOptions এর পাশাপাশি বা আলাদাভাবে)
+  createQuestion = async (questionData: Record<string, unknown>) => {
+    await this.validateCategoryId(questionData.category_id);
+
+    const payload = this.sanitizeQuestionPayload(questionData);
+    payload.questionId = BarcodeService.generateEAN13();
+
+    const question = await QuestionModel.create(payload);
+    return question.populate("category_id", CATEGORY_POPULATE_FIELDS);
+  };
+
   getAllQuestions = async (
-    filters: { searchTerm?: string }, // নতুন ফিল্টার প্যারামিটার
+    filters: { searchTerm?: string; category_number?: number },
     paginationOptions: IPaginationOptions
   ) => {
-    const { searchTerm } = filters;
+    const { searchTerm, category_number } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
       paginationHelpers.calculatePagination(paginationOptions);
 
-    // ২. সার্চ কন্ডিশন তৈরি করা
-    const andConditions: any[] = [];
+    const andConditions: Record<string, unknown>[] = [];
 
-    // যদি searchTerm থাকে, তবে title এর ওপর partial match সার্চ করবে
     if (searchTerm) {
       andConditions.push({
-        $or: [
-          {
-            title: {
-              $regex: searchTerm,
-              $options: "i", // 'i' মানে case-insensitive (ছোট/বড় হাতের অক্ষর সমস্যা করবে না)
-            },
-          },
-        ],
+        title: {
+          $regex: searchTerm,
+          $options: "i",
+        },
       });
     }
 
-    // ৩. ফাইনাল কুয়েরি কন্ডিশন
-    // যদি কোনো কন্ডিশন থাকে তবে $and ব্যবহার করবে, না থাকলে খালি অবজেক্ট {}
+    if (category_number && Number.isFinite(category_number)) {
+      const topic = await QuestionStudyTopicModel.findOne({ category_number });
+
+      if (topic) {
+        andConditions.push({ category_id: topic._id });
+      } else {
+        andConditions.push({ category_id: null });
+      }
+    }
+
     const whereConditions =
       andConditions.length > 0 ? { $and: andConditions } : {};
 
-    // ৪. সর্টিং কন্ডিশন
     const sortConditions: { [key: string]: 1 | -1 } = {};
     if (sortBy && sortOrder) {
       sortConditions[sortBy] = sortOrder === "asc" ? 1 : -1;
     }
 
-    // ৫. ডাটাবেস কুয়েরি
-    const questions = await QuestionModel.find(whereConditions) // এখানে whereConditions পাস করা হলো
+    const questions = await QuestionModel.find(whereConditions)
+      .populate("category_id", CATEGORY_POPULATE_FIELDS)
       .sort(sortConditions)
       .skip(skip)
       .limit(limit);
 
-    // ৬. মোট ডকুমেন্ট গণনা (ফিল্টার অনুযায়ী)
     const total = await QuestionModel.countDocuments(whereConditions);
 
     return {
@@ -88,30 +104,48 @@ class Service {
   };
 
   getQuestionById = async (id: number) => {
-    const question = await QuestionModel.findOne({ questionId: id });
+    const question = await QuestionModel.findOne({ questionId: id }).populate(
+      "category_id",
+      CATEGORY_POPULATE_FIELDS
+    );
+
     if (!question) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "Question not found");
     }
+
     return question;
   };
 
-  updateQuestionById = async (id: number, updateData: Partial<any>) => {
+  updateQuestionById = async (
+    id: number,
+    updateData: Record<string, unknown>
+  ) => {
+    if (updateData.category_id !== undefined) {
+      await this.validateCategoryId(updateData.category_id);
+    }
+
+    const payload = this.sanitizeQuestionPayload(updateData);
+
     const question = await QuestionModel.findOneAndUpdate(
       { questionId: id },
-      updateData,
+      payload,
       { new: true }
-    );
+    ).populate("category_id", CATEGORY_POPULATE_FIELDS);
+
     if (!question) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "Question not found");
     }
+
     return question;
   };
 
   deleteQuestionById = async (id: number) => {
     const question = await QuestionModel.findOneAndDelete({ questionId: id });
+
     if (!question) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "Question not found");
     }
+
     return question;
   };
 }

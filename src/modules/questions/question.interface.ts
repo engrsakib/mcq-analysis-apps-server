@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { answerType, QuestionType } from "./question.enum";
 
 export interface IQuestionBlank {
@@ -18,4 +19,5 @@ export interface IQuestion {
   answerType: answerType;
   marks: number;
   answer: string | IQuestionBlank[];
+  category_id: Types.ObjectId;
 }

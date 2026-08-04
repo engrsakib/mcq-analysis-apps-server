@@ -55,6 +55,13 @@ const QuestionSchema = new Schema<IQuestion>(
       type: Schema.Types.Mixed,
       required: true,
     },
+
+    category_id: {
+      type: Schema.Types.ObjectId,
+      ref: "QuestionStudyTopic",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,

@@ -7,6 +7,7 @@ import { UserRoutes } from "@/modules/user/user.routes";
 import { UploadRoutes } from "@/modules/upload/upload.routes";
 import { PermissionsRoutes } from "@/modules/permission/permission.route";
 import { QuestionRoutes } from "./../modules/questions/question.route";
+import { QuestionStudyTopicRoutes } from "@/modules/question-study-topic/question-study-topic.router";
 import { YoutubeRoutes } from "@/modules/youtube/youtube.route";
 import { GuidelineRoutes } from "@/modules/guideline/guideline.router";
 import { BooksRoutes } from "@/modules/books/books.router";
@@ -70,6 +71,10 @@ const moduleRoutes = [
   {
     path: "/question",
     route: QuestionRoutes,
+  },
+  {
+    path: "/question-study-topic",
+    route: QuestionStudyTopicRoutes,
   },
   {
     path: "/notifications",
