@@ -23,6 +23,11 @@ import {
   isSystemRole,
 } from "../permission/role-permissions";
 import { IAdminRole } from "@/constants/roles";
+import { eventBus } from "@/events/EventBus";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 class Service {
   async create(data: IAdmin) {
@@ -56,7 +61,7 @@ class Service {
     await OTPService.sendVerificationOtp(data.phone_number, "admin");
   }
 
-  async createAdminByAdmin(data: IAdmin) {
+  async createAdminByAdmin(data: IAdmin, actor?: ActorInfo) {
     try {
       const isExist = await AdminModel.findOne({
         phone_number: data.phone_number,
@@ -90,6 +95,22 @@ class Service {
           );
         }
 
+        if (admin && actor) {
+          await eventBus.publish({
+            type: "ADMIN_CREATED",
+            payload: buildAdminActivityPayload({
+              actor,
+              action: "created",
+              entityType: "admin",
+              entityLabel: `"${admin.name || admin.phone_number}"`,
+              entityId: admin._id.toString(),
+              module: "admin",
+              title: "Staff Added",
+              description: `${actor.name} added staff ${admin.name || admin.phone_number}`,
+            }),
+          });
+        }
+
         return admin;
       }
 
@@ -101,6 +122,22 @@ class Service {
           getPermissionsForRole(admin.role as IAdminRole),
           `Auto-assigned for ${admin.role} role`
         );
+      }
+
+      if (actor) {
+        await eventBus.publish({
+          type: "ADMIN_CREATED",
+          payload: buildAdminActivityPayload({
+            actor,
+            action: "created",
+            entityType: "admin",
+            entityLabel: `"${admin.name || admin.phone_number}"`,
+            entityId: admin._id.toString(),
+            module: "admin",
+            title: "Staff Added",
+            description: `${actor.name} added staff ${admin.name || admin.phone_number}`,
+          }),
+        });
       }
 
       return admin;
@@ -398,7 +435,7 @@ class Service {
     return { ...data, permissions: keys };
   }
 
-  async updateAdmin(id: string, data: Partial<IAdmin>) {
+  async updateAdmin(id: string, data: Partial<IAdmin>, actor?: ActorInfo) {
     if (!id) {
       throw new ApiError(HttpStatusCode.BAD_REQUEST, "Admin ID is required");
     }
@@ -443,6 +480,20 @@ class Service {
         getPermissionsForRole(updatedAdmin.role as IAdminRole),
         `Auto-assigned for ${updatedAdmin.role} role`
       );
+    }
+
+    if (updatedAdmin && actor) {
+      await eventBus.publish({
+        type: "ADMIN_UPDATED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "admin",
+          entityLabel: `"${updatedAdmin.name || updatedAdmin.phone_number}"`,
+          entityId: updatedAdmin._id.toString(),
+          module: "admin",
+        }),
+      });
     }
 
     return updatedAdmin;
@@ -500,12 +551,33 @@ class Service {
     });
   }
 
-  async deleteAdmin(id: string) {
+  async deleteAdmin(id: string, actor?: ActorInfo) {
     const isExist = await AdminModel.findById(id);
     if (!isExist) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "Admin was not found");
     }
-    return await AdminModel.findByIdAndUpdate(id, { is_Deleted: true });
+
+    const deleted = await AdminModel.findByIdAndUpdate(
+      id,
+      { is_Deleted: true },
+      { new: true }
+    );
+
+    if (deleted && actor) {
+      await eventBus.publish({
+        type: "ADMIN_DELETED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "deleted",
+          entityType: "admin",
+          entityLabel: `"${deleted.name || deleted.phone_number}"`,
+          entityId: deleted._id.toString(),
+          module: "admin",
+        }),
+      });
+    }
+
+    return deleted;
   }
 }
 

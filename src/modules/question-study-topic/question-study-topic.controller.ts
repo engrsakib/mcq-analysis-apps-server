@@ -2,10 +2,14 @@ import { Request, Response } from "express";
 import BaseController from "@/shared/baseController";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { QuestionStudyTopicService } from "./question-study-topic.service";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createTopic = this.catchAsync(async (req: Request, res: Response) => {
-    const topic = await QuestionStudyTopicService.createTopic(req.body);
+    const topic = await QuestionStudyTopicService.createTopic(
+      req.body,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
@@ -77,7 +81,8 @@ class Controller extends BaseController {
 
       const topic = await QuestionStudyTopicService.updateTopicByCategoryNumber(
         categoryNumber,
-        req.body
+        req.body,
+        resolveActor(req.user)
       );
 
       this.sendResponse(res, {
@@ -140,7 +145,8 @@ class Controller extends BaseController {
       }
 
       await QuestionStudyTopicService.deleteTopicByCategoryNumber(
-        categoryNumber
+        categoryNumber,
+        resolveActor(req.user)
       );
 
       this.sendResponse(res, {

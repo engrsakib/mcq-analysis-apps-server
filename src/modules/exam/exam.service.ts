@@ -14,6 +14,10 @@ import {
 } from "./exam.utils";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 // Exams are addressable by either their Mongo _id or their numeric exam_number,
 // so callers may pass whichever identifier they have at hand.
@@ -36,7 +40,7 @@ const buildExamFilter = (id: string): Record<string, unknown> => {
 };
 
 class Service {
-  async createExam(payload: Partial<IExam>): Promise<IExam> {
+  async createExam(payload: Partial<IExam>, actor?: ActorInfo): Promise<IExam> {
     try {
       const examNumber = BarcodeService.generateEAN13();
 
@@ -53,15 +57,14 @@ class Service {
 
       await eventBus.publish({
         type: "EXAM_CREATED",
-        payload: {
-          userId: (payload as any).created_by || "system",
-          title: (result as any).title || "Exam",
-          description: "Created successfully",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "created",
+          entityType: "exam",
+          entityLabel: `"${result.exam_name || "Exam"}"`,
+          entityId: String(result.exam_number),
           module: "exam",
-          time: new Date().toISOString(),
-          examId:
-            (result.exam_number as any)?.toString() || result._id.toString(),
-        },
+        }),
       });
 
       return result;
@@ -279,7 +282,7 @@ class Service {
     return withBangladeshExamDateTime(exam);
   }
 
-  async updateExamById(id: string, payload: Partial<IExam>) {
+  async updateExamById(id: string, payload: Partial<IExam>, actor?: ActorInfo) {
     const updatedExam = await ExamModel.findOneAndUpdate(
       buildExamFilter(id),
       payload,
@@ -289,28 +292,42 @@ class Service {
       }
     ).populate("questions");
 
-    // যদি এক্সাম খুঁজে না পাওয়া যায়
     if (!updatedExam) {
       throw new Error("Exam not found");
     }
+
     await eventBus.publish({
       type: "EXAM_UPDATED",
-      payload: {
-        userId: (payload as any).updated_by || "system",
-        title: (updatedExam as any).title || "Exam",
-        description: "Updated successfully",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "updated",
+        entityType: "exam",
+        entityLabel: `"${updatedExam.exam_name || "Exam"}"`,
+        entityId: String(updatedExam.exam_number),
         module: "exam",
-        time: new Date().toISOString(),
-        examId:
-          (updatedExam.exam_number as any)?.toString() ||
-          updatedExam._id.toString(),
-      },
+      }),
     });
+
     return updatedExam;
   }
 
-  async deleteExamById(id: string) {
+  async deleteExamById(id: string, actor?: ActorInfo) {
     const deletedExam = await ExamModel.findOneAndDelete(buildExamFilter(id));
+
+    if (deletedExam) {
+      await eventBus.publish({
+        type: "EXAM_DELETED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "deleted",
+          entityType: "exam",
+          entityLabel: `"${deletedExam.exam_name || "Exam"}"`,
+          entityId: String(deletedExam.exam_number),
+          module: "exam",
+        }),
+      });
+    }
+
     return deletedExam;
   }
 
@@ -332,7 +349,11 @@ class Service {
     return exams;
   }
 
-  async updateExamStatus(id: string, payload: Partial<IExam>) {
+  async updateExamStatus(
+    id: string,
+    payload: Partial<IExam>,
+    actor?: ActorInfo
+  ) {
     const updatedExam = await ExamModel.findOneAndUpdate(
       buildExamFilter(id),
       payload,
@@ -345,16 +366,14 @@ class Service {
 
     await eventBus.publish({
       type: "EXAM_UPDATED",
-      payload: {
-        userId: (payload as any).updated_by || "system",
-        title: (updatedExam as any).title || "Exam",
-        description: "Updated successfully",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "updated",
+        entityType: "exam",
+        entityLabel: `"${updatedExam.exam_name || "Exam"}" status`,
+        entityId: String(updatedExam.exam_number),
         module: "exam",
-        time: new Date().toISOString(),
-        examId:
-          (updatedExam.exam_number as any)?.toString() ||
-          updatedExam._id.toString(),
-      },
+      }),
     });
 
     return updatedExam;

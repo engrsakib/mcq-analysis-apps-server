@@ -4,6 +4,10 @@ import { GUIDELINE_STATUS } from "./study_plan.interface";
 import { eventBus } from "@/events/EventBus";
 import { AnyBulkWriteOperation, Types } from "mongoose";
 import { searchHelpers } from "@/utils/searchHelpers";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 type ReorderStudyPlanItem = {
   id?: string | number;
@@ -13,7 +17,7 @@ type ReorderStudyPlanItem = {
 };
 
 class Service {
-  async createStudyPlan(guidelineData: any) {
+  async createStudyPlan(guidelineData: any, actor?: ActorInfo) {
     guidelineData.is_published = false;
     guidelineData.study_plan_number = await BarcodeService.generateEAN13();
     if (
@@ -31,14 +35,14 @@ class Service {
 
     await eventBus.publish({
       type: "STUDY_PLAN_CREATED",
-      payload: {
-        userId: guidelineData.created_by || "system",
-        title: guideline.title || "Study Plan",
-        description: "Created successfully",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "created",
+        entityType: "study-plan",
+        entityLabel: `"${guideline.title || "Study Plan"}"`,
+        entityId: String(guideline.study_plan_number),
         module: "study-plan",
-        time: new Date().toISOString(),
-        planId: guideline.study_plan_number as number,
-      },
+      }),
     });
 
     return guideline;
@@ -112,7 +116,7 @@ class Service {
     return studyPlan;
   }
 
-  async updateStudyPlanById(id: string, updateData: any) {
+  async updateStudyPlanById(id: string, updateData: any, actor?: ActorInfo) {
     const updatedGuideline = await StudyPlan.findOneAndUpdate(
       { study_plan_number: id },
       updateData,
@@ -122,14 +126,14 @@ class Service {
     if (updatedGuideline) {
       await eventBus.publish({
         type: "STUDY_PLAN_UPDATED",
-        payload: {
-          userId: updateData.updated_by || "system",
-          title: updatedGuideline.title || "Study Plan",
-          description: "Updated successfully",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "study-plan",
+          entityLabel: `"${updatedGuideline.title || "Study Plan"}"`,
+          entityId: String(updatedGuideline.study_plan_number),
           module: "study-plan",
-          time: new Date().toISOString(),
-          planId: updatedGuideline.study_plan_number as number,
-        },
+        }),
       });
     }
 

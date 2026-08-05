@@ -4,6 +4,7 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cookieManager } from "@/shared/cookie";
 import { BooksService } from "./books.service";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createBooks = this.catchAsync(async (req: Request, res: Response) => {
@@ -16,7 +17,10 @@ class Controller extends BaseController {
         message: "Book data is required",
       });
     }
-    const createdBook = await BooksService.create(bookData);
+    const createdBook = await BooksService.create(
+      bookData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
@@ -138,7 +142,11 @@ class Controller extends BaseController {
       });
     }
 
-    const updatedBook = await BooksService.updateBookById(id, updateData);
+    const updatedBook = await BooksService.updateBookById(
+      id,
+      updateData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,

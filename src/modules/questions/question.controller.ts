@@ -2,10 +2,14 @@ import { Request, Response } from "express";
 import BaseController from "@/shared/baseController";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { QuestionService } from "./question.service";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createQuestion = this.catchAsync(async (req: Request, res: Response) => {
-    const question = await QuestionService.createQuestion(req.body);
+    const question = await QuestionService.createQuestion(
+      req.body,
+      resolveActor(req.user)
+    );
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
       success: true,
@@ -64,7 +68,11 @@ class Controller extends BaseController {
 
   updateQuestionById = this.catchAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const question = await QuestionService.updateQuestionById(id, req.body);
+    const question = await QuestionService.updateQuestionById(
+      id,
+      req.body,
+      resolveActor(req.user)
+    );
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
@@ -75,7 +83,7 @@ class Controller extends BaseController {
 
   deleteQuestionById = this.catchAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    await QuestionService.deleteQuestionById(id);
+    await QuestionService.deleteQuestionById(id, resolveActor(req.user));
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,

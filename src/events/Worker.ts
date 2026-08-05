@@ -1,14 +1,28 @@
 import {
-  handleBookUploaded,
+  handleAdminCreated,
+  handleAdminDeleted,
+  handleAdminUpdated,
   handleBookUpdated,
+  handleBookUploaded,
   handleExamCreated,
+  handleExamDeleted,
+  handleExamSubmitted,
   handleExamUpdated,
   handleGuidelineCreated,
   handleGuidelineUpdated,
+  handleQuestionCreated,
+  handleQuestionDeleted,
+  handleQuestionTopicCreated,
+  handleQuestionTopicDeleted,
+  handleQuestionTopicUpdated,
+  handleQuestionUpdated,
   handleResultPublished,
   handleResultUpdated,
   handleStudyPlanCreated,
   handleStudyPlanUpdated,
+  handleUserDeleted,
+  handleUserRegistered,
+  handleUserUpdated,
   handleYoutubeVideoAdded,
   handleYoutubeVideoUpdated,
 } from "@/modules/notification/notification.handler";
@@ -59,12 +73,68 @@ jobQueue.setHandler(async (event: AppEvent) => {
       await handleExamUpdated(event.payload);
       break;
 
+    case "EXAM_DELETED":
+      await handleExamDeleted(event.payload);
+      break;
+
     case "GUIDELINE_CREATED":
       await handleGuidelineCreated(event.payload);
       break;
 
     case "GUIDELINE_UPDATED":
       await handleGuidelineUpdated(event.payload);
+      break;
+
+    case "QUESTION_CREATED":
+      await handleQuestionCreated(event.payload);
+      break;
+
+    case "QUESTION_UPDATED":
+      await handleQuestionUpdated(event.payload);
+      break;
+
+    case "QUESTION_DELETED":
+      await handleQuestionDeleted(event.payload);
+      break;
+
+    case "QUESTION_TOPIC_CREATED":
+      await handleQuestionTopicCreated(event.payload);
+      break;
+
+    case "QUESTION_TOPIC_UPDATED":
+      await handleQuestionTopicUpdated(event.payload);
+      break;
+
+    case "QUESTION_TOPIC_DELETED":
+      await handleQuestionTopicDeleted(event.payload);
+      break;
+
+    case "USER_REGISTERED":
+      await handleUserRegistered(event.payload);
+      break;
+
+    case "USER_UPDATED":
+      await handleUserUpdated(event.payload);
+      break;
+
+    case "USER_DELETED":
+      await handleUserDeleted(event.payload);
+      break;
+
+    case "ADMIN_CREATED":
+      await handleAdminCreated(event.payload);
+      break;
+
+    case "ADMIN_UPDATED":
+      await handleAdminUpdated(event.payload);
+      break;
+
+    case "ADMIN_DELETED":
+      await handleAdminDeleted(event.payload);
+      break;
+
+    case "EXAM_SUBMITTED":
+      await handleExamSubmitted(event.payload);
       break;
 
     default:

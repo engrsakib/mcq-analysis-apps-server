@@ -1,5 +1,9 @@
 import { Document } from "mongoose";
-import { NotificationModuleName } from "@/events/EventTypes";
+import {
+  NotificationAction,
+  NotificationAudience,
+  NotificationModuleName,
+} from "@/events/EventTypes";
 
 export enum NotificationModuleEnum {
   STUDY_PLAN = "study-plan",
@@ -8,6 +12,10 @@ export enum NotificationModuleEnum {
   BOOKS = "books",
   EXAM = "exam",
   GUIDELINE = "guideline",
+  QUESTION = "question",
+  USER = "user",
+  ADMIN = "admin",
+  QUESTION_STUDY_TOPIC = "question-study-topic",
 }
 
 export interface INotification extends Document {
@@ -18,6 +26,12 @@ export interface INotification extends Document {
   time: string;
   isRead: boolean;
   createdAt: Date;
+  actorName?: string;
+  actorId?: string;
+  action?: NotificationAction;
+  entityType?: string;
+  entityId?: string;
+  audience?: NotificationAudience;
 }
 
 export interface ICreateNotificationPayload {
@@ -26,4 +40,10 @@ export interface ICreateNotificationPayload {
   module: NotificationModuleName;
   userId: string;
   time: string;
+  actorName?: string;
+  actorId?: string;
+  action?: NotificationAction;
+  entityType?: string;
+  entityId?: string;
+  audience?: NotificationAudience;
 }

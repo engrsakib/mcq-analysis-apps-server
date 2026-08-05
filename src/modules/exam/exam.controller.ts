@@ -4,6 +4,7 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cookieManager } from "@/shared/cookie";
 import { examService } from "./exam.service";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createExam = this.catchAsync(async (req: Request, res: Response) => {
@@ -16,7 +17,10 @@ class Controller extends BaseController {
         message: "Exam data is required",
       });
     }
-    const createdExam = await examService.createExam(examData);
+    const createdExam = await examService.createExam(
+      examData,
+      resolveActor(req.user)
+    );
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
       success: true,
@@ -130,7 +134,11 @@ class Controller extends BaseController {
       });
     }
 
-    const updatedExam = await examService.updateExamById(id, updateData);
+    const updatedExam = await examService.updateExamById(
+      id,
+      updateData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
@@ -149,7 +157,7 @@ class Controller extends BaseController {
         message: "YouTube entry ID is required",
       });
     }
-    await examService.deleteExamById(id);
+    await examService.deleteExamById(id, resolveActor(req.user));
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
@@ -206,7 +214,11 @@ class Controller extends BaseController {
       });
     }
 
-    const result = await examService.updateExamStatus(id, updateData);
+    const result = await examService.updateExamStatus(
+      id,
+      updateData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,

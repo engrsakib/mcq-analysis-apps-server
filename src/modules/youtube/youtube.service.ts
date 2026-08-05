@@ -3,6 +3,10 @@ import { YoutubeModel } from "./youtube.model";
 import { eventBus } from "@/events/EventBus";
 import { searchHelpers } from "@/utils/searchHelpers";
 import { AnyBulkWriteOperation, Types } from "mongoose";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 type ReorderYoutubeItem = {
   id?: string | number;
@@ -12,7 +16,7 @@ type ReorderYoutubeItem = {
 };
 
 class Service {
-  async createYoutubeVideo(videoData: any) {
+  async createYoutubeVideo(videoData: any, actor?: ActorInfo) {
     videoData.video_number = await BarcodeService.generateEAN13();
 
     if (videoData.position === undefined || videoData.position === null) {
@@ -27,15 +31,14 @@ class Service {
 
     await eventBus.publish({
       type: "YOUTUBE_VIDEO_ADDED",
-      payload: {
-        userId: videoData.created_by || "system",
-        title: (video as any).title || "YouTube Video",
-        description: "Created successfully",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "created",
+        entityType: "youtube",
+        entityLabel: `"${video.title || "YouTube Video"}"`,
+        entityId: String(video.video_number),
         module: "youtube",
-        time: new Date().toISOString(),
-        videoId:
-          (video.video_number as any)?.toString() || video._id.toString(),
-      },
+      }),
     });
 
     return video;
@@ -108,7 +111,7 @@ class Service {
     return video;
   }
 
-  async updateYoutubeVideoById(id: string, updateData: any) {
+  async updateYoutubeVideoById(id: string, updateData: any, actor?: ActorInfo) {
     const updatedVideo = await YoutubeModel.findOneAndUpdate(
       { video_number: id },
       updateData,
@@ -118,16 +121,14 @@ class Service {
     if (updatedVideo) {
       await eventBus.publish({
         type: "YOUTUBE_VIDEO_UPDATED",
-        payload: {
-          userId: updateData.updated_by || "system",
-          title: (updatedVideo as any).title || "YouTube Video",
-          description: "Updated successfully",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "youtube",
+          entityLabel: `"${updatedVideo.title || "YouTube Video"}"`,
+          entityId: String(updatedVideo.video_number),
           module: "youtube",
-          time: new Date().toISOString(),
-          videoId:
-            (updatedVideo.video_number as any)?.toString() ||
-            updatedVideo._id.toString(),
-        },
+        }),
       });
     }
 

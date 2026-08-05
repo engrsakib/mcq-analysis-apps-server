@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { UserService } from "./user.service";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { cookieManager } from "@/shared/cookie";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   create = this.catchAsync(async (req: Request, res: Response) => {
@@ -16,7 +17,7 @@ class Controller extends BaseController {
   });
 
   createByAdmin = this.catchAsync(async (req: Request, res: Response) => {
-    await UserService.createByAdmin(req.body);
+    await UserService.createByAdmin(req.body, resolveActor(req.user));
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
       success: true,
@@ -142,7 +143,11 @@ class Controller extends BaseController {
 
   updateUser = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
-    const data = await UserService.updateUser(id, req.body);
+    const data = await UserService.updateUser(
+      id,
+      req.body,
+      resolveActor(req.user)
+    );
     this.sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -174,7 +179,7 @@ class Controller extends BaseController {
 
   deleteUser = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
-    await UserService.deleteUser(id);
+    await UserService.deleteUser(id, resolveActor(req.user));
     this.sendResponse(res, {
       statusCode: 200,
       success: true,

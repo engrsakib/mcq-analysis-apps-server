@@ -18,6 +18,7 @@ import { UserModel } from "../user/user.model";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { IRoles } from "@/constants/roles";
 import { hasExamStarted, isExamWithinWindow } from "../exam/exam.utils";
+import { buildAdminActivityPayload } from "@/modules/notification/notification.helpers";
 
 function toResultResponse(
   attempt: IExamAttempt,
@@ -144,6 +145,20 @@ class service {
       writtenExam: writtenExam ?? [],
     });
 
+    await eventBus.publish({
+      type: "EXAM_SUBMITTED",
+      payload: buildAdminActivityPayload({
+        actor: { id: String(user.id), name: studentName },
+        action: "submitted",
+        entityType: "exam",
+        entityLabel: `${studentName} submitted exam ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
+        entityId: String(exam_number),
+        module: "result",
+        title: "Exam Submitted",
+        description: `${studentName} submitted exam ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
+      }),
+    });
+
     const shouldCreateOfficialResult =
       !existingResult && withinWindow && !exam.is_completed;
 
@@ -170,14 +185,16 @@ class service {
 
       await eventBus.publish({
         type: "RESULT_PUBLISHED",
-        payload: {
-          userId: user.phone_number,
-          title: exam.exam_name || "Result",
-          description: "Created successfully",
+        payload: buildAdminActivityPayload({
+          actor: { id: String(user.id), name: studentName },
+          action: "submitted",
+          entityType: "result",
+          entityLabel: `${studentName} official result for ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
+          entityId: result._id.toString(),
           module: "result",
-          time: new Date().toISOString(),
-          resultId: result._id.toString(),
-        },
+          title: "Official Result Recorded",
+          description: `${studentName} official result recorded for ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
+        }),
       });
 
       return result;
@@ -369,14 +386,16 @@ class service {
     if (result) {
       await eventBus.publish({
         type: "RESULT_UPDATED",
-        payload: {
-          userId: student_phone || "system",
-          title: "Result",
-          description: "Updated successfully",
+        payload: buildAdminActivityPayload({
+          actor: { id: "system", name: "System" },
+          action: "updated",
+          entityType: "result",
+          entityLabel: `marks for ${result.student_name || student_phone} in exam #${exam_number}`,
+          entityId: result._id.toString(),
           module: "result",
-          time: new Date().toISOString(),
-          resultId: result._id.toString(),
-        },
+          title: "Result Updated",
+          description: `Marks updated for ${result.student_name || student_phone} in exam #${exam_number}`,
+        }),
       });
     }
 

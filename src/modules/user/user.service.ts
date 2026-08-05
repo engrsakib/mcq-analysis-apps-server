@@ -12,12 +12,33 @@ import {
   ILoginCredentials,
   IResetPassword,
 } from "@/interfaces/common.interface";
-import { emitter } from "@/events/eventEmitter";
+
 import { IRoles, ROLES } from "@/constants/roles";
 import { IPaginationOptions } from "@/interfaces/pagination.interfaces";
 import { paginationHelpers } from "@/helpers/paginationHelpers";
+import { eventBus } from "@/events/EventBus";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 class Service {
+  private publishUserRegistered = async (user: IUser) => {
+    if (user.role !== ROLES.STUDENT) return;
+
+    await eventBus.publish({
+      type: "USER_REGISTERED",
+      payload: buildAdminActivityPayload({
+        actor: { id: user._id.toString(), name: user.name || "Student" },
+        action: "registered",
+        entityType: "user",
+        entityLabel: user.name || user.phone_number,
+        entityId: user._id.toString(),
+        module: "user",
+      }),
+    });
+  };
+
   async create(data: IUser) {
     const isExist = await UserModel.findOne({
       phone_number: data.phone_number,
@@ -43,11 +64,7 @@ class Service {
       // await OTPService.sendVerificationOtp(data.phone_number, "user");
 
       if (data.role === ROLES.STUDENT && updatedUser) {
-        if (updatedUser) {
-          if (updatedUser) {
-            emitter.emit("user.registered", updatedUser._id);
-          }
-        }
+        await this.publishUserRegistered(updatedUser);
       }
 
       return updatedUser;
@@ -58,13 +75,32 @@ class Service {
 
     // await OTPService.sendVerificationOtp(data.phone_number, "user");
     if (data.role === ROLES.STUDENT) {
-      emitter.emit("user.registered", result._id);
+      await this.publishUserRegistered(result);
     }
 
     return result;
   }
 
-  async createByAdmin(data: IUser) {
+  private publishStudentCreatedByAdmin = async (
+    user: IUser,
+    actor: ActorInfo
+  ) => {
+    await eventBus.publish({
+      type: "USER_REGISTERED",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "created",
+        entityType: "user",
+        entityLabel: `"${user.name || user.phone_number}"`,
+        entityId: user._id.toString(),
+        module: "user",
+        title: "Student Added",
+        description: `${actor.name} added student ${user.name || user.phone_number}`,
+      }),
+    });
+  };
+
+  async createByAdmin(data: IUser, actor?: ActorInfo) {
     const isExist = await UserModel.findOne({
       phone_number: data.phone_number,
     });
@@ -88,8 +124,12 @@ class Service {
         },
         { new: true }
       );
-      if (data.role === ROLES.STUDENT) {
-        emitter.emit("user.registered", updatedUser?._id);
+      if (data.role === ROLES.STUDENT && updatedUser) {
+        if (actor) {
+          await this.publishStudentCreatedByAdmin(updatedUser, actor);
+        } else {
+          await this.publishUserRegistered(updatedUser);
+        }
       }
       return updatedUser;
     }
@@ -97,8 +137,13 @@ class Service {
     const result = await UserModel.create(data);
 
     if (data.role === ROLES.STUDENT) {
-      emitter.emit("user.registered", result._id);
+      if (actor) {
+        await this.publishStudentCreatedByAdmin(result, actor);
+      } else {
+        await this.publishUserRegistered(result);
+      }
     }
+
     return result;
   }
 
@@ -209,7 +254,7 @@ class Service {
     return { ...data };
   }
 
-  async updateUser(id: string, data: Partial<IUser>) {
+  async updateUser(id: string, data: Partial<IUser>, actor?: ActorInfo) {
     if (!id) {
       throw new ApiError(HttpStatusCode.BAD_REQUEST, "User ID is required");
     }
@@ -228,15 +273,57 @@ class Service {
     if (!isExist) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "User was not found");
     }
-    return await UserModel.findByIdAndUpdate(id, { ...data });
+
+    const updated = await UserModel.findByIdAndUpdate(
+      id,
+      { ...data },
+      { new: true }
+    );
+
+    if (updated && actor) {
+      await eventBus.publish({
+        type: "USER_UPDATED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "user",
+          entityLabel: `"${updated.name || updated.phone_number}"`,
+          entityId: updated._id.toString(),
+          module: "user",
+        }),
+      });
+    }
+
+    return updated;
   }
 
-  async deleteUser(id: string) {
+  async deleteUser(id: string, actor?: ActorInfo) {
     const isExist = await UserModel.findById(id);
     if (!isExist) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "User was not found");
     }
-    return await UserModel.findByIdAndUpdate(id, { is_Deleted: true });
+
+    const deleted = await UserModel.findByIdAndUpdate(
+      id,
+      { is_Deleted: true },
+      { new: true }
+    );
+
+    if (deleted && actor) {
+      await eventBus.publish({
+        type: "USER_DELETED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "deleted",
+          entityType: "user",
+          entityLabel: `"${deleted.name || deleted.phone_number}"`,
+          entityId: deleted._id.toString(),
+          module: "user",
+        }),
+      });
+    }
+
+    return deleted;
   }
 
   private async generateLoginCredentials(id: Types.ObjectId | string): Promise<{

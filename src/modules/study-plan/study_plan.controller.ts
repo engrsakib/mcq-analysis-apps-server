@@ -2,6 +2,7 @@ import BaseController from "@/shared/baseController";
 import { StudyPlanService } from "./study_plan.service";
 import { Request, Response } from "express";
 import { HttpStatusCode } from "@/lib/httpStatus";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createStudyPlan = this.catchAsync(async (req: Request, res: Response) => {
@@ -13,8 +14,10 @@ class Controller extends BaseController {
         message: "Study plan data is required",
       });
     }
-    const createdGuideline =
-      await StudyPlanService.createStudyPlan(guidelineData);
+    const createdGuideline = await StudyPlanService.createStudyPlan(
+      guidelineData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
@@ -86,7 +89,8 @@ class Controller extends BaseController {
 
     const updatedGuideline = await StudyPlanService.updateStudyPlanById(
       id,
-      updateData
+      updateData,
+      resolveActor(req.user)
     );
     if (!updatedGuideline) {
       return this.sendResponse(res, {

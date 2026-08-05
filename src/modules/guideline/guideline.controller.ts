@@ -4,6 +4,7 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cookieManager } from "@/shared/cookie";
 import { GuidelineService } from "./guideline.servece";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createGuideline = this.catchAsync(async (req: Request, res: Response) => {
@@ -16,8 +17,10 @@ class Controller extends BaseController {
         message: "Guideline data is required",
       });
     }
-    const createdGuideline =
-      await GuidelineService.createGuideline(guidelineData);
+    const createdGuideline = await GuidelineService.createGuideline(
+      guidelineData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
@@ -125,7 +128,8 @@ class Controller extends BaseController {
 
     const updatedVideo = await GuidelineService.updateGuidelineById(
       id,
-      updateData
+      updateData,
+      resolveActor(req.user)
     );
 
     this.sendResponse(res, {

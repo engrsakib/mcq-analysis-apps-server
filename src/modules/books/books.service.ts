@@ -3,6 +3,10 @@ import { BooksModel } from "./books.model";
 import { eventBus } from "@/events/EventBus";
 import { searchHelpers } from "@/utils/searchHelpers";
 import { AnyBulkWriteOperation, Types } from "mongoose";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 type ReorderBookItem = {
   id?: string | number;
@@ -12,7 +16,7 @@ type ReorderBookItem = {
 };
 
 class Service {
-  async create(bookData: any) {
+  async create(bookData: any, actor?: ActorInfo) {
     bookData.book_number = await BarcodeService.generateEAN13();
 
     if (bookData.position === undefined || bookData.position === null) {
@@ -27,14 +31,14 @@ class Service {
 
     await eventBus.publish({
       type: "BOOK_UPLOADED",
-      payload: {
-        userId: bookData.created_by || "system",
-        title: book.title || "Book",
-        description: "Created successfully",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "created",
+        entityType: "books",
+        entityLabel: `"${book.title || "Book"}"`,
+        entityId: String(book.book_number),
         module: "books",
-        time: new Date().toISOString(),
-        bookId: (book.book_number as any)?.toString() || book._id.toString(),
-      },
+      }),
     });
 
     return book;
@@ -112,7 +116,7 @@ class Service {
     return book;
   }
 
-  async updateBookById(id: string, updateData: any) {
+  async updateBookById(id: string, updateData: any, actor?: ActorInfo) {
     const updatedBook = await BooksModel.findOneAndUpdate(
       { book_number: id },
       updateData,
@@ -122,16 +126,14 @@ class Service {
     if (updatedBook) {
       await eventBus.publish({
         type: "BOOK_UPDATED",
-        payload: {
-          userId: updateData.updated_by || "system",
-          title: updatedBook.title || "Book",
-          description: "Updated successfully",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "books",
+          entityLabel: `"${updatedBook.title || "Book"}"`,
+          entityId: String(updatedBook.book_number),
           module: "books",
-          time: new Date().toISOString(),
-          bookId:
-            (updatedBook.book_number as any)?.toString() ||
-            updatedBook._id.toString(),
-        },
+        }),
       });
     }
 

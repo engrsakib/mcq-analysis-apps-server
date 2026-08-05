@@ -4,6 +4,7 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cookieManager } from "@/shared/cookie";
 import { YoutubeService } from "./youtube.service";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createYouTube = this.catchAsync(async (req: Request, res: Response) => {
@@ -16,7 +17,10 @@ class Controller extends BaseController {
         message: "YouTube video data is required",
       });
     }
-    const createdVideo = await YoutubeService.createYoutubeVideo(videoData);
+    const createdVideo = await YoutubeService.createYoutubeVideo(
+      videoData,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
@@ -126,7 +130,8 @@ class Controller extends BaseController {
 
     const updatedVideo = await YoutubeService.updateYoutubeVideoById(
       id,
-      updateData
+      updateData,
+      resolveActor(req.user)
     );
 
     this.sendResponse(res, {

@@ -3,6 +3,7 @@ import { AdminService } from "./admin.service";
 import BaseController from "@/shared/baseController";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { cookieManager } from "@/shared/cookie";
+import { resolveActor } from "@/modules/notification/notification.helpers";
 
 class Controller extends BaseController {
   createAdmin = this.catchAsync(async (req: Request, res: Response) => {
@@ -17,7 +18,10 @@ class Controller extends BaseController {
   });
 
   createAdminByAdmin = this.catchAsync(async (req: Request, res: Response) => {
-    const admin = await AdminService.createAdminByAdmin(req.body);
+    const admin = await AdminService.createAdminByAdmin(
+      req.body,
+      resolveActor(req.user)
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.CREATED,
@@ -133,7 +137,11 @@ class Controller extends BaseController {
 
   updateAdmin = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
-    const data = await AdminService.updateAdmin(id, req.body);
+    const data = await AdminService.updateAdmin(
+      id,
+      req.body,
+      resolveActor(req.user)
+    );
     this.sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -177,7 +185,7 @@ class Controller extends BaseController {
 
   deleteAdmin = this.catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
-    await AdminService.deleteAdmin(id);
+    await AdminService.deleteAdmin(id, resolveActor(req.user));
     this.sendResponse(res, {
       statusCode: 200,
       success: true,

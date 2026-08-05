@@ -1,9 +1,10 @@
 import z from "zod";
-import { StudyTopicType } from "./question-study-topic.enum";
 
-const studyTopicTypeSchema = z.enum(
-  Object.values(StudyTopicType) as [string, ...string[]]
-);
+const studyTopicTypeSchema = z
+  .string()
+  .min(1, "Type is required")
+  .max(50)
+  .regex(/^[a-z0-9_]+$/, "Invalid study topic type");
 
 const create = z.object({
   body: z

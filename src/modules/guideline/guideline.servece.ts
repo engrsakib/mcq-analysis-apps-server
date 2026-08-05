@@ -4,6 +4,10 @@ import { GUIDELINE_STATUS } from "./guideline.interface";
 import { eventBus } from "@/events/EventBus";
 import { searchHelpers } from "@/utils/searchHelpers";
 import { AnyBulkWriteOperation, Types } from "mongoose";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 type ReorderGuidelineItem = {
   id?: string | number;
@@ -13,7 +17,7 @@ type ReorderGuidelineItem = {
 };
 
 class Service {
-  async createGuideline(guidelineData: any) {
+  async createGuideline(guidelineData: any, actor?: ActorInfo) {
     guidelineData.is_published = false;
     guidelineData.guideline_number = await BarcodeService.generateEAN13();
 
@@ -32,16 +36,14 @@ class Service {
 
     await eventBus.publish({
       type: "GUIDELINE_CREATED",
-      payload: {
-        userId: guidelineData.created_by || "system",
-        title: guideline.title || "Guideline",
-        description: "Created successfully",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "created",
+        entityType: "guideline",
+        entityLabel: `"${guideline.title || "Guideline"}"`,
+        entityId: String(guideline.guideline_number),
         module: "guideline",
-        time: new Date().toISOString(),
-        guidelineId:
-          (guideline.guideline_number as any)?.toString() ||
-          guideline._id.toString(),
-      },
+      }),
     });
 
     return guideline;
@@ -115,7 +117,7 @@ class Service {
     return guideline;
   }
 
-  async updateGuidelineById(id: string, updateData: any) {
+  async updateGuidelineById(id: string, updateData: any, actor?: ActorInfo) {
     const updatedGuideline = await GuidelineModel.findOneAndUpdate(
       { guideline_number: id },
       updateData,
@@ -125,16 +127,14 @@ class Service {
     if (updatedGuideline) {
       await eventBus.publish({
         type: "GUIDELINE_UPDATED",
-        payload: {
-          userId: updateData.updated_by || "system",
-          title: updatedGuideline.title || "Guideline",
-          description: "Updated successfully",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "guideline",
+          entityLabel: `"${updatedGuideline.title || "Guideline"}"`,
+          entityId: String(updatedGuideline.guideline_number),
           module: "guideline",
-          time: new Date().toISOString(),
-          guidelineId:
-            (updatedGuideline.guideline_number as any)?.toString() ||
-            updatedGuideline._id.toString(),
-        },
+        }),
       });
     }
 

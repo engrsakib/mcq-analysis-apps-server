@@ -5,7 +5,12 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 import { searchHelpers } from "@/utils/searchHelpers";
 import { QuestionModel } from "../questions/questuon.model";
 import { QuestionStudyTopicModel } from "./question-study-topic.model";
-import { StudyTopicType } from "./question-study-topic.enum";
+import { StudyTopicTypeService } from "../study-topic-type/study-topic-type.service";
+import { eventBus } from "@/events/EventBus";
+import {
+  ActorInfo,
+  buildAdminActivityPayload,
+} from "@/modules/notification/notification.helpers";
 
 type ReorderItem = {
   id?: string | number;
@@ -17,10 +22,23 @@ type ReorderItem = {
 const ALLOWED_UPDATE_FIELDS = ["name", "type"] as const;
 
 class Service {
-  createTopic = async (topicData: { name: string; type: StudyTopicType }) => {
+  createTopic = async (
+    topicData: { name: string; type: string },
+    actor?: ActorInfo
+  ) => {
+    const type = topicData.type.trim().toLowerCase();
+    const typeExists = await StudyTopicTypeService.typeExists(type);
+
+    if (!typeExists) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "Invalid study topic type. Please select or create a valid type first."
+      );
+    }
+
     const payload: Record<string, unknown> = {
       name: topicData.name,
-      type: topicData.type,
+      type,
       category_number: await BarcodeService.generateEAN13(),
     };
 
@@ -30,7 +48,21 @@ class Service {
 
     payload.position = (lastTopic?.position ?? 0) + 1;
 
-    return QuestionStudyTopicModel.create(payload);
+    const topic = await QuestionStudyTopicModel.create(payload);
+
+    await eventBus.publish({
+      type: "QUESTION_TOPIC_CREATED",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "created",
+        entityType: "question-study-topic",
+        entityLabel: `"${topic.name}"`,
+        entityId: String(topic.category_number),
+        module: "question-study-topic",
+      }),
+    });
+
+    return topic;
   };
 
   getAllTopics = async (query: Record<string, unknown>) => {
@@ -56,11 +88,8 @@ class Service {
       );
     }
 
-    if (
-      type &&
-      Object.values(StudyTopicType).includes(type as StudyTopicType)
-    ) {
-      andConditions.push({ type });
+    if (type) {
+      andConditions.push({ type: type.toLowerCase() });
     }
 
     if (categoryNumber && Number.isFinite(categoryNumber)) {
@@ -111,7 +140,8 @@ class Service {
 
   updateTopicByCategoryNumber = async (
     categoryNumber: number,
-    updateData: Record<string, unknown>
+    updateData: Record<string, unknown>,
+    actor?: ActorInfo
   ) => {
     const sanitized: Record<string, unknown> = {};
 
@@ -128,6 +158,20 @@ class Service {
       );
     }
 
+    if (typeof sanitized.type === "string") {
+      const normalizedType = sanitized.type.trim().toLowerCase();
+      const typeExists = await StudyTopicTypeService.typeExists(normalizedType);
+
+      if (!typeExists) {
+        throw new ApiError(
+          HttpStatusCode.BAD_REQUEST,
+          "Invalid study topic type. Please select or create a valid type first."
+        );
+      }
+
+      sanitized.type = normalizedType;
+    }
+
     const topic = await QuestionStudyTopicModel.findOneAndUpdate(
       { category_number: categoryNumber },
       sanitized,
@@ -137,6 +181,18 @@ class Service {
     if (!topic) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "Study topic not found");
     }
+
+    await eventBus.publish({
+      type: "QUESTION_TOPIC_UPDATED",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "updated",
+        entityType: "question-study-topic",
+        entityLabel: `"${topic.name}"`,
+        entityId: String(topic.category_number),
+        module: "question-study-topic",
+      }),
+    });
 
     return topic;
   };
@@ -182,7 +238,10 @@ class Service {
     return QuestionStudyTopicModel.bulkWrite(operations);
   };
 
-  deleteTopicByCategoryNumber = async (categoryNumber: number) => {
+  deleteTopicByCategoryNumber = async (
+    categoryNumber: number,
+    actor?: ActorInfo
+  ) => {
     const topic = await QuestionStudyTopicModel.findOne({
       category_number: categoryNumber,
     });
@@ -204,6 +263,18 @@ class Service {
 
     await QuestionStudyTopicModel.findOneAndDelete({
       category_number: categoryNumber,
+    });
+
+    await eventBus.publish({
+      type: "QUESTION_TOPIC_DELETED",
+      payload: buildAdminActivityPayload({
+        actor,
+        action: "deleted",
+        entityType: "question-study-topic",
+        entityLabel: `"${topic.name}"`,
+        entityId: String(topic.category_number),
+        module: "question-study-topic",
+      }),
     });
 
     return topic;

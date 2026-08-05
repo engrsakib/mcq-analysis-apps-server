@@ -1,142 +1,162 @@
 import { NotificationEventPayload } from "@/events/EventTypes";
-import { NotificationModel } from "./notification.model";
-import { UserModel } from "@/modules/user/user.model";
-import { sendPushNotification } from "@/config/firebase/firebase.config";
-import { isValidObjectId } from "@/utils/mongooseHelpers";
+import { processNotification } from "./notification.helpers";
 
-type IUserToken = {
-  fcmToken?: string;
-  fcm_token?: string;
-};
-
-const getUserFcmToken = async (userId: string): Promise<string | null> => {
-  // Safety: scheduler/events may pass "system" or phone numbers — never pass those to findById.
-  if (!isValidObjectId(userId)) {
-    return null;
-  }
-
-  try {
-    const user = await UserModel.findById(userId)
-      .select("fcmToken fcm_token")
-      .lean<IUserToken | null>();
-
-    const token = user?.fcmToken || user?.fcm_token;
-    return token?.trim() ? token.trim() : null;
-  } catch (error) {
-    console.error(
-      `[Notification] Failed to load FCM token for userId="${userId}":`,
-      error
-    );
-    return null;
-  }
-};
-
-const saveAndPushNotification = async (
-  payload: NotificationEventPayload
-): Promise<void> => {
-  // Safety: userId is stored as a plain string on notifications; require a non-empty value.
-  const userId = payload.userId?.trim();
-  if (!userId) {
-    console.warn(
-      "[Notification] Skipped — payload.userId is missing or empty."
-    );
-    return;
-  }
-
-  try {
-    await NotificationModel.create({
-      userId,
-      title: payload.title,
-      description: payload.description,
-      module: payload.module,
-      time: payload.time,
-      isRead: false,
-    });
-
-    const token = await getUserFcmToken(userId);
-    if (token) {
-      await sendPushNotification(token, payload.title, payload.description);
-    }
-  } catch (error) {
-    // Safety: log and swallow so background jobs never crash the process.
-    console.error("[Notification] Failed to save or push notification:", error);
-  }
-};
-
-export const handleSendNotificationEvent = async (
-  payload: NotificationEventPayload
-): Promise<void> => {
-  await saveAndPushNotification(payload);
+const dispatch = async (payload: NotificationEventPayload): Promise<void> => {
+  await processNotification(payload);
 };
 
 export const handleStudyPlanCreated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleStudyPlanUpdated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleYoutubeVideoAdded = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleYoutubeVideoUpdated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleResultPublished = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleResultUpdated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleBookUploaded = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleBookUpdated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleExamCreated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleExamUpdated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleExamDeleted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleGuidelineCreated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
 export const handleGuidelineUpdated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
-  await saveAndPushNotification(payload);
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleQuestionCreated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleQuestionUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleQuestionDeleted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleQuestionTopicCreated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleQuestionTopicUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleQuestionTopicDeleted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleUserRegistered = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleUserUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleUserDeleted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleAdminCreated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleAdminUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleAdminDeleted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleExamSubmitted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };

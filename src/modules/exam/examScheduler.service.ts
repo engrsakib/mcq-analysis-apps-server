@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { ExamModel } from "./exam.model";
 import { eventBus } from "@/events/EventBus";
 import { getExamEndTime } from "./exam.utils";
+import { buildAdminActivityPayload } from "@/modules/notification/notification.helpers";
 
 let schedulerInitialized = false;
 
@@ -75,15 +76,16 @@ async function autoStartExams(): Promise<void> {
     try {
       await eventBus.publish({
         type: "EXAM_UPDATED",
-        payload: {
-          // "system" is intentional — notification handler skips FCM lookup for non-ObjectId ids.
-          userId: "system",
-          title: exam.exam_name || "Exam",
-          description: "Exam started automatically",
+        payload: buildAdminActivityPayload({
+          actor: { id: "system", name: "System" },
+          action: "updated",
+          entityType: "exam",
+          entityLabel: `"${exam.exam_name || "Exam"}" started automatically`,
+          entityId: String(exam.exam_number ?? ""),
           module: "exam",
-          time: now.toISOString(),
-          examId: exam.exam_number?.toString() || "",
-        },
+          title: "Exam Started",
+          description: `Exam "${exam.exam_name || "Exam"}" started automatically`,
+        }),
       });
     } catch (error) {
       console.error(
@@ -137,14 +139,16 @@ async function autoEndAndPublishExams(): Promise<void> {
     try {
       await eventBus.publish({
         type: "EXAM_UPDATED",
-        payload: {
-          userId: "system",
-          title: exam.exam_name || "Exam",
-          description: "Exam completed and results published automatically",
+        payload: buildAdminActivityPayload({
+          actor: { id: "system", name: "System" },
+          action: "updated",
+          entityType: "exam",
+          entityLabel: `"${exam.exam_name || "Exam"}" completed automatically`,
+          entityId: String(exam.exam_number ?? ""),
           module: "exam",
-          time: now.toISOString(),
-          examId: exam.exam_number?.toString() || "",
-        },
+          title: "Exam Completed",
+          description: `Exam "${exam.exam_name || "Exam"}" completed and results published automatically`,
+        }),
       });
     } catch (error) {
       console.error(

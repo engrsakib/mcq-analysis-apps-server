@@ -1,5 +1,4 @@
 import { model, Schema } from "mongoose";
-import { StudyTopicType } from "./question-study-topic.enum";
 import { IQuestionStudyTopic } from "./question-study-topic.interface";
 
 const QuestionStudyTopicSchema = new Schema<IQuestionStudyTopic>(
@@ -13,8 +12,9 @@ const QuestionStudyTopicSchema = new Schema<IQuestionStudyTopic>(
     name: { type: String, required: true, trim: true },
     type: {
       type: String,
-      enum: Object.values(StudyTopicType),
       required: true,
+      trim: true,
+      lowercase: true,
     },
     position: { type: Number, default: 0, index: true },
   },
