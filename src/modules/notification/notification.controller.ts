@@ -19,7 +19,11 @@ const MESSAGE = {
 const QUERY_KEYS = {
   USER_ID: "userId",
   AUDIENCE: "audience",
+  PAGE: "page",
+  LIMIT: "limit",
 } as const;
+
+const MAX_LIMIT_FOR_LEGACY = 100;
 
 class Controller extends BaseController {
   private getQueryStringValue(req: Request, key: string): string | null {
@@ -52,6 +56,16 @@ class Controller extends BaseController {
     return "user";
   }
 
+  private parsePagination(req: Request): { page: number; limit: number } {
+    const page = Math.max(1, Number(req.query[QUERY_KEYS.PAGE]) || 1);
+    const limit = Math.min(
+      50,
+      Math.max(1, Number(req.query[QUERY_KEYS.LIMIT]) || 10)
+    );
+
+    return { page, limit };
+  }
+
   getNotifications = this.catchAsync(async (req: Request, res: Response) => {
     const userId = this.resolveUserId(req);
     const audience = this.resolveAudience(req);
@@ -64,16 +78,40 @@ class Controller extends BaseController {
       });
     }
 
-    const notifications = await NotificationService.getNotificationsByUserId(
+    const hasPagination =
+      req.query[QUERY_KEYS.PAGE] !== undefined ||
+      req.query[QUERY_KEYS.LIMIT] !== undefined;
+
+    if (!hasPagination) {
+      const legacy = await NotificationService.getNotificationsByUserId(
+        userId,
+        audience,
+        1,
+        MAX_LIMIT_FOR_LEGACY
+      );
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: MESSAGE.ALL_FETCHED,
+        data: legacy.data,
+      });
+      return;
+    }
+
+    const { page, limit } = this.parsePagination(req);
+    const result = await NotificationService.getNotificationsByUserId(
       userId,
-      audience
+      audience,
+      page,
+      limit
     );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
       message: MESSAGE.ALL_FETCHED,
-      data: notifications,
+      data: result,
     });
   });
 

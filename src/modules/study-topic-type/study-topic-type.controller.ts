@@ -25,6 +25,26 @@ class Controller extends BaseController {
       data: type,
     });
   });
+
+  deleteType = this.catchAsync(async (req: Request, res: Response) => {
+    const value = req.params.value;
+
+    if (!value?.trim()) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: "Type value is required",
+      });
+    }
+
+    await StudyTopicTypeService.deleteType(value);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Study topic type deleted successfully",
+    });
+  });
 }
 
 export const StudyTopicTypeController = new Controller();

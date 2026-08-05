@@ -1,6 +1,7 @@
 import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { StudyTopicType } from "../question-study-topic/question-study-topic.enum";
+import { QuestionStudyTopicModel } from "../question-study-topic/question-study-topic.model";
 import { StudyTopicTypeModel } from "./study-topic-type.model";
 
 const DEFAULT_TYPES = Object.entries(StudyTopicType).map(
@@ -75,6 +76,42 @@ class Service {
       value: value.toLowerCase(),
     });
     return Boolean(type);
+  };
+
+  deleteType = async (value: string) => {
+    await this.ensureDefaultTypes();
+
+    const normalizedValue = value.trim().toLowerCase();
+    const type = await StudyTopicTypeModel.findOne({ value: normalizedValue });
+
+    if (!type) {
+      throw new ApiError(
+        HttpStatusCode.NOT_FOUND,
+        "Study topic type not found"
+      );
+    }
+
+    if (type.isDefault) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "Default types cannot be deleted"
+      );
+    }
+
+    const linkedCount = await QuestionStudyTopicModel.countDocuments({
+      type: normalizedValue,
+    });
+
+    if (linkedCount > 0) {
+      throw new ApiError(
+        HttpStatusCode.CONFLICT,
+        `Cannot delete type: ${linkedCount} topic(s) are using it`
+      );
+    }
+
+    await StudyTopicTypeModel.deleteOne({ value: normalizedValue });
+
+    return type;
   };
 }
 

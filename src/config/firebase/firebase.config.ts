@@ -39,6 +39,14 @@ function fixPrivateKey(key?: string) {
   return fixed;
 }
 
+function hasFirebaseCredentials(): boolean {
+  return Boolean(
+    process.env.FIREBASE_PROJECT_ID?.trim() &&
+      process.env.FIREBASE_CLIENT_EMAIL?.trim() &&
+      process.env.FIREBASE_PRIVATE_KEY?.trim()
+  );
+}
+
 const serviceAccount = {
   project_id: process.env.FIREBASE_PROJECT_ID,
   private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
@@ -48,20 +56,37 @@ const serviceAccount = {
   client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
 };
 
-export const firebaseAdmin =
-  admin.apps.length > 0
-    ? admin.app()
-    : admin.initializeApp({
-        credential: admin.credential.cert(
-          serviceAccount as admin.ServiceAccount
-        ),
-      });
+let firebaseAdmin: admin.app.App | null = null;
+
+if (hasFirebaseCredentials()) {
+  try {
+    firebaseAdmin =
+      admin.apps.length > 0
+        ? admin.app()
+        : admin.initializeApp({
+            credential: admin.credential.cert(
+              serviceAccount as admin.ServiceAccount
+            ),
+          });
+  } catch (error) {
+    console.warn("[Firebase] Push notifications disabled:", error);
+    firebaseAdmin = null;
+  }
+} else {
+  console.warn("[Firebase] Missing credentials — push notifications disabled.");
+}
+
+export { firebaseAdmin };
 
 export const sendPushNotification = async (
   token: string,
   title: string,
   body: string
 ): Promise<PushNotificationResult> => {
+  if (!firebaseAdmin) {
+    return { success: false, error: "Firebase not configured" };
+  }
+
   try {
     const messageId = await firebaseAdmin.messaging().send({
       token,

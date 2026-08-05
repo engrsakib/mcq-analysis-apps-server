@@ -152,6 +152,25 @@ const getUserFcmToken = async (userId: string): Promise<string | null> => {
   }
 };
 
+export function serializeNotification(
+  notification: unknown
+): Record<string, unknown> {
+  const doc = notification as {
+    _id?: unknown;
+    toObject?: () => Record<string, unknown>;
+  };
+
+  const raw =
+    typeof doc.toObject === "function"
+      ? doc.toObject()
+      : { ...(doc as object) };
+
+  return {
+    ...raw,
+    _id: String(raw._id ?? ""),
+  };
+}
+
 export async function notifyAllAdmins(
   payload: NotificationEventPayload
 ): Promise<void> {
@@ -185,7 +204,7 @@ export async function notifyAllAdmins(
 
       sseManager.broadcast(adminId, {
         type: "notification",
-        data: notification.toObject(),
+        data: serializeNotification(notification),
       });
     }
   } catch (error) {

@@ -23,4 +23,11 @@ router.post(
   StudyTopicTypeController.createType
 );
 
+router.delete(
+  "/:value",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  JwtInstance.hasPermissions(PermissionEnum.DELETE_QUESTION),
+  StudyTopicTypeController.deleteType
+);
+
 export const StudyTopicTypeRoutes = router;

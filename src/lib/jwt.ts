@@ -46,13 +46,38 @@ class JWT {
     return { access_token, refresh_token };
   }
 
+  private resolveTokens(req: Request): {
+    access_token: string | undefined;
+    refresh_token: string | undefined;
+  } {
+    const headerTokens = this.extractTokens(req, "header");
+    if (headerTokens.access_token) {
+      return headerTokens;
+    }
+
+    const serverCookieTokens = this.extractTokens(req, "cookie");
+    if (serverCookieTokens.access_token) {
+      return serverCookieTokens;
+    }
+
+    const frontendAccessToken = req.cookies?.access_token;
+    if (typeof frontendAccessToken === "string" && frontendAccessToken.trim()) {
+      return {
+        access_token: frontendAccessToken.trim(),
+        refresh_token:
+          typeof req.cookies?.refresh_token === "string"
+            ? req.cookies.refresh_token
+            : undefined,
+      };
+    }
+
+    return { access_token: undefined, refresh_token: undefined };
+  }
+
   public authenticate(allowedRoles?: IRoles[]) {
     return catchAsync(
       async (req: Request, res: Response, next: NextFunction) => {
-        const { access_token, refresh_token } = this.extractTokens(
-          req,
-          "header"
-        );
+        const { access_token, refresh_token } = this.resolveTokens(req);
 
         if (!access_token && !refresh_token) {
           return next(
