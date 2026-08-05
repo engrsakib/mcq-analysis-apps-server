@@ -23,24 +23,27 @@ const ALLOWED_UPDATE_FIELDS = ["name", "type"] as const;
 
 class Service {
   createTopic = async (
-    topicData: { name: string; type: string },
+    topicData: { name: string; type?: string },
     actor?: ActorInfo
   ) => {
-    const type = topicData.type.trim().toLowerCase();
-    const typeExists = await StudyTopicTypeService.typeExists(type);
-
-    if (!typeExists) {
-      throw new ApiError(
-        HttpStatusCode.BAD_REQUEST,
-        "Invalid study topic type. Please select or create a valid type first."
-      );
-    }
-
     const payload: Record<string, unknown> = {
       name: topicData.name,
-      type,
       category_number: await BarcodeService.generateEAN13(),
     };
+
+    if (topicData.type?.trim()) {
+      const type = topicData.type.trim().toLowerCase();
+      const typeExists = await StudyTopicTypeService.typeExists(type);
+
+      if (!typeExists) {
+        throw new ApiError(
+          HttpStatusCode.BAD_REQUEST,
+          "Invalid study topic type. Please select or create a valid type first."
+        );
+      }
+
+      payload.type = type;
+    }
 
     const lastTopic = await QuestionStudyTopicModel.findOne()
       .sort({ position: -1 })
@@ -160,16 +163,22 @@ class Service {
 
     if (typeof sanitized.type === "string") {
       const normalizedType = sanitized.type.trim().toLowerCase();
-      const typeExists = await StudyTopicTypeService.typeExists(normalizedType);
 
-      if (!typeExists) {
-        throw new ApiError(
-          HttpStatusCode.BAD_REQUEST,
-          "Invalid study topic type. Please select or create a valid type first."
-        );
+      if (!normalizedType) {
+        sanitized.type = "";
+      } else {
+        const typeExists =
+          await StudyTopicTypeService.typeExists(normalizedType);
+
+        if (!typeExists) {
+          throw new ApiError(
+            HttpStatusCode.BAD_REQUEST,
+            "Invalid study topic type. Please select or create a valid type first."
+          );
+        }
+
+        sanitized.type = normalizedType;
       }
-
-      sanitized.type = normalizedType;
     }
 
     const topic = await QuestionStudyTopicModel.findOneAndUpdate(

@@ -12,9 +12,10 @@ const QuestionStudyTopicSchema = new Schema<IQuestionStudyTopic>(
     name: { type: String, required: true, trim: true },
     type: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       lowercase: true,
+      default: "",
     },
     position: { type: Number, default: 0, index: true },
   },
