@@ -51,6 +51,7 @@ class Service {
         is_started: false,
         is_completed: false,
         results_published: false,
+        is_practice_mode: false,
       };
 
       const result = await ExamModel.create(examData);
@@ -200,7 +201,18 @@ class Service {
 
     const [aggregationResult] = await ExamModel.aggregate([
       { $match: searchCondition },
-      { $sort: { createdAt: -1 } },
+      {
+        $addFields: {
+          isLive: {
+            $and: [
+              { $eq: ["$is_started", true] },
+              { $eq: ["$is_completed", false] },
+            ],
+          },
+          isPractice: { $eq: ["$is_practice_mode", true] },
+        },
+      },
+      { $sort: { isLive: -1, isPractice: -1, exam_date_time: -1 } },
       {
         $facet: {
           data: [
@@ -275,9 +287,11 @@ class Service {
 
     const exam = await ExamModel.findOne({
       ...buildExamFilter(id),
-      is_started: true,
-      is_completed: false,
-      $or: [{ is_published: true }, { is_started: true }],
+      is_published: true,
+      $or: [
+        { is_started: true, is_completed: false },
+        { is_practice_mode: true },
+      ],
     }).populate("questions");
     return withBangladeshExamDateTime(exam);
   }
@@ -363,8 +377,12 @@ class Service {
 
     if (payload.is_completed === true) {
       statusUpdate.results_published = true;
+      statusUpdate.completed_at = new Date();
+      statusUpdate.is_practice_mode = false;
     } else if (payload.is_completed === false) {
       statusUpdate.results_published = false;
+      statusUpdate.is_practice_mode = false;
+      statusUpdate.completed_at = null;
     }
 
     const updatedExam = await ExamModel.findOneAndUpdate(

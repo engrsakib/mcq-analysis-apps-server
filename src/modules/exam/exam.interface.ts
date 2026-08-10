@@ -13,6 +13,8 @@ export interface IExam {
   is_published: boolean;
   results_published?: boolean;
   manual_status_override?: boolean;
+  is_practice_mode?: boolean;
+  completed_at?: Date | null;
   negative_mark: NegativeMark;
   questions: ObjectId[];
 }

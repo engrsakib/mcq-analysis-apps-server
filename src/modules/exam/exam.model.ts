@@ -13,6 +13,8 @@ const examSchema = new Schema<IExam>({
   is_published: { type: Boolean, required: true, default: false },
   manual_status_override: { type: Boolean, required: true, default: false },
   results_published: { type: Boolean, required: true, default: false },
+  is_practice_mode: { type: Boolean, required: true, default: false },
+  completed_at: { type: Date, required: false, default: null },
   negative_mark: {
     type: Number,
     enum: Object.values(NegativeMark),

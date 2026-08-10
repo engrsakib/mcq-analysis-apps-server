@@ -78,7 +78,7 @@ export const examPaths = {
       tags: ["Exam"],
       summary: "Get all exams for users",
       description:
-        "Retrieves published exams for authenticated users. Each item includes isSubmitted (per-user) and is_completed (admin exam status).",
+        "Retrieves published exams for authenticated users. Live exams (started and not completed) appear first. Each item includes isSubmitted (per-user), isLive, is_completed, and exam_date_time in Bangladesh time (+06:00).",
       operationId: "getAllExamsForUsers",
       security: securityRequirements.authenticated,
       parameters: paginationParams,

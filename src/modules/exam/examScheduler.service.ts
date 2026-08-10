@@ -2,7 +2,7 @@ import cron from "node-cron";
 import mongoose from "mongoose";
 import { ExamModel } from "./exam.model";
 import { eventBus } from "@/events/EventBus";
-import { getExamEndTime } from "./exam.utils";
+import { getExamEndTime, getPracticeModeStartTime } from "./exam.utils";
 import { buildAdminActivityPayload } from "@/modules/notification/notification.helpers";
 
 let schedulerInitialized = false;
@@ -13,7 +13,7 @@ function isDatabaseReady(): boolean {
 }
 
 async function backfillLegacyCompletedExams(): Promise<void> {
-  const result = await ExamModel.updateMany(
+  const unpublished = await ExamModel.updateMany(
     {
       is_completed: true,
       results_published: { $ne: true },
@@ -21,9 +21,24 @@ async function backfillLegacyCompletedExams(): Promise<void> {
     { $set: { results_published: true } }
   );
 
-  if (result.modifiedCount > 0) {
+  if (unpublished.modifiedCount > 0) {
     console.info(
-      `[ExamScheduler] Backfilled results_published for ${result.modifiedCount} legacy completed exam(s)`
+      `[ExamScheduler] Backfilled results_published for ${unpublished.modifiedCount} legacy completed exam(s)`
+    );
+  }
+
+  const practiceBackfill = await ExamModel.updateMany(
+    {
+      is_completed: true,
+      results_published: true,
+      is_practice_mode: { $ne: true },
+    },
+    { $set: { is_practice_mode: true } }
+  );
+
+  if (practiceBackfill.modifiedCount > 0) {
+    console.info(
+      `[ExamScheduler] Enabled practice mode for ${practiceBackfill.modifiedCount} legacy completed exam(s)`
     );
   }
 }
@@ -101,7 +116,7 @@ async function autoStartExams(): Promise<void> {
   console.info(`[ExamScheduler] Auto-started ${examsToStart.length} exam(s)`);
 }
 
-async function autoEndAndPublishExams(): Promise<void> {
+async function autoMarkExamsCompleted(): Promise<void> {
   const now = new Date();
 
   const candidateExams = await ExamModel.find({
@@ -120,7 +135,6 @@ async function autoEndAndPublishExams(): Promise<void> {
     return;
   }
 
-  // Safety: never pass undefined/null exam numbers into an $in query.
   const examNumbers = examsToComplete
     .map((exam) => exam.exam_number)
     .filter(
@@ -136,7 +150,7 @@ async function autoEndAndPublishExams(): Promise<void> {
 
   await ExamModel.updateMany(
     { exam_number: { $in: examNumbers } },
-    { $set: { is_completed: true, results_published: true } }
+    { $set: { is_completed: true, completed_at: now } }
   );
 
   for (const exam of examsToComplete) {
@@ -147,11 +161,11 @@ async function autoEndAndPublishExams(): Promise<void> {
           actor: { id: "system", name: "System" },
           action: "updated",
           entityType: "exam",
-          entityLabel: `"${exam.exam_name || "Exam"}" completed automatically`,
+          entityLabel: `"${exam.exam_name || "Exam"}" marked completed`,
           entityId: String(exam.exam_number ?? ""),
           module: "exam",
           title: "Exam Completed",
-          description: `Exam "${exam.exam_name || "Exam"}" completed and results published automatically`,
+          description: `Exam "${exam.exam_name || "Exam"}" duration ended and was marked completed`,
         }),
       });
     } catch (error) {
@@ -163,8 +177,86 @@ async function autoEndAndPublishExams(): Promise<void> {
   }
 
   console.info(
-    `[ExamScheduler] Auto-completed and published results for ${examsToComplete.length} exam(s)`
+    `[ExamScheduler] Marked ${examsToComplete.length} exam(s) as completed`
   );
+}
+
+async function autoPublishResultsAndEnablePractice(): Promise<void> {
+  const now = new Date();
+
+  const candidateExams = await ExamModel.find({
+    manual_status_override: { $ne: true },
+    is_completed: true,
+    is_practice_mode: { $ne: true },
+    results_published: false,
+  })
+    .select(
+      "exam_number exam_name exam_date_time duration_minutes completed_at"
+    )
+    .lean();
+
+  const examsToPublish = candidateExams.filter(
+    (exam) => getPracticeModeStartTime(exam) <= now
+  );
+
+  if (examsToPublish.length === 0) {
+    return;
+  }
+
+  const examNumbers = examsToPublish
+    .map((exam) => exam.exam_number)
+    .filter(
+      (examNumber): examNumber is number =>
+        examNumber !== undefined &&
+        examNumber !== null &&
+        !Number.isNaN(Number(examNumber))
+    );
+
+  if (examNumbers.length === 0) {
+    return;
+  }
+
+  await ExamModel.updateMany(
+    { exam_number: { $in: examNumbers } },
+    {
+      $set: {
+        results_published: true,
+        is_practice_mode: true,
+      },
+    }
+  );
+
+  for (const exam of examsToPublish) {
+    try {
+      await eventBus.publish({
+        type: "EXAM_UPDATED",
+        payload: buildAdminActivityPayload({
+          actor: { id: "system", name: "System" },
+          action: "updated",
+          entityType: "exam",
+          entityLabel: `"${exam.exam_name || "Exam"}" results published`,
+          entityId: String(exam.exam_number ?? ""),
+          module: "exam",
+          title: "Results Published",
+          description: `Exam "${exam.exam_name || "Exam"}" results published and practice mode enabled`,
+        }),
+      });
+    } catch (error) {
+      console.error(
+        `[ExamScheduler] Failed to publish practice-mode event for exam ${exam.exam_number}:`,
+        error
+      );
+    }
+  }
+
+  console.info(
+    `[ExamScheduler] Published results and enabled practice mode for ${examsToPublish.length} exam(s)`
+  );
+}
+
+async function autoEndAndPublishExams(): Promise<void> {
+  await autoMarkExamsCompleted();
+  await autoPublishResultsAndEnablePractice();
 }
 
 async function runExamLifecycleTick(): Promise<void> {

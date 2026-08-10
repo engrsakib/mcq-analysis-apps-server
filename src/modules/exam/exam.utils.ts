@@ -7,6 +7,7 @@ type ExamTimingFields = {
 };
 
 const BANGLADESH_TIMEZONE = "Asia/Dhaka";
+const PRACTICE_MODE_DELAY_MS = 5 * 60 * 1000;
 
 /**
  * Converts a UTC instant to an Asia/Dhaka ISO string for user-facing API responses.
@@ -73,10 +74,63 @@ export function mapExamsWithBangladeshDateTime<T>(exams: T[]): T[] {
   return exams.map((exam) => withBangladeshExamDateTime(exam));
 }
 
+export function isLiveExam(exam: {
+  is_started?: boolean;
+  is_completed?: boolean;
+}): boolean {
+  return Boolean(exam.is_started && !exam.is_completed);
+}
+
 export function getExamEndTime(exam: ExamTimingFields): Date {
   const endTime = new Date(exam.exam_date_time);
   endTime.setMinutes(endTime.getMinutes() + exam.duration_minutes);
   return endTime;
+}
+
+export function getExamCompletedAt(exam: {
+  completed_at?: Date | string | null;
+  exam_date_time: Date | string;
+  duration_minutes: number;
+}): Date {
+  if (exam.completed_at) {
+    return new Date(exam.completed_at);
+  }
+
+  return getExamEndTime({
+    exam_date_time: new Date(exam.exam_date_time),
+    duration_minutes: exam.duration_minutes,
+  });
+}
+
+export function getPracticeModeStartTime(exam: {
+  completed_at?: Date | string | null;
+  exam_date_time: Date | string;
+  duration_minutes: number;
+}): Date {
+  const completedAt = getExamCompletedAt(exam);
+  return new Date(completedAt.getTime() + PRACTICE_MODE_DELAY_MS);
+}
+
+export function isPracticeMode(exam: { is_practice_mode?: boolean }): boolean {
+  return Boolean(exam.is_practice_mode);
+}
+
+export function isExamInFinalizingWindow(
+  exam: {
+    is_completed?: boolean;
+    is_practice_mode?: boolean;
+    results_published?: boolean;
+    completed_at?: Date | string | null;
+    exam_date_time: Date | string;
+    duration_minutes: number;
+  },
+  now: Date = new Date()
+): boolean {
+  if (!exam.is_completed || exam.is_practice_mode || exam.results_published) {
+    return false;
+  }
+
+  return now < getPracticeModeStartTime(exam);
 }
 
 export function isExamWithinWindow(

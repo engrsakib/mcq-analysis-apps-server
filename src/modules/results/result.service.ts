@@ -69,7 +69,7 @@ class service {
       await Promise.all([
         ExamModel.findOne({ exam_number })
           .select(
-            "exam_name exam_date_time duration_minutes is_published is_started is_completed questions"
+            "exam_name exam_date_time duration_minutes is_published is_started is_completed is_practice_mode results_published"
           )
           .lean(),
         ResultModel.findOne({
@@ -105,6 +105,13 @@ class service {
       throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam has not started yet");
     }
 
+    if (exam.is_completed && !exam.is_practice_mode) {
+      throw new ApiError(
+        HttpStatusCode.FORBIDDEN,
+        "Exam has ended. Practice mode will be available shortly."
+      );
+    }
+
     if (exam.questions.length !== totalQuestions) {
       throw new ApiError(
         HttpStatusCode.BAD_REQUEST,
@@ -126,7 +133,8 @@ class service {
     const studentName = userRecord.name || user.name || "";
     const withinWindow = isExamWithinWindow(exam);
     const attemptNumber = priorAttemptCount + 1;
-    const attemptIsOnTime = withinWindow;
+    const attemptIsOnTime =
+      withinWindow && !exam.is_practice_mode && !exam.is_completed;
 
     const attempt = await ExamAttemptModel.create({
       student_name: studentName,
@@ -160,7 +168,10 @@ class service {
     });
 
     const shouldCreateOfficialResult =
-      !existingResult && withinWindow && !exam.is_completed;
+      !existingResult &&
+      withinWindow &&
+      !exam.is_completed &&
+      !exam.is_practice_mode;
 
     if (shouldCreateOfficialResult) {
       const result = await ResultModel.create({
