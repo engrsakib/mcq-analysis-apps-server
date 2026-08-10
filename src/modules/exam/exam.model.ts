@@ -11,6 +11,7 @@ const examSchema = new Schema<IExam>({
   is_completed: { type: Boolean, required: true, default: false },
   questions: [{ type: Schema.Types.ObjectId, ref: "Question", required: true }],
   is_published: { type: Boolean, required: true, default: false },
+  manual_status_override: { type: Boolean, required: true, default: false },
   results_published: { type: Boolean, required: true, default: false },
   negative_mark: {
     type: Number,

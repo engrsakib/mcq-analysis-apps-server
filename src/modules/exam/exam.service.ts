@@ -354,9 +354,22 @@ class Service {
     payload: Partial<IExam>,
     actor?: ActorInfo
   ) {
+    const statusUpdate: Partial<IExam> & {
+      manual_status_override: boolean;
+    } = {
+      ...payload,
+      manual_status_override: true,
+    };
+
+    if (payload.is_completed === true) {
+      statusUpdate.results_published = true;
+    } else if (payload.is_completed === false) {
+      statusUpdate.results_published = false;
+    }
+
     const updatedExam = await ExamModel.findOneAndUpdate(
       buildExamFilter(id),
-      payload,
+      statusUpdate,
       { new: true, runValidators: true }
     );
 

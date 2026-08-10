@@ -33,6 +33,7 @@ async function autoPublishScheduledExams(): Promise<void> {
 
   const result = await ExamModel.updateMany(
     {
+      manual_status_override: { $ne: true },
       is_published: false,
       is_started: false,
       is_completed: false,
@@ -52,6 +53,7 @@ async function autoStartExams(): Promise<void> {
   const now = new Date();
 
   const examsToStart = await ExamModel.find({
+    manual_status_override: { $ne: true },
     is_started: false,
     is_completed: false,
     exam_date_time: { $lte: now },
@@ -65,6 +67,7 @@ async function autoStartExams(): Promise<void> {
 
   await ExamModel.updateMany(
     {
+      manual_status_override: { $ne: true },
       is_started: false,
       is_completed: false,
       exam_date_time: { $lte: now },
@@ -102,6 +105,7 @@ async function autoEndAndPublishExams(): Promise<void> {
   const now = new Date();
 
   const candidateExams = await ExamModel.find({
+    manual_status_override: { $ne: true },
     is_started: true,
     is_completed: false,
   })
