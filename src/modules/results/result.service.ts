@@ -69,7 +69,7 @@ class service {
       await Promise.all([
         ExamModel.findOne({ exam_number })
           .select(
-            "exam_name exam_date_time duration_minutes is_published is_started is_completed is_practice_mode results_published"
+            "exam_name exam_date_time duration_minutes is_published is_started is_completed is_practice_mode results_published questions"
           )
           .lean(),
         ResultModel.findOne({
@@ -112,7 +112,14 @@ class service {
       );
     }
 
-    if (exam.questions.length !== totalQuestions) {
+    const questionCount = exam.questions?.length ?? 0;
+    if (!Array.isArray(exam.questions) || questionCount === 0) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "Exam questions could not be loaded for validation"
+      );
+    }
+    if (questionCount !== totalQuestions) {
       throw new ApiError(
         HttpStatusCode.BAD_REQUEST,
         "Question count does not match the exam"
