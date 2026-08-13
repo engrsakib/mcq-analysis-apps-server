@@ -33,6 +33,14 @@ class Service {
       routineData.post_date = new Date();
     }
 
+    if (!routineData.description) {
+      routineData.description = "";
+    }
+
+    if (!routineData.category) {
+      routineData.category = "general";
+    }
+
     const routine = await ExamRoutine.create(routineData);
 
     await eventBus.publish({

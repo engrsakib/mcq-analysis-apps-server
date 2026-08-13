@@ -809,13 +809,7 @@ export const schemas = {
       post_date: { type: "string", format: "date-time" },
       position: { type: "integer", example: 1 },
     },
-    required: [
-      "title",
-      "description",
-      "exam_routine_url",
-      "category",
-      "post_date",
-    ],
+    required: ["title", "exam_routine_url"],
   },
   ReorderExamRoutineItem: {
     type: "object",

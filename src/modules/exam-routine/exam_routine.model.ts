@@ -23,7 +23,7 @@ const examRoutineSchema = new Schema<IExamRoutine>(
     },
     description: {
       type: String,
-      required: [true, "Description is required"],
+      default: "",
     },
     status: {
       type: String,
@@ -47,11 +47,11 @@ const examRoutineSchema = new Schema<IExamRoutine>(
         values: Object.values(GUIDELINE_CATEGORY_ENUMS),
         message: "{VALUE} is not a valid category",
       },
-      required: [true, "Category is required"],
+      default: GUIDELINE_CATEGORY_ENUMS.GENERAL,
     },
     post_date: {
       type: Date,
-      required: [true, "Post date is required"],
+      default: Date.now,
       index: true,
     },
   },
