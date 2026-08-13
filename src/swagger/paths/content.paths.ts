@@ -471,6 +471,136 @@ export const studyPlanPaths = {
   },
 };
 
+export const examRoutinePaths = {
+  "/exam-routine": {
+    post: {
+      tags: ["Exam Routine"],
+      summary: "Create exam routine",
+      description: "Requires CREATE_GUIDELINE permission.",
+      operationId: "createExamRoutine",
+      security: securityRequirements.authenticated,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/CreateExamRoutineRequest",
+        "Exam routine creation payload"
+      ),
+      responses: {
+        "201": successResponse(201, "Exam routine created", {
+          $ref: "#/components/schemas/ExamRoutine",
+        }),
+        ...crudResponses,
+      },
+    },
+    get: {
+      tags: ["Exam Routine"],
+      summary: "Get all exam routines (admin)",
+      description: "Requires VIEW_GUIDELINE permission.",
+      operationId: "getAllExamRoutines",
+      security: securityRequirements.authenticated,
+      parameters: paginationParams,
+      responses: {
+        "200": successResponse(200, "Exam routines retrieved", {
+          $ref: "#/components/schemas/PaginatedResponse",
+        }),
+        ...crudResponses,
+      },
+    },
+  },
+  "/exam-routine/user": {
+    get: {
+      tags: ["Exam Routine"],
+      summary: "Get all exam routines for users",
+      description: "Returns active routines sorted by post_date descending.",
+      operationId: "getAllExamRoutinesForUsers",
+      parameters: paginationParams,
+      responses: {
+        "200": successResponse(200, "Exam routines retrieved", {
+          $ref: "#/components/schemas/PaginatedResponse",
+        }),
+      },
+    },
+  },
+  "/exam-routine/reorder": {
+    patch: {
+      tags: ["Exam Routine"],
+      summary: "Reorder exam routines",
+      description:
+        "Updates position/order of exam routines. Requires UPDATE_GUIDELINE permission.",
+      operationId: "reorderExamRoutines",
+      security: securityRequirements.authenticated,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/ReorderExamRoutinesRequest",
+        "Array of items with id and position, or { items: [...] }"
+      ),
+      responses: {
+        "200": successResponse(200, "Exam routine order updated"),
+        "400": commonResponses.ValidationError,
+        ...crudResponses,
+      },
+    },
+  },
+  "/exam-routine/{id}": {
+    get: {
+      tags: ["Exam Routine"],
+      summary: "Get exam routine by ID",
+      operationId: "getExamRoutineById",
+      parameters: [objectIdParam],
+      responses: {
+        "200": successResponse(200, "Exam routine retrieved", {
+          $ref: "#/components/schemas/ExamRoutine",
+        }),
+        "404": commonResponses.NotFound,
+      },
+    },
+    put: {
+      tags: ["Exam Routine"],
+      summary: "Update exam routine",
+      description: "Requires UPDATE_GUIDELINE permission.",
+      operationId: "updateExamRoutine",
+      security: securityRequirements.authenticated,
+      parameters: [objectIdParam],
+      requestBody: jsonRequestBody(
+        "#/components/schemas/CreateExamRoutineRequest",
+        "Exam routine update payload"
+      ),
+      responses: {
+        "200": successResponse(200, "Exam routine updated", {
+          $ref: "#/components/schemas/ExamRoutine",
+        }),
+        "404": commonResponses.NotFound,
+        ...crudResponses,
+      },
+    },
+    delete: {
+      tags: ["Exam Routine"],
+      summary: "Delete exam routine",
+      description: "Requires DELETE_GUIDELINE permission.",
+      operationId: "deleteExamRoutine",
+      security: securityRequirements.authenticated,
+      parameters: [objectIdParam],
+      responses: {
+        "200": successResponse(200, "Exam routine deleted"),
+        "404": commonResponses.NotFound,
+        ...crudResponses,
+      },
+    },
+    patch: {
+      tags: ["Exam Routine"],
+      summary: "Toggle exam routine status",
+      description: "Requires UPDATE_GUIDELINE permission.",
+      operationId: "toggleExamRoutineStatus",
+      security: securityRequirements.authenticated,
+      parameters: [objectIdParam],
+      responses: {
+        "200": successResponse(200, "Status toggled", {
+          $ref: "#/components/schemas/ExamRoutine",
+        }),
+        "404": commonResponses.NotFound,
+        ...crudResponses,
+      },
+    },
+  },
+};
+
 export const notificationPaths = {
   "/notifications": {
     get: {

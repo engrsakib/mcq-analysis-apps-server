@@ -7,6 +7,7 @@ import {
 
 export enum NotificationModuleEnum {
   STUDY_PLAN = "study-plan",
+  EXAM_ROUTINE = "exam-routine",
   YOUTUBE = "youtube",
   RESULT = "result",
   BOOKS = "books",

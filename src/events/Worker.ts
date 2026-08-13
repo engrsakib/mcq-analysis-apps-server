@@ -20,6 +20,8 @@ import {
   handleResultUpdated,
   handleStudyPlanCreated,
   handleStudyPlanUpdated,
+  handleExamRoutineCreated,
+  handleExamRoutineUpdated,
   handleUserDeleted,
   handleUserRegistered,
   handleUserUpdated,
@@ -39,6 +41,14 @@ jobQueue.setHandler(async (event: AppEvent) => {
 
     case "STUDY_PLAN_UPDATED":
       await handleStudyPlanUpdated(event.payload);
+      break;
+
+    case "EXAM_ROUTINE_CREATED":
+      await handleExamRoutineCreated(event.payload);
+      break;
+
+    case "EXAM_ROUTINE_UPDATED":
+      await handleExamRoutineUpdated(event.payload);
       break;
 
     case "YOUTUBE_VIDEO_ADDED":

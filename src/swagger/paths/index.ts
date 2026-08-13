@@ -13,6 +13,7 @@ import {
   guidelinePaths,
   youtubePaths,
   studyPlanPaths,
+  examRoutinePaths,
   notificationPaths,
 } from "./content.paths";
 import { searchPaths } from "./search.paths";
@@ -31,6 +32,7 @@ export const apiPaths = {
   ...guidelinePaths,
   ...youtubePaths,
   ...studyPlanPaths,
+  ...examRoutinePaths,
   ...notificationPaths,
   ...searchPaths,
 };

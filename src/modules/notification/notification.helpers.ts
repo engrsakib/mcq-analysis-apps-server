@@ -53,6 +53,7 @@ const ENTITY_LABELS: Record<string, string> = {
   admin: "staff member",
   "question-study-topic": "study topic",
   "study-plan": "study plan",
+  "exam-routine": "exam routine",
   books: "book",
   guideline: "guideline",
   youtube: "video",

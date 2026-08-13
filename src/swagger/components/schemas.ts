@@ -774,6 +774,79 @@ export const schemas = {
       },
     ],
   },
+  ExamRoutine: {
+    type: "object",
+    properties: {
+      _id: { type: "string", format: "objectId" },
+      exam_routine_number: { type: "integer", example: 1234567890123 },
+      position: { type: "integer", example: 1 },
+      title: { type: "string", example: "Weekly Exam Routine" },
+      description: { type: "string" },
+      status: { $ref: "#/components/schemas/GuidelineStatusEnum" },
+      thumbnail_url: { type: "string" },
+      exam_routine_url: {
+        type: "string",
+        example: "https://example.com/routine.pdf",
+      },
+      category: { $ref: "#/components/schemas/GuidelineCategoryEnum" },
+      post_date: { type: "string", format: "date-time" },
+      createdAt: { type: "string", format: "date-time" },
+      updatedAt: { type: "string", format: "date-time" },
+    },
+  },
+  CreateExamRoutineRequest: {
+    type: "object",
+    properties: {
+      title: { type: "string", example: "Weekly Exam Routine" },
+      description: { type: "string", example: "Exam routine for this week" },
+      status: { $ref: "#/components/schemas/GuidelineStatusEnum" },
+      thumbnail_url: { type: "string" },
+      exam_routine_url: {
+        type: "string",
+        example: "https://example.com/routine.pdf",
+      },
+      category: { $ref: "#/components/schemas/GuidelineCategoryEnum" },
+      post_date: { type: "string", format: "date-time" },
+      position: { type: "integer", example: 1 },
+    },
+    required: [
+      "title",
+      "description",
+      "exam_routine_url",
+      "category",
+      "post_date",
+    ],
+  },
+  ReorderExamRoutineItem: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      _id: { type: "string", format: "objectId" },
+      exam_routine_number: {
+        oneOf: [{ type: "string" }, { type: "integer" }],
+      },
+      position: { type: "integer", minimum: 0 },
+    },
+    required: ["position"],
+  },
+  ReorderExamRoutinesRequest: {
+    oneOf: [
+      {
+        type: "array",
+        items: { $ref: "#/components/schemas/ReorderExamRoutineItem" },
+      },
+      {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/ReorderExamRoutineItem" },
+          },
+        },
+        required: ["items"],
+      },
+    ],
+  },
   UpdatePermissionsRequest: {
     type: "object",
     properties: {
