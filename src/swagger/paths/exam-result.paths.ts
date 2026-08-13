@@ -78,10 +78,19 @@ export const examPaths = {
       tags: ["Exam"],
       summary: "Get all exams for users",
       description:
-        "Retrieves published exams for authenticated users. Live exams (started and not completed) appear first. Each item includes isSubmitted (per-user), isLive, is_completed, and exam_date_time in Bangladesh time (+06:00).",
+        "Retrieves published exams for authenticated users. Live exams (started and not completed) appear first. Each item includes isSubmitted (per-user), isLive, is_completed, and exam_date_time in Bangladesh time (+06:00). Pass isLive=true to return only currently live exams.",
       operationId: "getAllExamsForUsers",
       security: securityRequirements.authenticated,
-      parameters: paginationParams,
+      parameters: [
+        ...paginationParams,
+        {
+          name: "isLive",
+          in: "query",
+          schema: { type: "boolean" },
+          description:
+            "When true, returns only exams where is_started is true and is_completed is false",
+        },
+      ],
       responses: {
         "200": successResponse(200, "Exam entries retrieved successfully", {
           $ref: "#/components/schemas/UserExamPaginatedResponse",

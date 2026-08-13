@@ -199,7 +199,10 @@ class Service {
       }),
     };
 
-    const [aggregationResult] = await ExamModel.aggregate([
+    const filterLive =
+      query.isLive === true || query.isLive === "true" || query.isLive === "1";
+
+    const pipeline: mongoose.PipelineStage[] = [
       { $match: searchCondition },
       {
         $addFields: {
@@ -212,6 +215,13 @@ class Service {
           isPractice: { $eq: ["$is_practice_mode", true] },
         },
       },
+    ];
+
+    if (filterLive) {
+      pipeline.push({ $match: { isLive: true } });
+    }
+
+    pipeline.push(
       { $sort: { isLive: -1, isPractice: -1, exam_date_time: -1 } },
       {
         $facet: {
@@ -257,8 +267,10 @@ class Service {
           ],
           total: [{ $count: "count" }],
         },
-      },
-    ]);
+      }
+    );
+
+    const [aggregationResult] = await ExamModel.aggregate(pipeline);
 
     const total = aggregationResult?.total?.[0]?.count || 0;
 
