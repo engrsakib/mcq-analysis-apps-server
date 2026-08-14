@@ -185,7 +185,6 @@ async function autoPublishResultsAndEnablePractice(): Promise<void> {
   const now = new Date();
 
   const candidateExams = await ExamModel.find({
-    manual_status_override: { $ne: true },
     is_completed: true,
     is_practice_mode: { $ne: true },
     results_published: false,

@@ -198,7 +198,12 @@ class Controller extends BaseController {
     const { id } = req.params;
     const updateData = req.body;
 
-    const allowedUpdates = ["is_published", "is_started", "is_completed"];
+    const allowedUpdates = [
+      "is_published",
+      "is_started",
+      "is_completed",
+      "is_practice_mode",
+    ];
     const updates = Object.keys(updateData);
 
     const isValidOperation = updates.every((field) =>
@@ -210,7 +215,7 @@ class Controller extends BaseController {
         statusCode: HttpStatusCode.BAD_REQUEST,
         success: false,
         message:
-          "Invalid updates! You can only update: is_published, is_started, is_completed",
+          "Invalid updates! You can only update: is_published, is_started, is_completed, is_practice_mode",
       });
     }
 

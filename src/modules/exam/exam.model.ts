@@ -1,9 +1,16 @@
 import { model, Schema } from "mongoose";
 import { IExam, NegativeMark } from "./exam.interface";
+import { DEFAULT_EXAM_SUBJECT, EXAM_SUBJECTS } from "./exam.constants";
 
 const examSchema = new Schema<IExam>({
   exam_number: { type: Number, required: false },
   exam_name: { type: String, required: true },
+  subject: {
+    type: String,
+    enum: EXAM_SUBJECTS,
+    required: true,
+    default: DEFAULT_EXAM_SUBJECT,
+  },
   exam_date_time: { type: Date, required: true },
   duration_minutes: { type: Number, required: true },
   total_marks: { type: Number, required: true },
@@ -26,5 +33,6 @@ const examSchema = new Schema<IExam>({
 examSchema.index({ is_published: 1, exam_name: 1 });
 examSchema.index({ is_published: 1, is_started: 1, exam_date_time: 1 });
 examSchema.index({ is_started: 1, is_completed: 1 });
+examSchema.index({ subject: 1, is_published: 1 });
 
 export const ExamModel = model<IExam>("Exam", examSchema);

@@ -7,7 +7,7 @@ type ExamTimingFields = {
 };
 
 const BANGLADESH_TIMEZONE = "Asia/Dhaka";
-const PRACTICE_MODE_DELAY_MS = 5 * 60 * 1000;
+const PRACTICE_MODE_DELAY_MS = 360 * 1000;
 
 /**
  * Converts a UTC instant to an Asia/Dhaka ISO string for user-facing API responses.

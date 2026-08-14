@@ -18,6 +18,11 @@ import {
   ActorInfo,
   buildAdminActivityPayload,
 } from "@/modules/notification/notification.helpers";
+import {
+  DEFAULT_EXAM_SUBJECT,
+  EXAM_SUBJECTS,
+  ExamSubject,
+} from "./exam.constants";
 
 // Exams are addressable by either their Mongo _id or their numeric exam_number,
 // so callers may pass whichever identifier they have at hand.
@@ -39,6 +44,29 @@ const buildExamFilter = (id: string): Record<string, unknown> => {
   return { exam_number: examNumber };
 };
 
+const buildSubjectFilter = (query: Record<string, unknown>) => {
+  const requestedSubject =
+    typeof query.subject === "string" ? query.subject.trim() : "";
+
+  const subject =
+    requestedSubject.length > 0 ? requestedSubject : DEFAULT_EXAM_SUBJECT;
+
+  if (!EXAM_SUBJECTS.includes(subject as ExamSubject)) {
+    throw new ApiError(
+      HttpStatusCode.BAD_REQUEST,
+      `Invalid subject. Allowed values: ${EXAM_SUBJECTS.join(", ")}`
+    );
+  }
+
+  if (subject === DEFAULT_EXAM_SUBJECT) {
+    return {
+      $or: [{ subject: DEFAULT_EXAM_SUBJECT }, { subject: { $exists: false } }],
+    };
+  }
+
+  return { subject };
+};
+
 class Service {
   async createExam(payload: Partial<IExam>, actor?: ActorInfo): Promise<IExam> {
     try {
@@ -46,6 +74,7 @@ class Service {
 
       const examData = {
         ...payload,
+        subject: payload.subject ?? DEFAULT_EXAM_SUBJECT,
         exam_number: examNumber,
         is_published: Boolean(payload.exam_date_time),
         is_started: false,
@@ -129,6 +158,7 @@ class Service {
       is_started: false,
       is_completed: false,
       exam_date_time: { $gt: now },
+      ...buildSubjectFilter(query),
       ...searchHelpers.buildSearchCondition({
         searchFields: ["exam_name"],
         searchTerm,
@@ -192,6 +222,7 @@ class Service {
 
     const searchCondition: Record<string, unknown> = {
       $or: [{ is_published: true }, { is_started: true }],
+      ...buildSubjectFilter(query),
       ...searchHelpers.buildSearchCondition({
         searchFields: ["exam_name"],
         searchTerm,
@@ -380,21 +411,44 @@ class Service {
     payload: Partial<IExam>,
     actor?: ActorInfo
   ) {
+    const existingExam = await ExamModel.findOne(buildExamFilter(id)).lean();
+
+    if (!existingExam) {
+      throw new Error("Exam not found");
+    }
+
     const statusUpdate: Partial<IExam> & {
       manual_status_override: boolean;
     } = {
-      ...payload,
+      is_published: payload.is_published,
+      is_started: payload.is_started,
+      is_completed: payload.is_completed,
       manual_status_override: true,
     };
 
     if (payload.is_completed === true) {
-      statusUpdate.results_published = true;
-      statusUpdate.completed_at = new Date();
-      statusUpdate.is_practice_mode = false;
+      if (!existingExam.is_completed) {
+        statusUpdate.completed_at = new Date();
+      }
+
+      if (payload.is_practice_mode === true) {
+        statusUpdate.is_practice_mode = true;
+        statusUpdate.results_published = true;
+      } else {
+        statusUpdate.is_practice_mode = false;
+        if (!existingExam.is_completed) {
+          statusUpdate.results_published = false;
+        }
+      }
     } else if (payload.is_completed === false) {
       statusUpdate.results_published = false;
       statusUpdate.is_practice_mode = false;
       statusUpdate.completed_at = null;
+    } else if (typeof payload.is_practice_mode === "boolean") {
+      statusUpdate.is_practice_mode = payload.is_practice_mode;
+      if (payload.is_practice_mode) {
+        statusUpdate.results_published = true;
+      }
     }
 
     const updatedExam = await ExamModel.findOneAndUpdate(
