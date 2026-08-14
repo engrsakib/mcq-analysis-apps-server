@@ -6,6 +6,7 @@ export type NotificationModuleName =
   | "books"
   | "exam"
   | "guideline"
+  | "announcement"
   | "question"
   | "user"
   | "admin"
@@ -38,6 +39,7 @@ export type NotificationEventPayload = {
   bookId?: string | number;
   examId?: string | number;
   guidelineId?: string | number;
+  announcementId?: string | number;
   questionId?: string | number;
 };
 
@@ -57,6 +59,9 @@ export type AppEvent =
   | { type: "EXAM_DELETED"; payload: NotificationEventPayload }
   | { type: "GUIDELINE_CREATED"; payload: NotificationEventPayload }
   | { type: "GUIDELINE_UPDATED"; payload: NotificationEventPayload }
+  | { type: "ANNOUNCEMENT_CREATED"; payload: NotificationEventPayload }
+  | { type: "ANNOUNCEMENT_UPDATED"; payload: NotificationEventPayload }
+  | { type: "ANNOUNCEMENT_DELETED"; payload: NotificationEventPayload }
   | { type: "QUESTION_CREATED"; payload: NotificationEventPayload }
   | { type: "QUESTION_UPDATED"; payload: NotificationEventPayload }
   | { type: "QUESTION_DELETED"; payload: NotificationEventPayload }

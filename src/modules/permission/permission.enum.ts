@@ -24,6 +24,11 @@ export enum PermissionEnum {
   UPDATE_GUIDELINE = "update_guideline",
   DELETE_GUIDELINE = "delete_guideline",
 
+  CREATE_ANNOUNCEMENT = "create_announcement",
+  VIEW_ANNOUNCEMENT = "view_announcement",
+  UPDATE_ANNOUNCEMENT = "update_announcement",
+  DELETE_ANNOUNCEMENT = "delete_announcement",
+
   CHECK_RESULT = "check_result",
 
   CREATE_STAFF = "create_staff",

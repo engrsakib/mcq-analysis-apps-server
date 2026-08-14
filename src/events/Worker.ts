@@ -10,6 +10,9 @@ import {
   handleExamUpdated,
   handleGuidelineCreated,
   handleGuidelineUpdated,
+  handleAnnouncementCreated,
+  handleAnnouncementUpdated,
+  handleAnnouncementDeleted,
   handleQuestionCreated,
   handleQuestionDeleted,
   handleQuestionTopicCreated,
@@ -93,6 +96,18 @@ jobQueue.setHandler(async (event: AppEvent) => {
 
     case "GUIDELINE_UPDATED":
       await handleGuidelineUpdated(event.payload);
+      break;
+
+    case "ANNOUNCEMENT_CREATED":
+      await handleAnnouncementCreated(event.payload);
+      break;
+
+    case "ANNOUNCEMENT_UPDATED":
+      await handleAnnouncementUpdated(event.payload);
+      break;
+
+    case "ANNOUNCEMENT_DELETED":
+      await handleAnnouncementDeleted(event.payload);
       break;
 
     case "QUESTION_CREATED":

@@ -17,6 +17,7 @@ import { ResultRoutes } from "@/modules/results/result.router";
 import { StudyPlanRoutes } from "@/modules/study-plan/study_plan.router";
 import { ExamRoutineRoutes } from "@/modules/exam-routine/exam_routine.router";
 import { NotificationRoutes } from "@/modules/notification/notification.routes";
+import { AnnouncementRoutes } from "@/modules/announcement/announcement.router";
 import { SearchRoutes } from "@/modules/search/search.router";
 import { DashboardRoutes } from "@/modules/dashboard/dashboard.router";
 const router = Router();
@@ -89,6 +90,10 @@ const moduleRoutes = [
   {
     path: "/notifications",
     route: NotificationRoutes,
+  },
+  {
+    path: "/announcements",
+    route: AnnouncementRoutes,
   },
   {
     path: "/search",

@@ -56,6 +56,7 @@ const ENTITY_LABELS: Record<string, string> = {
   "exam-routine": "exam routine",
   books: "book",
   guideline: "guideline",
+  announcement: "announcement",
   youtube: "video",
   result: "result",
 };

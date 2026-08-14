@@ -6,6 +6,7 @@ export const PERMISSION_GROUP_KEYS = {
   QUESTION: "QUESTION",
   BOOK: "BOOK",
   GUIDELINE: "GUIDELINE",
+  ANNOUNCEMENT: "ANNOUNCEMENT",
   STAFF: "STAFF",
   OTHER: "OTHER",
 } as const;
@@ -44,6 +45,12 @@ export const PERMISSION_GROUPS: Record<PermissionGroupKey, PermissionEnum[]> = {
     PermissionEnum.UPDATE_GUIDELINE,
     PermissionEnum.DELETE_GUIDELINE,
   ],
+  [PERMISSION_GROUP_KEYS.ANNOUNCEMENT]: [
+    PermissionEnum.CREATE_ANNOUNCEMENT,
+    PermissionEnum.VIEW_ANNOUNCEMENT,
+    PermissionEnum.UPDATE_ANNOUNCEMENT,
+    PermissionEnum.DELETE_ANNOUNCEMENT,
+  ],
   [PERMISSION_GROUP_KEYS.STAFF]: [
     PermissionEnum.CREATE_STAFF,
     PermissionEnum.VIEW_STAFF,
@@ -62,6 +69,7 @@ export const PERMISSION_GROUP_LABELS: Record<PermissionGroupKey, string> = {
   [PERMISSION_GROUP_KEYS.QUESTION]: "Question",
   [PERMISSION_GROUP_KEYS.BOOK]: "Book",
   [PERMISSION_GROUP_KEYS.GUIDELINE]: "Guideline",
+  [PERMISSION_GROUP_KEYS.ANNOUNCEMENT]: "Announcement",
   [PERMISSION_GROUP_KEYS.STAFF]: "Staff",
   [PERMISSION_GROUP_KEYS.OTHER]: "Other Permissions",
 };
@@ -72,6 +80,7 @@ export const PERMISSION_GROUP_ICONS: Record<PermissionGroupKey, string> = {
   [PERMISSION_GROUP_KEYS.QUESTION]: "❓",
   [PERMISSION_GROUP_KEYS.BOOK]: "📚",
   [PERMISSION_GROUP_KEYS.GUIDELINE]: "📋",
+  [PERMISSION_GROUP_KEYS.ANNOUNCEMENT]: "📢",
   [PERMISSION_GROUP_KEYS.STAFF]: "👥",
   [PERMISSION_GROUP_KEYS.OTHER]: "⚙️",
 };
@@ -97,6 +106,10 @@ export const PERMISSION_LABELS: Record<PermissionEnum, string> = {
   [PermissionEnum.VIEW_GUIDELINE]: "View Guideline",
   [PermissionEnum.UPDATE_GUIDELINE]: "Update Guideline",
   [PermissionEnum.DELETE_GUIDELINE]: "Delete Guideline",
+  [PermissionEnum.CREATE_ANNOUNCEMENT]: "Create Announcement",
+  [PermissionEnum.VIEW_ANNOUNCEMENT]: "View Announcement",
+  [PermissionEnum.UPDATE_ANNOUNCEMENT]: "Update Announcement",
+  [PermissionEnum.DELETE_ANNOUNCEMENT]: "Delete Announcement",
   [PermissionEnum.CHECK_RESULT]: "Check Result",
   [PermissionEnum.CREATE_STAFF]: "Create Staff",
   [PermissionEnum.VIEW_STAFF]: "View Staff",

@@ -95,6 +95,24 @@ export const handleGuidelineUpdated = async (
   await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
+export const handleAnnouncementCreated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleAnnouncementUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleAnnouncementDeleted = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
 export const handleQuestionCreated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
