@@ -3,6 +3,8 @@ import { JwtInstance } from "@/lib/jwt";
 import { ROLES } from "@/constants/roles";
 import { PermissionEnum } from "../permission/permission.enum";
 import { ExamController } from "./exam.controller";
+import validateRequest from "@/middlewares/validateRequest";
+import { examValidations } from "./exam.validate";
 
 const router = Router();
 const authenticate = JwtInstance.authenticate(Object.values(ROLES));
@@ -13,6 +15,7 @@ router.post(
   "/",
   // authenticate,
   // JwtInstance.hasPermissions(PermissionEnum.CREATE_EXAM),
+  validateRequest(examValidations.create),
   ExamController.createExam
 );
 
@@ -35,6 +38,7 @@ router.put(
   "/:id",
   authenticate,
   JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
+  validateRequest(examValidations.update),
   ExamController.updateExamById
 );
 

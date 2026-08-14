@@ -7,7 +7,7 @@ const examSchema = new Schema<IExam>({
   exam_name: { type: String, required: true },
   subject: {
     type: String,
-    enum: EXAM_SUBJECTS,
+    enum: [...EXAM_SUBJECTS],
     required: true,
     default: DEFAULT_EXAM_SUBJECT,
   },

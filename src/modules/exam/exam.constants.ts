@@ -16,3 +16,7 @@ export const EXAM_SUBJECTS = [
 export type ExamSubject = (typeof EXAM_SUBJECTS)[number];
 
 export const DEFAULT_EXAM_SUBJECT: ExamSubject = "Model Test";
+
+export const SUBJECTIVE_EXAM_SUBJECTS = EXAM_SUBJECTS.filter(
+  (subject) => subject !== DEFAULT_EXAM_SUBJECT
+);

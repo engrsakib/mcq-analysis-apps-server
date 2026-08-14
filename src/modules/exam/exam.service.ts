@@ -22,7 +22,9 @@ import {
   DEFAULT_EXAM_SUBJECT,
   EXAM_SUBJECTS,
   ExamSubject,
+  SUBJECTIVE_EXAM_SUBJECTS,
 } from "./exam.constants";
+import { pickExamCreatePayload, pickExamUpdatePayload } from "./exam.payload";
 
 // Exams are addressable by either their Mongo _id or their numeric exam_number,
 // so callers may pass whichever identifier they have at hand.
@@ -45,6 +47,24 @@ const buildExamFilter = (id: string): Record<string, unknown> => {
 };
 
 const buildSubjectFilter = (query: Record<string, unknown>) => {
+  const excludeSubject =
+    typeof query.excludeSubject === "string" ? query.excludeSubject.trim() : "";
+
+  if (excludeSubject.length > 0) {
+    if (!EXAM_SUBJECTS.includes(excludeSubject as ExamSubject)) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        `Invalid excludeSubject. Allowed values: ${EXAM_SUBJECTS.join(", ")}`
+      );
+    }
+
+    if (excludeSubject === DEFAULT_EXAM_SUBJECT) {
+      return { subject: { $in: [...SUBJECTIVE_EXAM_SUBJECTS] } };
+    }
+
+    return { subject: { $ne: excludeSubject } };
+  }
+
   const requestedSubject =
     typeof query.subject === "string" ? query.subject.trim() : "";
 
@@ -71,12 +91,12 @@ class Service {
   async createExam(payload: Partial<IExam>, actor?: ActorInfo): Promise<IExam> {
     try {
       const examNumber = BarcodeService.generateEAN13();
+      const normalizedPayload = pickExamCreatePayload(payload);
 
       const examData = {
-        ...payload,
-        subject: payload.subject ?? DEFAULT_EXAM_SUBJECT,
+        ...normalizedPayload,
         exam_number: examNumber,
-        is_published: Boolean(payload.exam_date_time),
+        is_published: Boolean(normalizedPayload.exam_date_time),
         is_started: false,
         is_completed: false,
         results_published: false,
@@ -99,6 +119,9 @@ class Service {
 
       return result;
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new Error(`Failed to create exam: ${error}`);
     }
   }
@@ -340,9 +363,11 @@ class Service {
   }
 
   async updateExamById(id: string, payload: Partial<IExam>, actor?: ActorInfo) {
+    const normalizedPayload = pickExamUpdatePayload(payload);
+
     const updatedExam = await ExamModel.findOneAndUpdate(
       buildExamFilter(id),
-      payload,
+      normalizedPayload,
       {
         new: true,
         runValidators: true,
