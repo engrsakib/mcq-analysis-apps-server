@@ -1,5 +1,6 @@
 export type NotificationModuleName =
   | "study-plan"
+  | "exam-solution"
   | "exam-routine"
   | "youtube"
   | "result"
@@ -46,6 +47,8 @@ export type NotificationEventPayload = {
 export type AppEvent =
   | { type: "STUDY_PLAN_CREATED"; payload: NotificationEventPayload }
   | { type: "STUDY_PLAN_UPDATED"; payload: NotificationEventPayload }
+  | { type: "EXAM_SOLUTION_CREATED"; payload: NotificationEventPayload }
+  | { type: "EXAM_SOLUTION_UPDATED"; payload: NotificationEventPayload }
   | { type: "EXAM_ROUTINE_CREATED"; payload: NotificationEventPayload }
   | { type: "EXAM_ROUTINE_UPDATED"; payload: NotificationEventPayload }
   | { type: "YOUTUBE_VIDEO_ADDED"; payload: NotificationEventPayload }

@@ -15,6 +15,7 @@ import { BooksRoutes } from "@/modules/books/books.router";
 import { ExamRoutes } from "@/modules/exam/exam.router";
 import { ResultRoutes } from "@/modules/results/result.router";
 import { StudyPlanRoutes } from "@/modules/study-plan/study_plan.router";
+import { ExamSolutionRoutes } from "@/modules/exam-solution/exam_solution.router";
 import { ExamRoutineRoutes } from "@/modules/exam-routine/exam_routine.router";
 import { NotificationRoutes } from "@/modules/notification/notification.routes";
 import { AnnouncementRoutes } from "@/modules/announcement/announcement.router";
@@ -50,6 +51,10 @@ const moduleRoutes = [
   {
     path: "/study-plan",
     route: StudyPlanRoutes,
+  },
+  {
+    path: "/exam-solution",
+    route: ExamSolutionRoutes,
   },
   {
     path: "/exam-routine",

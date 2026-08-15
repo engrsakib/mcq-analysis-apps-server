@@ -17,6 +17,18 @@ export const handleStudyPlanUpdated = async (
   await dispatch({ ...payload, audience: payload.audience ?? "admin" });
 };
 
+export const handleExamSolutionCreated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
+export const handleExamSolutionUpdated = async (
+  payload: NotificationEventPayload
+): Promise<void> => {
+  await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+};
+
 export const handleExamRoutineCreated = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
