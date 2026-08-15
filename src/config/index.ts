@@ -62,6 +62,9 @@ export const envConfig = {
     sender_id: process.env.SMS_SENDER_ID as string,
     base_url: process.env.SMS_BASE_URL as string,
   },
+  redis: {
+    url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+  },
   courier: {
     api_key: process.env.COURIER_API_KEY as string,
     secret_key: process.env.COURIER_SECRET_KEY as string,

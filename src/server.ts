@@ -2,6 +2,7 @@ import { Server } from "http";
 import app from "./app";
 import { envConfig } from "./config";
 import mongodbConnection from "./config/mongoDbConnection";
+import { connectRedis } from "./config/redis";
 import { initExamScheduler } from "./modules/exam/examScheduler.service";
 import { PermissionService } from "./modules/permission/permission.service";
 
@@ -24,6 +25,14 @@ async function main() {
     }
   } catch (error: any) {
     console.error(`MongoDB boot initialization failed: ${error?.message}`, {
+      stack: error?.stack,
+    });
+  }
+
+  try {
+    await connectRedis();
+  } catch (error: any) {
+    console.error(`Redis boot initialization failed: ${error?.message}`, {
       stack: error?.stack,
     });
   }

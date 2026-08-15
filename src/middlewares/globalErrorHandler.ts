@@ -10,7 +10,15 @@ type ErrorResponse = {
   statusCode: number;
   message: string;
   errorMessages: IGenericErrorMessage[];
+  data?: Record<string, unknown>;
 };
+
+const handleApiError = (error: ApiError): ErrorResponse => ({
+  statusCode: error?.statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR,
+  message: error.message || "Something went wrong",
+  errorMessages: error?.message ? [{ path: "", message: error.message }] : [],
+  data: error.data,
+});
 
 const handleZodValidationError = (error: ZodError): ErrorResponse => {
   const errorMessages: IGenericErrorMessage[] = error.issues.map(
@@ -46,12 +54,6 @@ const handleZodValidationError = (error: ZodError): ErrorResponse => {
     errorMessages,
   };
 };
-
-const handleApiError = (error: ApiError): ErrorResponse => ({
-  statusCode: error?.statusCode || HttpStatusCode.INTERNAL_SERVER_ERROR,
-  message: error.message || "Something went wrong",
-  errorMessages: error?.message ? [{ path: "", message: error.message }] : [],
-});
 
 const handleGenericError = (error: Error): ErrorResponse => ({
   statusCode: HttpStatusCode.INTERNAL_SERVER_ERROR,
@@ -191,13 +193,14 @@ export const globalErrorHandler: ErrorRequestHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  const { statusCode, message, errorMessages } = normalizeError(error);
+  const { statusCode, message, errorMessages, data } = normalizeError(error);
 
   res.status(statusCode).json({
     statusCode,
     success: false,
     message,
     errorMessages,
+    ...(data ? { data } : {}),
     stack:
       process.env.NODE_ENV !== "production" && error instanceof Error
         ? error.stack

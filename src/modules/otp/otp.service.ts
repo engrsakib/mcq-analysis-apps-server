@@ -6,9 +6,12 @@ import { SMSService } from "../sms/sms.service";
 import { OTPModel } from "./otp.model";
 import { IOtpVerify } from "./otp.interface";
 import { AdminModel } from "../admin/admin.model";
+import { otpRateLimitService } from "./otp-rate-limit.service";
 
 class Service {
   async sendVerificationOtp(phone_number: string, account_type: IRoles) {
+    await otpRateLimitService.assertCanSendOtp(phone_number);
+
     const isExist = await OTPModel.findOne({ phone_number });
     if (isExist) {
       throw new ApiError(
@@ -64,23 +67,19 @@ class Service {
         "Your provided otp was wrong. Please try with correct otp"
       );
     }
+
+    await OTPModel.deleteOne({ phone_number: data.phone_number });
   }
 
   async sendForgetPasswordOtp(phone_number: string) {
-    const isExist = await OTPModel.findOne({ phone_number });
-    if (isExist) {
-      throw new ApiError(
-        HttpStatusCode.BAD_REQUEST,
-        "We've already sent an OTP to your inbox. Please check sms and verify your account"
-      );
-    }
+    await otpRateLimitService.assertCanSendOtp(phone_number);
 
-    // generate otp
+    await OTPModel.deleteOne({ phone_number });
+
     const otp = await this.generateOtp();
     await OTPModel.create({ phone_number, otp });
 
-    // send sms
-    await SMSService.sendOtp(phone_number, otp);
+    await SMSService.sendForgetPasswordOtp(phone_number, otp);
   }
 
   private async generateOtp(): Promise<number> {

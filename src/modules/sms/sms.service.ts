@@ -45,6 +45,16 @@ class Service {
     });
   };
 
+  sendForgetPasswordOtp = async (
+    number: string,
+    otp: number
+  ): Promise<void> => {
+    await this.sendSms({
+      number,
+      message: `MCQ Analysis app user Password Recovery OTP is ${otp}. Valid for 5 minutes. Do not share this OTP with anyone.`,
+    });
+  };
+
   sendGeneralMessage = async (number: string, message: string) => {
     await this.sendSms({ number, message });
   };
