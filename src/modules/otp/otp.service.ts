@@ -72,7 +72,8 @@ class Service {
   }
 
   async sendForgetPasswordOtp(phone_number: string) {
-    await otpRateLimitService.assertCanSendOtp(phone_number);
+    const rateLimitMeta =
+      await otpRateLimitService.assertCanSendOtp(phone_number);
 
     await OTPModel.deleteOne({ phone_number });
 
@@ -80,6 +81,8 @@ class Service {
     await OTPModel.create({ phone_number, otp });
 
     await SMSService.sendForgetPasswordOtp(phone_number, otp);
+
+    return rateLimitMeta;
   }
 
   private async generateOtp(): Promise<number> {

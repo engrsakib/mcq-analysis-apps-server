@@ -7,22 +7,26 @@ class Controller extends BaseController {
   private readonly message =
     "We've sent a verification code to your phone number";
   adminForgetPassword = this.catchAsync(async (req: Request, res: Response) => {
-    await ForgetPasswordService.adminForgetPassword(req.body.phone_number);
+    const rateLimitMeta = await ForgetPasswordService.adminForgetPassword(
+      req.body.phone_number
+    );
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
       message: this.message,
-      data: null,
+      data: rateLimitMeta,
     });
   });
 
   userForgetPassword = this.catchAsync(async (req: Request, res: Response) => {
-    await ForgetPasswordService.userForgetPassword(req.body.phone_number);
+    const rateLimitMeta = await ForgetPasswordService.userForgetPassword(
+      req.body.phone_number
+    );
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
       message: this.message,
-      data: null,
+      data: rateLimitMeta,
     });
   });
 }

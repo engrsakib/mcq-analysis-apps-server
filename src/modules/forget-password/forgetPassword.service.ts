@@ -13,7 +13,7 @@ class Service {
         "Your account was not found!"
       );
     }
-    await OTPService.sendForgetPasswordOtp(admin.phone_number);
+    return OTPService.sendForgetPasswordOtp(admin.phone_number);
   }
 
   async userForgetPassword(phone_number: string) {
@@ -24,7 +24,7 @@ class Service {
         "Your account was not found!"
       );
     }
-    await OTPService.sendForgetPasswordOtp(user.phone_number);
+    return OTPService.sendForgetPasswordOtp(user.phone_number);
   }
 }
 
