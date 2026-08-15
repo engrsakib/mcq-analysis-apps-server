@@ -11,6 +11,7 @@ import { syncExamLifecycle } from "./examScheduler.service";
 import {
   mapExamsWithBangladeshDateTime,
   withBangladeshExamDateTime,
+  withShuffledQuestions,
 } from "./exam.utils";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
@@ -359,7 +360,12 @@ class Service {
         { is_practice_mode: true },
       ],
     }).populate("questions");
-    return withBangladeshExamDateTime(exam);
+
+    if (!exam) {
+      return null;
+    }
+
+    return withShuffledQuestions(withBangladeshExamDateTime(exam));
   }
 
   async updateExamById(id: string, payload: Partial<IExam>, actor?: ActorInfo) {

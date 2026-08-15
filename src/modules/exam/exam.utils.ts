@@ -70,6 +70,34 @@ export function withBangladeshExamDateTime<T>(exam: T): T {
   return plain as T;
 }
 
+export function shuffleArray<T>(items: T[]): T[] {
+  const shuffled = [...items];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+export function withShuffledQuestions<T>(exam: T): T {
+  if (!exam || typeof exam !== "object") {
+    return exam;
+  }
+
+  const record = exam as Record<string, unknown>;
+
+  if (!Array.isArray(record.questions) || record.questions.length <= 1) {
+    return exam;
+  }
+
+  return {
+    ...record,
+    questions: shuffleArray(record.questions),
+  } as T;
+}
+
 export function mapExamsWithBangladeshDateTime<T>(exams: T[]): T[] {
   return exams.map((exam) => withBangladeshExamDateTime(exam));
 }
