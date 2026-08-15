@@ -152,7 +152,7 @@ class Service {
       .skip(skip)
       .limit(limit)
       .select("-questions")
-      .sort({ createdAt: -1 });
+      .sort({ exam_date_time: -1, exam_number: -1 });
 
     const total = await ExamModel.countDocuments(searchCondition);
 
@@ -193,7 +193,7 @@ class Service {
       .skip(skip)
       .limit(limit)
       .select("-questions")
-      .sort({ createdAt: -1 });
+      .sort({ exam_date_time: -1, exam_number: -1 });
 
     const total = await ExamModel.countDocuments(searchCondition);
 
@@ -277,7 +277,7 @@ class Service {
     }
 
     pipeline.push(
-      { $sort: { isLive: -1, isPractice: -1, exam_date_time: -1 } },
+      { $sort: { exam_date_time: -1, exam_number: -1 } },
       {
         $facet: {
           data: [
