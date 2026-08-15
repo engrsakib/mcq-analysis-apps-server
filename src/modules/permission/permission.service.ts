@@ -4,6 +4,12 @@ import mongoose from "mongoose";
 import { PermissionModel } from "./permission.mode";
 import { AdminModel } from "../admin/admin.model";
 import { PermissionEnum } from "./permission.enum";
+import { IAdminRole } from "@/constants/roles";
+import {
+  getPermissionsForRole,
+  isSystemRole,
+  SYSTEM_ROLES,
+} from "./role-permissions";
 
 class Service {
   async CreateAndUpdatePermissions(
@@ -66,6 +72,60 @@ class Service {
       );
     } finally {
       session.endSession();
+    }
+  }
+
+  async syncPermissionsForAdmin(adminId: string, role: IAdminRole) {
+    const expectedPermissions = getPermissionsForRole(role);
+
+    const admin = await AdminModel.findById(adminId)
+      .select("permissions role")
+      .populate({ path: "permissions", select: "key" })
+      .lean();
+
+    if (!admin) return;
+
+    const currentKeys =
+      admin.permissions &&
+      typeof admin.permissions === "object" &&
+      "key" in admin.permissions
+        ? (admin.permissions as { key: string[] }).key
+        : [];
+
+    const expectedSet = new Set(expectedPermissions);
+    const isInSync =
+      currentKeys.length === expectedPermissions.length &&
+      currentKeys.every((key) => expectedSet.has(key as PermissionEnum));
+
+    if (isInSync) return;
+
+    await this.CreateAndUpdatePermissions(
+      adminId,
+      expectedPermissions,
+      `Auto-synced permissions for ${role} role`
+    );
+  }
+
+  async syncSystemRolePermissions() {
+    const admins = await AdminModel.find({
+      is_Deleted: { $ne: true },
+      role: { $in: SYSTEM_ROLES },
+    }).select("_id role");
+
+    for (const admin of admins) {
+      if (!admin.role || !isSystemRole(admin.role)) continue;
+
+      try {
+        await this.syncPermissionsForAdmin(
+          admin._id.toString(),
+          admin.role as IAdminRole
+        );
+      } catch (error) {
+        console.error(
+          `Failed to sync permissions for admin ${admin._id}:`,
+          error
+        );
+      }
     }
   }
 }

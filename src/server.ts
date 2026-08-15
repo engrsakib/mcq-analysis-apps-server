@@ -3,6 +3,7 @@ import app from "./app";
 import { envConfig } from "./config";
 import mongodbConnection from "./config/mongoDbConnection";
 import { initExamScheduler } from "./modules/exam/examScheduler.service";
+import { PermissionService } from "./modules/permission/permission.service";
 
 process.on("uncaughtException", (error) => {
   console.error(`Uncaught Exception: ${error.message}`, { stack: error.stack });
@@ -32,6 +33,17 @@ async function main() {
   } catch (error: any) {
     console.error(
       `Exam scheduler boot initialization failed: ${error?.message}`,
+      {
+        stack: error?.stack,
+      }
+    );
+  }
+
+  try {
+    await PermissionService.syncSystemRolePermissions();
+  } catch (error: any) {
+    console.error(
+      `Permission sync boot initialization failed: ${error?.message}`,
       {
         stack: error?.stack,
       }

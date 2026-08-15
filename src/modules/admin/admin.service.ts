@@ -200,6 +200,13 @@ class Service {
       );
     }
 
+    if (admin.role && isSystemRole(admin.role)) {
+      await PermissionService.syncPermissionsForAdmin(
+        admin._id.toString(),
+        admin.role as IAdminRole
+      );
+    }
+
     return await this.generateLoginCredentials(admin._id);
   }
 
