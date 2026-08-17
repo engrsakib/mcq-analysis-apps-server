@@ -21,6 +21,7 @@ import { NotificationRoutes } from "@/modules/notification/notification.routes";
 import { AnnouncementRoutes } from "@/modules/announcement/announcement.router";
 import { SearchRoutes } from "@/modules/search/search.router";
 import { DashboardRoutes } from "@/modules/dashboard/dashboard.router";
+import { SmsRoutes } from "@/modules/sms/sms.router";
 const router = Router();
 
 const moduleRoutes = [
@@ -107,6 +108,10 @@ const moduleRoutes = [
   {
     path: "/dashboard",
     route: DashboardRoutes,
+  },
+  {
+    path: "/sms",
+    route: SmsRoutes,
   },
 ];
 

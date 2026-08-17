@@ -37,6 +37,9 @@ export enum PermissionEnum {
   DELETE_STAFF = "delete_staff",
 
   MANAGE_PERMISSIONS = "manage_permissions",
+
+  VIEW_SMS = "view_sms",
+  SEND_SMS = "send_sms",
 }
 
 export enum PermissionGroup {
