@@ -2,8 +2,11 @@ import { envConfig } from "@/config/index";
 import axios from "axios";
 import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
+import { normalizePhoneNumber } from "@/utils/phone.util";
+import { smsLogService } from "./sms-log.service";
 import {
   IBulkSmsResponse,
+  ISmsLogType,
   ISmsPayload,
   ISmsResult,
   ISmsStatus,
@@ -37,24 +40,6 @@ class Service {
     return envConfig.sms.base_url.replace(/\/smsapi\/?$/, "/getBalanceApi");
   }
 
-  private normalizePhoneNumber(number: string): string {
-    const digits = number.replace(/\D/g, "");
-
-    if (digits.startsWith("880")) {
-      return digits;
-    }
-
-    if (digits.startsWith("0")) {
-      return `88${digits}`;
-    }
-
-    if (digits.length === 10 || digits.length === 11) {
-      return `880${digits.replace(/^0/, "")}`;
-    }
-
-    return digits;
-  }
-
   private parseBulkSmsResponse(data: IBulkSmsResponse): ISmsResult {
     const responseCode = Number(data.response_code);
 
@@ -75,15 +60,18 @@ class Service {
       api_key: envConfig.sms.api_key,
       senderid: envConfig.sms.sender_id,
       type: "text",
-      number: this.normalizePhoneNumber(payload.number),
+      number: normalizePhoneNumber(payload.number),
       message: String(payload.message),
     });
   }
 
-  private async sendSms(payload: ISmsPayload): Promise<ISmsResult> {
-    try {
-      const number = this.normalizePhoneNumber(payload.number);
+  private async sendSms(
+    payload: ISmsPayload,
+    messageType: ISmsLogType
+  ): Promise<ISmsResult> {
+    const number = normalizePhoneNumber(payload.number);
 
+    try {
       console.log(`[SMS] Sending to ${number}...`);
 
       const { data } = await axios.post<IBulkSmsResponse>(
@@ -97,6 +85,14 @@ class Service {
       );
 
       const parsed = this.parseBulkSmsResponse(data);
+
+      await smsLogService.logSmsEvent({
+        phone_number: number,
+        message_type: messageType,
+        success: parsed.success,
+        response_code: parsed.response_code,
+        error_message: parsed.error_message,
+      });
 
       if (parsed.success) {
         console.log(`[SMS] Message sent successfully`, { number });
@@ -119,6 +115,14 @@ class Service {
 
       const message =
         error instanceof Error ? error.message : "Failed to send SMS";
+
+      await smsLogService.logSmsEvent({
+        phone_number: number,
+        message_type: messageType,
+        success: false,
+        response_code: null,
+        error_message: message,
+      });
 
       console.error(`[SMS] Error sending message`, { error: message });
 
@@ -175,28 +179,34 @@ class Service {
     number: string,
     message: string
   ): Promise<ISmsResult> => {
-    return this.sendSms({ number, message });
+    return this.sendSms({ number, message }, "test");
   };
 
   sendOtp = async (number: string, otp: number): Promise<void> => {
-    await this.sendSms({
-      number,
-      message: `Your Cloudy BD OTP is ${otp}`,
-    });
+    await this.sendSms(
+      {
+        number,
+        message: `Your Cloudy BD OTP is ${otp}`,
+      },
+      "otp"
+    );
   };
 
   sendForgetPasswordOtp = async (
     number: string,
     otp: number
   ): Promise<void> => {
-    await this.sendSms({
-      number,
-      message: `MCQ Analysis app user Password Recovery OTP is ${otp}. Valid for 5 minutes. Do not share this OTP with anyone.`,
-    });
+    await this.sendSms(
+      {
+        number,
+        message: `MCQ Analysis app user Password Recovery OTP is ${otp}. Valid for 5 minutes. Do not share this OTP with anyone.`,
+      },
+      "forget_password_otp"
+    );
   };
 
   sendGeneralMessage = async (number: string, message: string) => {
-    await this.sendSms({ number, message });
+    await this.sendSms({ number, message }, "general");
   };
 }
 

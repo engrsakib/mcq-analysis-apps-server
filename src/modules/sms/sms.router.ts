@@ -24,6 +24,52 @@ router.get(
   smsController.getStatus
 );
 
+router.get(
+  "/logs",
+  authenticate,
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_SMS),
+  smsController.getSmsLogs
+);
+
+router.get(
+  "/otp-block-logs",
+  authenticate,
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_SMS),
+  smsController.getOtpBlockLogs
+);
+
+router.get(
+  "/otp-blocks",
+  authenticate,
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_SMS),
+  smsController.getOtpBlocks
+);
+
+router.get(
+  "/otp-config",
+  authenticate,
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_SMS),
+  smsController.getOtpConfig
+);
+
+router.patch(
+  "/otp-config",
+  authenticate,
+  JwtInstance.hasPermissions(PermissionEnum.SEND_SMS),
+  validateRequest(smsValidations.updateOtpConfig),
+  loggerMiddleware,
+  smsController.updateOtpConfig
+);
+
+router.delete(
+  "/otp-blocks",
+  authenticate,
+  JwtInstance.hasPermissions(PermissionEnum.SEND_SMS),
+  validateRequest(smsValidations.clearOtpBlock),
+  loggerMiddleware,
+  smsController.clearOtpBlocks
+);
+
 router.post(
   "/test",
   authenticate,
