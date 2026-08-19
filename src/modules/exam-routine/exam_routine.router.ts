@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.CREATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.CREATE_EXAM),
   validateRequest(examRoutineValidations.create),
   ExamRoutineController.createExamRoutine
 );
@@ -19,7 +19,7 @@ router.post(
 router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.VIEW_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_EXAM),
   ExamRoutineController.getAllExamRoutines
 );
 
@@ -30,7 +30,7 @@ router.get("/:id", ExamRoutineController.getExamRoutineById);
 router.put(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   validateRequest(examRoutineValidations.update),
   ExamRoutineController.updateExamRoutine
 );
@@ -38,21 +38,21 @@ router.put(
 router.patch(
   "/reorder",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamRoutineController.reorderExamRoutines
 );
 
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.DELETE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.DELETE_EXAM),
   ExamRoutineController.deleteExamRoutine
 );
 
 router.patch(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamRoutineController.toggleExamRoutineStatus
 );
 
