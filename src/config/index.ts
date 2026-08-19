@@ -14,8 +14,7 @@ export const envConfig = {
     public_dev: process.env.PUBLIC_CLIENT_URL_DEV as string,
     public_prod: process.env.PUBLIC_CLIENT_URL_PROD as string,
     server_base_url:
-      process.env.SERVER_BASE_URL ||
-      "https://mcq-analysis-apps-server.onrender.com",
+      process.env.SERVER_BASE_URL || "http://187.52.120.181:9001",
   },
   cors_origins: process.env.CORS_ORIGINS
     ? (process.env.CORS_ORIGINS as string).split(", ")

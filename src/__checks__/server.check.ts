@@ -28,7 +28,7 @@ new ApiCheck("render-api-health-check", {
   maxResponseTime: 20000,
   request: {
     method: "GET",
-    url: "https://mcq-analysis-apps-server.onrender.com/health",
+    url: "api.mcqanalysis.com/health",
     followRedirects: true,
     assertions: [
       AssertionBuilder.statusCode().equals(200),

@@ -1,2 +1,1 @@
-export const PRODUCTION_API_BASE_URL =
-  "https://mcq-analysis-apps-server.onrender.com";
+export const PRODUCTION_API_BASE_URL = "http://187.52.120.181:9001";

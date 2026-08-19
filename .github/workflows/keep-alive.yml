@@ -2,7 +2,7 @@ name: Keep Render Awake
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping Render
         run: |
-          curl -L -o /dev/null -s -w "HTTP Status: %{http_code}\n" https://mcq-analysis-apps-server.onrender.com/health
+          curl -L -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://187.52.120.181:9001/health

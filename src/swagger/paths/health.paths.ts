@@ -28,7 +28,7 @@ export const healthPaths = {
         "200": successResponse(200, "Application is running", undefined, {
           statusCode: 200,
           success: true,
-          message: "Cloudy BD application is running...",
+          message: "MCQ Analysis application is running...",
           data: null,
         }),
       },
