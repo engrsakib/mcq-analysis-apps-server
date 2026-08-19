@@ -207,7 +207,7 @@ class Service {
   };
 
   reorderTopics = async (items: ReorderItem[]) => {
-    const operations = items.reduce<AnyBulkWriteOperation<unknown>[]>(
+    const operations = items.reduce<AnyBulkWriteOperation<any>[]>(
       (acc, item) => {
         const identifier = item.id || item._id || item.category_number;
         const position = Number(item.position);
