@@ -1,22 +1,4 @@
-version: "3.9"
-
 services:
-  backend:
-    build: .
-    container_name: mcq_backend
-    restart: always
-    env_file:
-      - .env
-    environment:
-      REDIS_URL: redis://redis:6379
-    ports:
-      - "9001:9001"
-    depends_on:
-      - mongo
-      - redis
-    networks:
-      - mcqnet
-
   mongo:
     image: mongo:7
     container_name: mcq_mongo
@@ -28,8 +10,6 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    networks:
-      - mcqnet
 
   redis:
     image: redis:7-alpine
@@ -37,11 +17,9 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    networks:
-      - mcqnet
+    volumes:
+      - redis_data:/data
 
 volumes:
   mongo_data:
-
-networks:
-  mcqnet:
+  redis_data:
