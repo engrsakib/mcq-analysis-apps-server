@@ -16,7 +16,7 @@ router.post(
 router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.VIEW_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.VIEW_EXAM),
   ExamSolutionController.getAllExamSolutions
 );
 
@@ -27,28 +27,28 @@ router.get("/:id", ExamSolutionController.getExamSolutionById);
 router.put(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamSolutionController.updateExamSolution
 );
 
 router.patch(
   "/reorder",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamSolutionController.reorderExamSolutions
 );
 
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.DELETE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.DELETE_EXAM),
   ExamSolutionController.deleteExamSolution
 );
 
 router.patch(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_GUIDELINE),
+  JwtInstance.hasPermissions(PermissionEnum.UPDATE_EXAM),
   ExamSolutionController.toggleExamSolutionStatus
 );
 
