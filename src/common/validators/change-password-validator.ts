@@ -13,8 +13,7 @@ export const changePasswordValidation = z.object({
           required_error: "New Password is required",
           invalid_type_error: "New Password must be string",
         })
-        .min(6, "New Password must be at least 6 characters")
-        .max(15, "New Password must be less than 15 characters"),
+        .min(1, "New Password couldn't be empty"),
     })
     .strict(),
 });

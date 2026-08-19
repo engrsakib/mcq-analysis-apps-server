@@ -170,8 +170,7 @@ export const schemas = {
       old_password: { type: "string", minLength: 1, example: "oldpass123" },
       new_password: {
         type: "string",
-        minLength: 6,
-        maxLength: 15,
+        minLength: 1,
         example: "newpass123",
       },
     },

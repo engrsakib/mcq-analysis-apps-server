@@ -10,6 +10,7 @@ import { loggerMiddleware } from "@/middlewares/logger";
 import { resetPasswordValidation } from "@/common/validators/reset-password-validator";
 import { changePasswordValidation } from "@/common/validators/change-password-validator";
 import { PermissionEnum } from "../permission/permission.enum";
+import { ExamAttemptController } from "@/modules/exam-attempt/exam-attempt.controller";
 
 const router = Router();
 
@@ -34,10 +35,29 @@ router.patch(
   UserController.updateSelf
 );
 
+router.patch(
+  "/reset-password",
+  validateRequest(resetPasswordValidation),
+  UserController.resetPassword
+);
+
+router.patch(
+  "/change-password",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  validateRequest(changePasswordValidation),
+  UserController.changePassword
+);
+
 router.get(
   "/auth",
   JwtInstance.authenticate(Object.values(ROLES)),
   UserController.getLoggedInUser
+);
+
+router.get(
+  "/personal-growth",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  ExamAttemptController.personalGrowth
 );
 
 router.patch(
@@ -101,19 +121,6 @@ router.post(
   validateRequest(loginValidation),
   loggerMiddleware,
   UserController.login
-);
-
-router.patch(
-  "/reset-password",
-  validateRequest(resetPasswordValidation),
-  UserController.resetPassword
-);
-
-router.patch(
-  "/change-password",
-  JwtInstance.authenticate(Object.values(ROLES)),
-  validateRequest(changePasswordValidation),
-  UserController.changePassword
 );
 
 router.delete("/logout", UserController.logout);

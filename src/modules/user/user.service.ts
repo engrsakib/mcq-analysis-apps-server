@@ -467,18 +467,6 @@ class Service {
       );
     }
 
-    const isSamePassword = await BcryptInstance.compare(
-      data.new_password,
-      user.password
-    );
-
-    if (isSamePassword) {
-      throw new ApiError(
-        HttpStatusCode.BAD_REQUEST,
-        "Same password couldn't be changed. Please provide a different password"
-      );
-    }
-
     const newPassword = await BcryptInstance.hash(data.new_password);
 
     await UserModel.findByIdAndUpdate(user._id, { password: newPassword });
