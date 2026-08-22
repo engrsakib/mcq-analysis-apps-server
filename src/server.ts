@@ -4,6 +4,7 @@ import { envConfig } from "./config";
 import mongodbConnection from "./config/mongoDbConnection";
 import { connectRedis } from "./config/redis";
 import { initExamScheduler } from "./modules/exam/examScheduler.service";
+import { initPermissionScheduler } from "./modules/permission/permissionScheduler.service";
 import { PermissionService } from "./modules/permission/permission.service";
 
 process.on("uncaughtException", (error) => {
@@ -53,6 +54,17 @@ async function main() {
   } catch (error: any) {
     console.error(
       `Permission sync boot initialization failed: ${error?.message}`,
+      {
+        stack: error?.stack,
+      }
+    );
+  }
+
+  try {
+    await initPermissionScheduler();
+  } catch (error: any) {
+    console.error(
+      `Permission scheduler boot initialization failed: ${error?.message}`,
       {
         stack: error?.stack,
       }

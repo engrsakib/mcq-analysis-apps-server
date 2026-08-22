@@ -174,6 +174,7 @@ class OtpRateLimitService {
           "Too many OTP requests. Please try again later.",
           {
             remainingAttempts: 0,
+            maxAttempts,
             resetIn,
           }
         );
@@ -188,6 +189,7 @@ class OtpRateLimitService {
 
       return {
         remainingAttempts: Math.max(0, maxAttempts - newCount),
+        maxAttempts,
         resetIn: buildResetIn(ttl),
       };
     } catch (error) {
@@ -202,6 +204,7 @@ class OtpRateLimitService {
 
       return {
         remainingAttempts: maxAttempts,
+        maxAttempts,
         resetIn: buildResetIn(windowSeconds),
       };
     }

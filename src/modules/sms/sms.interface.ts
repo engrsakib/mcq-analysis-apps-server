@@ -67,5 +67,6 @@ export type IOtpRateLimitBlock = {
 
 export type OtpRateLimitMeta = {
   remainingAttempts: number;
+  maxAttempts: number;
   resetIn: string;
 };

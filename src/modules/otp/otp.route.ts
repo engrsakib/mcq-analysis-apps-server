@@ -6,6 +6,8 @@ import { loggerMiddleware } from "@/middlewares/logger";
 
 const router = Router();
 
+router.get("/rate-limit-config", OTPController.getRateLimitConfig);
+
 router.post(
   "/verify",
   validateRequest(otpValidations.verifyOtp),
