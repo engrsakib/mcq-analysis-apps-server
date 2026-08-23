@@ -9,7 +9,7 @@ import { ROLES } from "@/constants/roles";
 import { loggerMiddleware } from "@/middlewares/logger";
 import { resetPasswordValidation } from "@/common/validators/reset-password-validator";
 import { changePasswordValidation } from "@/common/validators/change-password-validator";
-import { PermissionEnum } from "../permission/permission.enum";
+// import { PermissionEnum } from "../permission/permission.enum";
 import { ExamAttemptController } from "@/modules/exam-attempt/exam-attempt.controller";
 
 const router = Router();
@@ -64,14 +64,14 @@ router.patch(
   "/:id",
   validateRequest(UserValidations.update),
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.UPDATE_STUDENT),
+  // JwtInstance.hasPermissions(PermissionEnum.UPDATE_STUDENT),
   UserController.updateUser
 );
 
 router.get(
   "/",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
+  // JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
   UserController.getAllCustomers
 );
 
@@ -84,14 +84,14 @@ router.get(
 router.get(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
+  // JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
   UserController.getUserById
 );
 
 router.delete(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  JwtInstance.hasPermissions(PermissionEnum.DELETE_STUDENT),
+  // JwtInstance.hasPermissions(PermissionEnum.DELETE_STUDENT),
   UserController.deleteUser
 );
 
