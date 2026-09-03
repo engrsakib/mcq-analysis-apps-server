@@ -1,6 +1,19 @@
 import z from "zod";
 import { USER_ROLES } from "./user.enum";
 
+const optionalEmail = z
+  .string()
+  .email({ message: "Please provide a valid email" })
+  .optional()
+  .or(z.literal(""));
+
+const optionalPassword = z
+  .string()
+  .min(6, "Password must be at least 6 characters")
+  .max(15, "Password must be less than 15 characters")
+  .optional()
+  .or(z.literal(""));
+
 const create = z.object({
   body: z
     .object({
@@ -13,10 +26,7 @@ const create = z.object({
       phone_number: z.string({
         required_error: "Phone number must be provided",
       }),
-      email: z
-        .string()
-        .email({ message: "Please provide a valid email" })
-        .optional(),
+      email: optionalEmail,
       password: z
         .string({ required_error: "Password is required" })
         .min(6, "Password must be at least 6 characters")
@@ -44,10 +54,8 @@ const update = z.object({
           required_error: "Phone number must be provided",
         })
         .optional(),
-      email: z
-        .string()
-        .email({ message: "Please provide a valid email" })
-        .optional(),
+      email: optionalEmail,
+      password: optionalPassword,
     })
     .strict(),
 });

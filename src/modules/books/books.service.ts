@@ -112,15 +112,17 @@ class Service {
   }
 
   async getBookById(id: string) {
-    const book = await BooksModel.findOne({ book_number: id });
+    const bookNumber = Number(id);
+    const book = await BooksModel.findOne({ book_number: bookNumber });
     return book;
   }
 
   async updateBookById(id: string, updateData: any, actor?: ActorInfo) {
+    const bookNumber = Number(id);
     const updatedBook = await BooksModel.findOneAndUpdate(
-      { book_number: id },
+      { book_number: bookNumber },
       updateData,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (updatedBook) {

@@ -76,15 +76,14 @@ router.get(
 );
 
 router.get(
-  "/:id",
+  "/:id/personal-growth",
   JwtInstance.authenticate(Object.values(ROLES)),
-  UserController.getUserById
+  ExamAttemptController.personalGrowthByUserId
 );
 
 router.get(
   "/:id",
   JwtInstance.authenticate(Object.values(ROLES)),
-  // JwtInstance.hasPermissions(PermissionEnum.VIEW_STUDENT),
   UserController.getUserById
 );
 

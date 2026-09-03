@@ -274,9 +274,20 @@ class Service {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "User was not found");
     }
 
+    const updatePayload: Partial<IUser> = { ...data };
+
+    if (updatePayload.password !== undefined) {
+      const nextPassword = updatePayload.password?.trim();
+      if (!nextPassword) {
+        delete updatePayload.password;
+      } else {
+        updatePayload.password = await BcryptInstance.hash(nextPassword);
+      }
+    }
+
     const updated = await UserModel.findByIdAndUpdate(
       id,
-      { ...data },
+      { ...updatePayload },
       { new: true }
     );
 

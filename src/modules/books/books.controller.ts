@@ -148,6 +148,14 @@ class Controller extends BaseController {
       resolveActor(req.user)
     );
 
+    if (!updatedBook) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.NOT_FOUND,
+        success: false,
+        message: "Book entry not found",
+      });
+    }
+
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,

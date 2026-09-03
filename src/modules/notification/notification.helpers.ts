@@ -25,17 +25,37 @@ export function resolveActor(user?: IJWtPayload): ActorInfo {
 
 export function formatRelativeTime(isoOrDate: string | Date): string {
   const date = typeof isoOrDate === "string" ? new Date(isoOrDate) : isoOrDate;
-  const diffMs = Date.now() - date.getTime();
+  const diffMs = Math.max(0, Date.now() - date.getTime());
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
 
   if (diffSec < 60) return "Just now";
-  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
-  if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
-  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
-  return date.toLocaleDateString();
+  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffHour < 24) return `${diffHour} hr ago`;
+
+  const remainingHours = diffHour % 24;
+  const remainingMins = diffMin % 60;
+  const dayPart = `${diffDay} day${diffDay === 1 ? "" : "s"}`;
+
+  if (remainingHours === 0 && remainingMins === 0) {
+    return `${dayPart} ago`;
+  }
+
+  const timeParts: string[] = [];
+  if (remainingHours > 0) timeParts.push(`${remainingHours} hr`);
+  if (remainingMins > 0) timeParts.push(`${remainingMins} min`);
+
+  if (diffDay >= 30) {
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  return `${dayPart} and ${timeParts.join(" ")} ago`;
 }
 
 const ACTION_VERBS: Record<NotificationAction, string> = {
