@@ -65,6 +65,7 @@ export const PERMISSION_GROUPS: Record<PermissionGroupKey, PermissionEnum[]> = {
   [PERMISSION_GROUP_KEYS.OTHER]: [
     PermissionEnum.CHECK_RESULT,
     PermissionEnum.MANAGE_PERMISSIONS,
+    PermissionEnum.VIEW_ACTIVITY,
   ],
 };
 
@@ -125,4 +126,5 @@ export const PERMISSION_LABELS: Record<PermissionEnum, string> = {
   [PermissionEnum.UPDATE_STAFF]: "Update Staff",
   [PermissionEnum.DELETE_STAFF]: "Delete Staff",
   [PermissionEnum.MANAGE_PERMISSIONS]: "Manage Permissions",
+  [PermissionEnum.VIEW_ACTIVITY]: "View Activity",
 };

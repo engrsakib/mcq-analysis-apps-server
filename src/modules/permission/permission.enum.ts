@@ -40,6 +40,8 @@ export enum PermissionEnum {
 
   VIEW_SMS = "view_sms",
   SEND_SMS = "send_sms",
+
+  VIEW_ACTIVITY = "view_activity",
 }
 
 export enum PermissionGroup {

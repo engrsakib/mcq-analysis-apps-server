@@ -3,7 +3,9 @@ import { AdminService } from "./admin.service";
 import BaseController from "@/shared/baseController";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { cookieManager } from "@/shared/cookie";
+import { activityService } from "@/modules/activity/activity.service";
 import { resolveActor } from "@/modules/notification/notification.helpers";
+import { getClientIp } from "@/utils/getClientIp";
 
 class Controller extends BaseController {
   createAdmin = this.catchAsync(async (req: Request, res: Response) => {
@@ -73,6 +75,20 @@ class Controller extends BaseController {
   adminLogin = this.catchAsync(async (req: Request, res: Response) => {
     const result = await AdminService.adminLogin(req.body);
     cookieManager.setTokens(res, result.access_token, result.refresh_token);
+
+    await activityService.record({
+      actorId: String(
+        (result.user as { _id?: { toString(): string } })._id ?? ""
+      ),
+      actorName: result.user.name || result.user.phone_number || "Admin",
+      action: "login",
+      module: "auth",
+      title: "Admin Login",
+      description: `${result.user.name || result.user.phone_number} logged in`,
+      ipAddress: getClientIp(req),
+      userAgent: req.headers["user-agent"],
+    });
+
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
       success: true,
@@ -174,6 +190,19 @@ class Controller extends BaseController {
   });
 
   logout = this.catchAsync(async (req: Request, res: Response) => {
+    if (req.user?.id) {
+      await activityService.record({
+        actorId: String(req.user.id),
+        actorName: req.user.name?.trim() || "Admin",
+        action: "logout",
+        module: "auth",
+        title: "Admin Logout",
+        description: `${req.user.name?.trim() || "Admin"} logged out`,
+        ipAddress: getClientIp(req),
+        userAgent: req.headers["user-agent"],
+      });
+    }
+
     cookieManager.clearTokens(res);
     this.sendResponse(res, {
       statusCode: 200,

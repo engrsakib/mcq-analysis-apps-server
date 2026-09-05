@@ -109,6 +109,10 @@ router.delete(
   AdminController.deleteAdmin
 );
 
-router.delete("/logout", AdminController.logout);
+router.delete(
+  "/logout",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  AdminController.logout
+);
 
 export const AdminRoutes = router;

@@ -8,6 +8,8 @@ import {
   NotificationEventPayload,
   NotificationModuleName,
 } from "@/events/EventTypes";
+import { activityService } from "@/modules/activity/activity.service";
+import { getRequestContext } from "@/middlewares/requestContext";
 import { NotificationModel } from "./notification.model";
 import { sseManager } from "./notification.sse";
 
@@ -274,6 +276,7 @@ export async function processNotification(
 ): Promise<void> {
   if (payload.audience === "admin") {
     await notifyAllAdmins(payload);
+    await activityService.recordFromNotification(payload, getRequestContext());
     return;
   }
 

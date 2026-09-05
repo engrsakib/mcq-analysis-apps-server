@@ -10,13 +10,17 @@ import cookieParser from "cookie-parser";
 import { corsOptions } from "./config/corsOptions";
 import { initWorker } from "./events/Worker";
 import { setupSwagger } from "./swagger";
+import { requestContextMiddleware } from "./middlewares/requestContext";
 
 dotenv.config();
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 // middlewares
 app.use(cors(corsOptions));
+app.use(requestContextMiddleware);
 app.use(cookieParser());
 // app.use(
 //   "/webhooks/steadfast",

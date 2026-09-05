@@ -29,7 +29,10 @@ const ROLE_PERMISSION_GROUPS: Record<IAdminRole, PermissionGroupKey[] | "ALL"> =
   };
 
 const ROLE_EXTRA_PERMISSIONS: Partial<Record<IAdminRole, PermissionEnum[]>> = {
-  [ADMIN_ROLES.ADMIN]: [PermissionEnum.CHECK_RESULT],
+  [ADMIN_ROLES.ADMIN]: [
+    PermissionEnum.CHECK_RESULT,
+    PermissionEnum.VIEW_ACTIVITY,
+  ],
   [ADMIN_ROLES.EDITOR]: [PermissionEnum.CHECK_RESULT],
 };
 

@@ -1,3 +1,12 @@
+export interface IExamParticipation {
+  exam_number: number;
+  exam_name: string;
+  participants: number;
+  participationRate: number;
+  onTimeSubmissions: number;
+  lateSubmissions: number;
+}
+
 export interface IDashboardStats {
   totalExams: number;
   completedExams: number;
@@ -7,4 +16,5 @@ export interface IDashboardStats {
   totalYoutubeVideos: number;
   rokomariBooks: number;
   totalResults: number;
+  examParticipation: IExamParticipation[];
 }

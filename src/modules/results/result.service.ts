@@ -263,6 +263,7 @@ class service {
                 exam_number: 1,
                 total_score: 1,
                 score: 1,
+                is_on_time: 1,
               },
             },
           ],
