@@ -134,11 +134,24 @@ class Controller extends BaseController {
     const id = req.params.id;
     const updateData = req.body;
 
-    if (!id || !updateData) {
+    if (!id) {
       return this.sendResponse(res, {
         statusCode: HttpStatusCode.BAD_REQUEST,
         success: false,
-        message: "YouTube entry ID and update data are required",
+        message: "Book entry ID is required",
+      });
+    }
+
+    if (
+      updateData == null ||
+      typeof updateData !== "object" ||
+      Array.isArray(updateData) ||
+      Object.keys(updateData).length === 0
+    ) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: "No updatable book fields were provided",
       });
     }
 

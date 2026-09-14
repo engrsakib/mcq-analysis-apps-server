@@ -122,6 +122,13 @@ router.post(
   UserController.login
 );
 
+router.post(
+  "/refresh-token",
+  validateRequest(UserValidations.refreshToken),
+  loggerMiddleware,
+  UserController.refreshToken
+);
+
 router.delete("/logout", UserController.logout);
 
 export const UserRoutes = router;

@@ -1,5 +1,8 @@
 import { BarcodeService } from "@/lib/barcode";
+import ApiError from "@/middlewares/error";
+import { HttpStatusCode } from "@/lib/httpStatus";
 import { BooksModel } from "./books.model";
+import { BOOK_PLATFORM_ENUMS } from "./books.interface";
 import { eventBus } from "@/events/EventBus";
 import { searchHelpers } from "@/utils/searchHelpers";
 import { AnyBulkWriteOperation, Types } from "mongoose";
@@ -13,6 +16,89 @@ type ReorderBookItem = {
   _id?: string;
   book_number?: string | number;
   position: number;
+};
+
+const BOOK_UPDATABLE_FIELDS = [
+  "title",
+  "thumbnail_url",
+  "description",
+  "price",
+  "sold_platform",
+  "buy_url",
+  "is_published",
+  "position",
+] as const;
+
+type BookUpdatableField = (typeof BOOK_UPDATABLE_FIELDS)[number];
+
+const VALID_SOLD_PLATFORMS = new Set<string>(
+  Object.values(BOOK_PLATFORM_ENUMS)
+);
+
+const buildBookFilter = (id: string): Record<string, unknown> => {
+  const trimmedId = String(id ?? "").trim();
+
+  if (/^[0-9a-fA-F]{24}$/.test(trimmedId)) {
+    return { _id: new Types.ObjectId(trimmedId) };
+  }
+
+  const bookNumber = Number(trimmedId);
+  if (!trimmedId || !Number.isFinite(bookNumber)) {
+    throw new ApiError(HttpStatusCode.BAD_REQUEST, "Invalid book identifier");
+  }
+
+  return { book_number: bookNumber };
+};
+
+const sanitizeBookUpdate = (
+  updateData: Record<string, unknown> | null | undefined
+): Record<string, unknown> => {
+  if (
+    !updateData ||
+    typeof updateData !== "object" ||
+    Array.isArray(updateData)
+  ) {
+    throw new ApiError(
+      HttpStatusCode.BAD_REQUEST,
+      "Book update data is required"
+    );
+  }
+
+  const sanitized: Record<string, unknown> = {};
+
+  for (const field of BOOK_UPDATABLE_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(updateData, field)) {
+      continue;
+    }
+
+    const value = updateData[field];
+
+    if (field === "sold_platform") {
+      if (typeof value !== "string" || !VALID_SOLD_PLATFORMS.has(value)) {
+        continue;
+      }
+      sanitized[field] = value;
+      continue;
+    }
+
+    if (field === "thumbnail_url" && typeof value === "string") {
+      sanitized[field] = value.trim();
+      continue;
+    }
+
+    if (value !== undefined) {
+      sanitized[field as BookUpdatableField] = value;
+    }
+  }
+
+  if (!Object.keys(sanitized).length) {
+    throw new ApiError(
+      HttpStatusCode.BAD_REQUEST,
+      "No updatable book fields were provided"
+    );
+  }
+
+  return sanitized;
 };
 
 class Service {
@@ -112,16 +198,16 @@ class Service {
   }
 
   async getBookById(id: string) {
-    const bookNumber = Number(id);
-    const book = await BooksModel.findOne({ book_number: bookNumber });
+    const book = await BooksModel.findOne(buildBookFilter(id));
     return book;
   }
 
   async updateBookById(id: string, updateData: any, actor?: ActorInfo) {
-    const bookNumber = Number(id);
+    const sanitized = sanitizeBookUpdate(updateData);
+
     const updatedBook = await BooksModel.findOneAndUpdate(
-      { book_number: bookNumber },
-      updateData,
+      buildBookFilter(id),
+      { $set: sanitized },
       { new: true, runValidators: true }
     );
 
@@ -181,15 +267,13 @@ class Service {
   }
 
   async deleteBookById(id: string) {
-    const deletedBook = await BooksModel.findOneAndDelete({
-      book_number: id,
-    });
+    const deletedBook = await BooksModel.findOneAndDelete(buildBookFilter(id));
     return deletedBook;
   }
 
   async publishBookToggole(id: string) {
     const publishedBook = await BooksModel.findOneAndUpdate(
-      { book_number: id },
+      buildBookFilter(id),
       [{ $set: { is_published: { $not: "$is_published" } } }],
       { new: true }
     );

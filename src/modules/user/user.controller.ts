@@ -108,6 +108,18 @@ class Controller extends BaseController {
     });
   });
 
+  refreshToken = this.catchAsync(async (req: Request, res: Response) => {
+    const { refresh_token } = req.body as { refresh_token: string };
+    const result = await UserService.refreshAccessToken(refresh_token);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Token refreshed successfully",
+      data: result,
+    });
+  });
+
   getLoggedInUser = this.catchAsync(async (req: Request, res: Response) => {
     console.log(req.user.id);
     const user = await UserService.getLoggedInUser(req?.user?.id);

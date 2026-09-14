@@ -437,6 +437,47 @@ class Service {
     return await this.generateLoginCredentials(user._id);
   }
 
+  async refreshAccessToken(refresh_token: string): Promise<{
+    access_token: string;
+    refresh_token: string;
+  }> {
+    const payload = JwtHelper.verifyToken(refresh_token) as {
+      id?: string;
+    };
+
+    if (!payload.id) {
+      throw new ApiError(
+        HttpStatusCode.UNAUTHORIZED,
+        "Invalid refresh token. Please log in again."
+      );
+    }
+
+    const user = await UserModel.findById(payload.id);
+    if (!user) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "User was not found!");
+    }
+
+    if (user.is_Deleted) {
+      throw new ApiError(
+        HttpStatusCode.GONE,
+        "This account has been deleted. Please contact support"
+      );
+    }
+
+    if (user.status === USER_STATUS.INACTIVE) {
+      throw new ApiError(
+        HttpStatusCode.UNAUTHORIZED,
+        "Your account is not verified. Please verify to access your account"
+      );
+    }
+
+    const credentials = await this.generateLoginCredentials(user._id);
+    return {
+      access_token: credentials.access_token,
+      refresh_token: credentials.refresh_token,
+    };
+  }
+
   async getLoggedInUser(id: string) {
     const user = await UserModel.findById(id).select({ password: 0 });
 

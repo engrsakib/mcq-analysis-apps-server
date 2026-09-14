@@ -164,6 +164,14 @@ export const schemas = {
     required: ["phone_number", "password"],
     additionalProperties: false,
   },
+  RefreshTokenRequest: {
+    type: "object",
+    properties: {
+      refresh_token: { type: "string", minLength: 1 },
+    },
+    required: ["refresh_token"],
+    additionalProperties: false,
+  },
   ChangePasswordRequest: {
     type: "object",
     properties: {

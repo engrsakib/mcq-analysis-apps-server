@@ -60,4 +60,16 @@ const update = z.object({
     .strict(),
 });
 
-export const UserValidations = { create, update };
+const refreshToken = z.object({
+  body: z
+    .object({
+      refresh_token: z
+        .string({
+          required_error: "Refresh token is required",
+        })
+        .min(1, "Refresh token is required"),
+    })
+    .strict(),
+});
+
+export const UserValidations = { create, update, refreshToken };

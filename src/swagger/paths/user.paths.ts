@@ -254,6 +254,27 @@ export const userPaths = {
       },
     },
   },
+  "/user/refresh-token": {
+    post: {
+      tags: ["User"],
+      summary: "Refresh access token",
+      description:
+        "Issues new access and refresh tokens using a valid refresh token.",
+      operationId: "userRefreshToken",
+      security: securityRequirements.public,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/RefreshTokenRequest",
+        "Refresh token payload"
+      ),
+      responses: {
+        "200": successResponse(200, "Token refreshed", {
+          $ref: "#/components/schemas/AuthTokens",
+        }),
+        "400": commonResponses.ValidationError,
+        "401": commonResponses.Unauthorized,
+      },
+    },
+  },
   "/user/reset-password": {
     patch: {
       tags: ["User"],
