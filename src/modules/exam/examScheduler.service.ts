@@ -4,6 +4,13 @@ import { ExamModel } from "./exam.model";
 import { eventBus } from "@/events/EventBus";
 import { getExamEndTime, getPracticeModeStartTime } from "./exam.utils";
 import { buildAdminActivityPayload } from "@/modules/notification/notification.helpers";
+import {
+  notifyExamEnded,
+  notifyExamGoLive,
+  notifyExamStarted,
+  notifyResultsPublished,
+  sendTopRankCongratulations,
+} from "@/modules/notification/student-notification.service";
 
 let schedulerInitialized = false;
 
@@ -46,22 +53,53 @@ async function backfillLegacyCompletedExams(): Promise<void> {
 async function autoPublishScheduledExams(): Promise<void> {
   const now = new Date();
 
-  const result = await ExamModel.updateMany(
-    {
-      manual_status_override: { $ne: true },
-      is_published: false,
-      is_started: false,
-      is_completed: false,
-      exam_date_time: { $gt: now },
-    },
+  const examsToPublish = await ExamModel.find({
+    manual_status_override: { $ne: true },
+    is_published: false,
+    is_started: false,
+    is_completed: false,
+    exam_date_time: { $gt: now },
+  })
+    .select(
+      "exam_number exam_name exam_date_time is_published is_started is_completed results_published"
+    )
+    .lean();
+
+  if (examsToPublish.length === 0) {
+    return;
+  }
+
+  const examNumbers = examsToPublish
+    .map((exam) => exam.exam_number)
+    .filter(
+      (examNumber): examNumber is number =>
+        examNumber !== undefined &&
+        examNumber !== null &&
+        !Number.isNaN(Number(examNumber))
+    );
+
+  await ExamModel.updateMany(
+    { exam_number: { $in: examNumbers } },
     { $set: { is_published: true } }
   );
 
-  if (result.modifiedCount > 0) {
-    console.info(
-      `[ExamScheduler] Auto-published ${result.modifiedCount} scheduled exam(s)`
-    );
+  for (const exam of examsToPublish) {
+    try {
+      await notifyExamGoLive({
+        ...exam,
+        is_published: true,
+      });
+    } catch (error) {
+      console.error(
+        `[ExamScheduler] Failed student go-live notification for exam ${exam.exam_number}:`,
+        error
+      );
+    }
   }
+
+  console.info(
+    `[ExamScheduler] Auto-published ${examsToPublish.length} scheduled exam(s)`
+  );
 }
 
 async function autoStartExams(): Promise<void> {
@@ -73,7 +111,9 @@ async function autoStartExams(): Promise<void> {
     is_completed: false,
     exam_date_time: { $lte: now },
   })
-    .select("exam_number exam_name is_published")
+    .select(
+      "exam_number exam_name exam_date_time is_published is_started is_completed results_published"
+    )
     .lean();
 
   if (examsToStart.length === 0) {
@@ -104,6 +144,15 @@ async function autoStartExams(): Promise<void> {
           title: "Exam Started",
           description: `Exam "${exam.exam_name || "Exam"}" started automatically`,
         }),
+      });
+      await notifyExamStarted({
+        exam_name: exam.exam_name,
+        exam_number: exam.exam_number,
+        exam_date_time: exam.exam_date_time,
+        is_published: true,
+        is_started: true,
+        is_completed: false,
+        results_published: false,
       });
     } catch (error) {
       console.error(
@@ -167,6 +216,15 @@ async function autoMarkExamsCompleted(): Promise<void> {
           title: "Exam Completed",
           description: `Exam "${exam.exam_name || "Exam"}" duration ended and was marked completed`,
         }),
+      });
+      await notifyExamEnded({
+        exam_name: exam.exam_name,
+        exam_number: exam.exam_number,
+        exam_date_time: exam.exam_date_time,
+        is_published: true,
+        is_started: true,
+        is_completed: true,
+        results_published: false,
       });
     } catch (error) {
       console.error(
@@ -240,6 +298,21 @@ async function autoPublishResultsAndEnablePractice(): Promise<void> {
           description: `Exam "${exam.exam_name || "Exam"}" results published and practice mode enabled`,
         }),
       });
+      await notifyResultsPublished({
+        exam_name: exam.exam_name,
+        exam_number: exam.exam_number,
+        exam_date_time: exam.exam_date_time,
+        is_published: true,
+        is_started: true,
+        is_completed: true,
+        results_published: true,
+      });
+      if (exam.exam_number != null) {
+        await sendTopRankCongratulations({
+          examNumber: Number(exam.exam_number),
+          examName: exam.exam_name || "Exam",
+        });
+      }
     } catch (error) {
       console.error(
         `[ExamScheduler] Failed to publish practice-mode event for exam ${exam.exam_number}:`,

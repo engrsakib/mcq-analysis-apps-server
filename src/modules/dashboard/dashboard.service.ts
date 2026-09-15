@@ -53,20 +53,50 @@ class DashboardService {
           },
           { $group: { _id: "$_id.exam_number", participants: { $sum: 1 } } },
         ]),
-        ResultModel.aggregate<{
+        ExamAttemptModel.aggregate<{
           _id: number;
           onTimeSubmissions: number;
           lateSubmissions: number;
         }>([
           { $match: { exam_number: { $in: examNumbers } } },
           {
+            $lookup: {
+              from: "exams",
+              localField: "exam_number",
+              foreignField: "exam_number",
+              as: "examDoc",
+            },
+          },
+          { $unwind: { path: "$examDoc", preserveNullAndEmptyArrays: true } },
+          {
+            $match: {
+              $expr: {
+                $or: [
+                  { $eq: ["$examDoc.completed_at", null] },
+                  { $lte: ["$dateTaken", "$examDoc.completed_at"] },
+                ],
+              },
+            },
+          },
+          {
             $group: {
               _id: "$exam_number",
               onTimeSubmissions: {
-                $sum: { $cond: [{ $eq: ["$is_on_time", true] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ["$is_official", true] }, 1, 0] },
               },
               lateSubmissions: {
-                $sum: { $cond: [{ $eq: ["$is_on_time", false] }, 1, 0] },
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ["$is_on_time", false] },
+                        { $eq: ["$is_official", false] },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
+                },
               },
             },
           },

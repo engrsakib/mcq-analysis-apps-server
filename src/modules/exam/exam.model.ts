@@ -22,6 +22,7 @@ const examSchema = new Schema<IExam>({
   results_published: { type: Boolean, required: true, default: false },
   is_practice_mode: { type: Boolean, required: true, default: false },
   completed_at: { type: Date, required: false, default: null },
+  rank_notifications_sent: { type: Boolean, required: true, default: false },
   negative_mark: {
     type: Number,
     enum: Object.values(NegativeMark),

@@ -17,6 +17,7 @@ export interface IExam {
   manual_status_override?: boolean;
   is_practice_mode?: boolean;
   completed_at?: Date | null;
+  rank_notifications_sent?: boolean;
   negative_mark: NegativeMark;
   questions: ObjectId[];
 }

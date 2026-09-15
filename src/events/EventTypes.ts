@@ -42,6 +42,9 @@ export type NotificationEventPayload = {
   guidelineId?: string | number;
   announcementId?: string | number;
   questionId?: string | number;
+  /** When true on an admin activity payload, also fan out to all students. */
+  notifyStudents?: boolean;
+  kind?: string;
 };
 
 export type AppEvent =

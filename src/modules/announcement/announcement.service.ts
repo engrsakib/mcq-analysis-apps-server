@@ -8,6 +8,7 @@ import {
   ActorInfo,
   buildAdminActivityPayload,
 } from "@/modules/notification/notification.helpers";
+import { notifyAnnouncementPublished } from "@/modules/notification/student-notification.service";
 import { AnnouncementModel } from "./announcement.model";
 import { AnnouncementReadModel } from "./announcement-read.model";
 import { IAnnouncement } from "./announcement.interface";
@@ -52,6 +53,14 @@ class Service {
         module: "announcement",
       }),
     });
+
+    if (announcement.is_published) {
+      await notifyAnnouncementPublished({
+        title: announcement.title,
+        body: announcement.body,
+        announcementNumber: announcement.announcement_number,
+      });
+    }
 
     return announcement;
   }
@@ -98,6 +107,12 @@ class Service {
       updateData.link = updateData.link?.trim() || "";
     }
 
+    const existing = await AnnouncementModel.findOne(
+      buildAnnouncementFilter(id)
+    )
+      .select("is_published")
+      .lean();
+
     const updated = await AnnouncementModel.findOneAndUpdate(
       buildAnnouncementFilter(id),
       updateData,
@@ -106,6 +121,16 @@ class Service {
 
     if (!updated) {
       throw new ApiError(HttpStatusCode.NOT_FOUND, "Announcement not found");
+    }
+
+    const wasPublished = Boolean(existing?.is_published);
+    const isPublished = Boolean(updated.is_published);
+    if (!wasPublished && isPublished) {
+      await notifyAnnouncementPublished({
+        title: updated.title,
+        body: updated.body,
+        announcementNumber: updated.announcement_number,
+      });
     }
 
     await eventBus.publish({

@@ -192,7 +192,7 @@ class service {
         wrongAnswers,
         unanswered,
         is_cheated: is_cheated ?? false,
-        is_on_time: true,
+        is_on_time: attemptIsOnTime,
         writtenExam: writtenExam ?? [],
       });
 
@@ -426,6 +426,25 @@ class service {
     }
 
     return result;
+  };
+
+  getTopRankedStudents = async (
+    examNum: number,
+    limit = 3
+  ): Promise<
+    Array<
+      IRankedLeaderboardRow & {
+        rank: number;
+      }
+    >
+  > => {
+    const board = await this.buildRankedLeaderboard(examNum);
+    return board
+      .filter(
+        (row): row is IRankedLeaderboardRow & { rank: number } =>
+          typeof row.rank === "number"
+      )
+      .slice(0, limit);
   };
 
   private buildRankedLeaderboard = async (

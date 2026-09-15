@@ -1,3 +1,4 @@
+import { ROLES } from "@/constants/roles";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { AdminModel } from "@/modules/admin/admin.model";
 import { UserModel } from "@/modules/user/user.model";
@@ -237,6 +238,72 @@ export async function notifyAllAdmins(
   }
 }
 
+const USER_FANOUT_CHUNK_SIZE = 50;
+
+export async function notifyAllUsers(
+  payload: NotificationEventPayload
+): Promise<void> {
+  try {
+    const users = await UserModel.find({
+      is_Deleted: false,
+      role: ROLES.STUDENT,
+    })
+      .select("_id fcmToken")
+      .lean<{ _id: { toString(): string }; fcmToken?: string }[]>();
+
+    if (!users.length) return;
+
+    const basePayload = {
+      title: payload.title,
+      description: payload.description,
+      module: payload.module,
+      time: payload.time || formatRelativeTime(new Date()),
+      isRead: false,
+      actorName: payload.actorName,
+      actorId: payload.actorId,
+      action: payload.action,
+      entityType: payload.entityType,
+      entityId: payload.entityId,
+      audience: "user" as const,
+    };
+
+    for (let i = 0; i < users.length; i += USER_FANOUT_CHUNK_SIZE) {
+      const chunk = users.slice(i, i + USER_FANOUT_CHUNK_SIZE);
+      await Promise.allSettled(
+        chunk.map(async (user) => {
+          const userId = user._id.toString();
+
+          await NotificationModel.create({
+            ...basePayload,
+            userId,
+          });
+
+          const fcmToken = user.fcmToken?.trim()
+            ? user.fcmToken.trim()
+            : await getUserFcmToken(userId);
+
+          if (!fcmToken) return;
+
+          try {
+            await sendPushNotification(
+              fcmToken,
+              payload.title,
+              payload.description
+            );
+          } catch (pushError) {
+            console.error(
+              `[Notification] FCM failed for userId="${userId}":`,
+              pushError
+            );
+          }
+        })
+      );
+    }
+  } catch (error) {
+    console.error("[Notification] notifyAllUsers failed:", error);
+  }
+}
+
 export async function notifyUser(
   payload: NotificationEventPayload
 ): Promise<void> {
@@ -276,6 +343,9 @@ export async function processNotification(
 ): Promise<void> {
   if (payload.audience === "admin") {
     await notifyAllAdmins(payload);
+    if (payload.notifyStudents) {
+      await notifyAllUsers({ ...payload, audience: "user" });
+    }
     await activityService.recordFromNotification(payload, getRequestContext());
     return;
   }

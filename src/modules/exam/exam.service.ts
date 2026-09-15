@@ -19,6 +19,7 @@ import {
   ActorInfo,
   buildAdminActivityPayload,
 } from "@/modules/notification/notification.helpers";
+import { handleExamStatusTransition } from "@/modules/notification/student-notification.service";
 import {
   DEFAULT_EXAM_SUBJECT,
   EXAM_SUBJECTS,
@@ -503,6 +504,34 @@ class Service {
         module: "exam",
       }),
     });
+
+    try {
+      await handleExamStatusTransition(
+        {
+          exam_name: existingExam.exam_name,
+          exam_number: existingExam.exam_number,
+          exam_date_time: existingExam.exam_date_time,
+          is_published: existingExam.is_published,
+          is_started: existingExam.is_started,
+          is_completed: existingExam.is_completed,
+          results_published: existingExam.results_published,
+        },
+        {
+          exam_name: updatedExam.exam_name,
+          exam_number: updatedExam.exam_number,
+          exam_date_time: updatedExam.exam_date_time,
+          is_published: updatedExam.is_published,
+          is_started: updatedExam.is_started,
+          is_completed: updatedExam.is_completed,
+          results_published: updatedExam.results_published,
+        }
+      );
+    } catch (error) {
+      console.error(
+        `[ExamService] Student notification on status update failed for exam ${updatedExam.exam_number}:`,
+        error
+      );
+    }
 
     return updatedExam;
   }
