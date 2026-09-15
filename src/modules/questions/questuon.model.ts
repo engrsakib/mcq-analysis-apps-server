@@ -42,6 +42,8 @@ const QuestionSchema = new Schema<IQuestion>(
 
     mathFormula: { type: String },
 
+    image_url: { type: String, required: false, default: "" },
+
     answerType: {
       type: String,
       enum: Object.values(answerType),

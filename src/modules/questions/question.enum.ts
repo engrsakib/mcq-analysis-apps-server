@@ -3,6 +3,8 @@ export enum QuestionType {
   MATH = "math",
   SCIENCE = "science",
   HISTORY = "history",
+  MENTAL_ABILITY = "mental_ability",
+  ICT = "ict",
 }
 
 export enum answerType {

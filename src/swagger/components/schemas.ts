@@ -405,6 +405,10 @@ export const schemas = {
         ],
       },
       mathFormula: { type: "string" },
+      image_url: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/question.png",
+      },
       answerType: { $ref: "#/components/schemas/AnswerTypeEnum" },
       marks: { type: "number", example: 1 },
       answer: {
@@ -442,6 +446,10 @@ export const schemas = {
         ],
       },
       mathFormula: { type: "string" },
+      image_url: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/question.png",
+      },
       answerType: { $ref: "#/components/schemas/AnswerTypeEnum" },
       marks: { type: "number", example: 1 },
       answer: {

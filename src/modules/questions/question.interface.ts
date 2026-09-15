@@ -16,6 +16,7 @@ export interface IQuestion {
   options?: string[];
   blanks: string | IQuestionBlank[];
   mathFormula?: string;
+  image_url?: string;
   answerType: answerType;
   marks: number;
   answer: string | IQuestionBlank[];
