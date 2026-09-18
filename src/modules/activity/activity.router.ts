@@ -7,6 +7,13 @@ import { activityController } from "./activity.controller";
 const router = Router();
 const authenticate = JwtInstance.authenticate(Object.values(ROLES));
 
+router.get("/me", authenticate, activityController.getMyActivityLogs);
+router.post(
+  "/me/exam-started",
+  authenticate,
+  activityController.recordExamStarted
+);
+
 router.get(
   "/",
   authenticate,

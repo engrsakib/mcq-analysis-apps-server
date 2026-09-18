@@ -249,6 +249,33 @@ export const resultPaths = {
       },
     },
   },
+  "/results/proctoring-event": {
+    post: {
+      tags: ["Result"],
+      summary: "Record exam proctoring violation",
+      description:
+        "Records a focus-loss or navigation proctoring event during an in-progress exam (student JWT).",
+      operationId: "recordProctoringEvent",
+      security: securityRequirements.authenticated,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/ProctoringEventRequest",
+        "Proctoring event payload"
+      ),
+      responses: {
+        "200": successResponse(200, "Proctoring event recorded", {
+          type: "object",
+          properties: {
+            exam_number: { type: "integer" },
+            eventType: { type: "string" },
+            occurredAt: { type: "string", format: "date-time" },
+          },
+        }),
+        "400": commonResponses.ValidationError,
+        "401": commonResponses.Unauthorized,
+        "404": commonResponses.NotFound,
+      },
+    },
+  },
   "/results/update-marks": {
     patch: {
       tags: ["Result"],

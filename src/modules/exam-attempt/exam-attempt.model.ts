@@ -25,6 +25,16 @@ const ExamAttemptSchema = new Schema<IExamAttempt>(
     is_cheated: { type: Boolean, required: true, default: false },
     is_on_time: { type: Boolean, required: true, default: true },
     dateTaken: { type: Date, required: true, default: Date.now },
+    sessionStartedAt: { type: Date, required: false, default: null },
+    proctoringEvents: {
+      type: [
+        {
+          type: { type: String, required: true },
+          at: { type: String, required: true },
+        },
+      ],
+      default: [],
+    },
     writtenExam: { type: [WrittenExamSchema], default: [] },
   },
   { timestamps: true }

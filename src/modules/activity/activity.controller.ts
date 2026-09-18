@@ -37,6 +37,40 @@ class ActivityController extends BaseController {
       data: result,
     });
   });
+
+  getMyActivityLogs = this.catchAsync(async (req: Request, res: Response) => {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+
+    const result = await activityService.listForActor(
+      String(req.user?.id ?? ""),
+      {
+        module: this.getQueryString(req, "module"),
+        action: this.getQueryString(req, "action"),
+        dateFrom: this.getQueryString(req, "dateFrom"),
+        dateTo: this.getQueryString(req, "dateTo"),
+      },
+      { page, limit, sortBy: "createdAt", sortOrder: "desc" }
+    );
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Activity logs retrieved successfully",
+      data: result,
+    });
+  });
+
+  recordExamStarted = this.catchAsync(async (req: Request, res: Response) => {
+    const data = await activityService.recordExamStarted(req.body, req.user!);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.CREATED,
+      success: true,
+      message: "Exam started recorded",
+      data,
+    });
+  });
 }
 
 export const activityController = new ActivityController();

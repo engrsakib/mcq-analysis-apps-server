@@ -21,6 +21,11 @@ export interface IResult extends Document {
   writtenExam: IwrittenExam[];
 }
 
+export interface IProctoringEventInput {
+  type: string;
+  at: string;
+}
+
 export interface ICreateResultInput {
   exam_number: number;
   total_score: number;
@@ -32,6 +37,16 @@ export interface ICreateResultInput {
   is_cheated?: boolean;
   is_on_time?: boolean;
   writtenExam?: IwrittenExam[];
+  clientSubmittedAt?: string;
+  sessionStartedAt?: string;
+  proctoringEvents?: IProctoringEventInput[];
+  submittedOffline?: boolean;
+}
+
+export interface IRecordProctoringEventInput {
+  exam_number: number;
+  eventType: string;
+  occurredAt: string;
 }
 
 export type UpdateMarkAction = "increase_marks" | "decrease_marks";

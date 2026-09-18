@@ -11,6 +11,12 @@ router.post(
   ResultController.createResult
 );
 
+router.post(
+  "/proctoring-event",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  ResultController.recordProctoringEvent
+);
+
 router.get(
   "/:exam_number/leaderboard",
   JwtInstance.authenticate(Object.values(ROLES)),

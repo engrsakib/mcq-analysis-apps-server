@@ -9,6 +9,11 @@ const ACTIVITY_ACTIONS = [
   "deleted",
   "registered",
   "submitted",
+  "proctoring_violation",
+  "exam_started",
+  "exam_submitted",
+  "exam_submitted_offline",
+  "exam_submitted_cheated",
 ] as const;
 
 const ACTIVITY_MODULES = [
@@ -50,6 +55,12 @@ const adminActivityLogSchema = new Schema<IAdminActivityLog>(
     entityId: { type: String, trim: true },
     ipAddress: { type: String, trim: true },
     userAgent: { type: String, trim: true },
+    severity: {
+      type: String,
+      enum: ["normal", "danger"],
+      default: "normal",
+    },
+    examNumber: { type: Number, index: true },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
@@ -59,6 +70,12 @@ const adminActivityLogSchema = new Schema<IAdminActivityLog>(
 adminActivityLogSchema.index({ createdAt: -1 });
 adminActivityLogSchema.index({ actorName: 1, createdAt: -1 });
 adminActivityLogSchema.index({ module: 1, action: 1, createdAt: -1 });
+adminActivityLogSchema.index({
+  actorId: 1,
+  action: 1,
+  examNumber: 1,
+  entityId: 1,
+});
 
 export const AdminActivityLogModel = model<IAdminActivityLog>(
   "AdminActivityLog",

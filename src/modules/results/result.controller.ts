@@ -15,6 +15,21 @@ class Controller extends BaseController {
     });
   });
 
+  recordProctoringEvent = this.catchAsync(
+    async (req: Request, res: Response) => {
+      const result = await resultService.recordProctoringEvent(
+        req.body,
+        req.user
+      );
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.CREATED,
+        success: true,
+        message: "Proctoring event recorded",
+        data: result,
+      });
+    }
+  );
+
   getResultsBySearch = this.catchAsync(async (req: Request, res: Response) => {
     const phone = req.query.phone as string | undefined;
     const examNum = req.query.examNum ? Number(req.query.examNum) : undefined;

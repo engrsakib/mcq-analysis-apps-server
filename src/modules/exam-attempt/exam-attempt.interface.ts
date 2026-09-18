@@ -1,5 +1,8 @@
 import { Document } from "mongoose";
-import { IwrittenExam } from "../results/result.interface";
+import {
+  IProctoringEventInput,
+  IwrittenExam,
+} from "../results/result.interface";
 
 export interface IExamAttempt extends Document {
   student_name: string;
@@ -16,6 +19,8 @@ export interface IExamAttempt extends Document {
   is_cheated: boolean;
   is_on_time: boolean;
   dateTaken: Date;
+  sessionStartedAt?: Date | null;
+  proctoringEvents?: IProctoringEventInput[];
   writtenExam: IwrittenExam[];
   createdAt?: Date;
   updatedAt?: Date;

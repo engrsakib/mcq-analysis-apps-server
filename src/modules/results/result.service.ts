@@ -2,10 +2,17 @@ import { ADMIN_ROLE_VALUES, IAdminRole } from "@/constants/roles";
 import {
   ICreateResultInput,
   IMeritExportResult,
+  IRecordProctoringEventInput,
   IRankedLeaderboardRow,
   IUpdateMarkPayload,
   MeritExportPhoneMode,
 } from "./result.interface";
+import {
+  computeAttemptIsOnTime,
+  resolveSessionStartedAt,
+  sanitizeClientSubmittedAt,
+} from "./result.timing.utils";
+import { activityService } from "@/modules/activity/activity.service";
 import { maskPhoneNumber } from "./result.utils";
 import { ResultModel } from "./result.model";
 import { ExamAttemptModel } from "../exam-attempt/exam-attempt.model";
@@ -59,6 +66,11 @@ class service {
       unanswered,
       is_cheated,
       writtenExam,
+      is_on_time: clientIsOnTime,
+      clientSubmittedAt,
+      sessionStartedAt,
+      proctoringEvents,
+      submittedOffline,
     } = resultData;
 
     if (!exam_number) {
@@ -138,10 +150,40 @@ class service {
     }
 
     const studentName = userRecord.name || user.name || "";
-    const withinWindow = isExamWithinWindow(exam);
+    const cheated = Boolean(is_cheated);
+    const sessionStart = resolveSessionStartedAt(sessionStartedAt);
+    const serverNow = new Date();
+    const submitInstant = sanitizeClientSubmittedAt({
+      clientSubmittedAt,
+      examStart: new Date(exam.exam_date_time),
+      serverNow,
+    });
+
+    if (sessionStart) {
+      const duplicateAttempt = await ExamAttemptModel.findOne({
+        exam_number,
+        student_phone: user.phone_number,
+        sessionStartedAt: sessionStart,
+      }).lean();
+
+      if (duplicateAttempt) {
+        return toResultResponse(
+          duplicateAttempt as unknown as IExamAttempt,
+          studentName,
+          user.phone_number,
+          exam_number
+        );
+      }
+    }
+
+    const withinWindow = isExamWithinWindow(exam, submitInstant);
     const attemptNumber = priorAttemptCount + 1;
-    const attemptIsOnTime =
-      withinWindow && !exam.is_practice_mode && !exam.is_completed;
+    const attemptIsOnTime = computeAttemptIsOnTime({
+      exam,
+      submitInstant,
+      sessionStartedAt: sessionStart,
+      clientIsOnTime,
+    });
 
     const attempt = await ExamAttemptModel.create({
       student_name: studentName,
@@ -155,9 +197,37 @@ class service {
       correctAnswers,
       wrongAnswers,
       unanswered,
-      is_cheated: is_cheated ?? false,
+      is_cheated: cheated,
       is_on_time: attemptIsOnTime,
+      dateTaken: submitInstant,
+      sessionStartedAt: sessionStart,
+      proctoringEvents: proctoringEvents ?? [],
       writtenExam: writtenExam ?? [],
+    });
+
+    const submitAction = cheated
+      ? "exam_submitted_cheated"
+      : submittedOffline
+        ? "exam_submitted_offline"
+        : "exam_submitted";
+    const submitSeverity = cheated || submittedOffline ? "danger" : "normal";
+    const submitTitle = cheated
+      ? "Exam submitted (proctoring violation)"
+      : submittedOffline
+        ? "Exam submitted offline"
+        : "Exam submitted";
+
+    await activityService.record({
+      actorId: String(user.id),
+      actorName: studentName,
+      action: submitAction,
+      module: "exam",
+      title: submitTitle,
+      description: `${studentName} submitted exam "${exam.exam_name || exam_number}" (Score: ${score}/${total_score}) at ${submitInstant.toISOString()}${submittedOffline ? " — synced from offline queue" : ""}`,
+      entityType: "exam",
+      entityId: String(exam_number),
+      examNumber: exam_number,
+      severity: submitSeverity,
     });
 
     await eventBus.publish({
@@ -178,7 +248,9 @@ class service {
       !existingResult &&
       withinWindow &&
       !exam.is_completed &&
-      !exam.is_practice_mode;
+      !exam.is_practice_mode &&
+      !cheated &&
+      attemptIsOnTime;
 
     if (shouldCreateOfficialResult) {
       const result = await ResultModel.create({
@@ -191,8 +263,9 @@ class service {
         correctAnswers,
         wrongAnswers,
         unanswered,
-        is_cheated: is_cheated ?? false,
+        is_cheated: cheated,
         is_on_time: attemptIsOnTime,
+        dateTaken: submitInstant,
         writtenExam: writtenExam ?? [],
       });
 
@@ -656,6 +729,63 @@ class service {
     }
 
     return fullLeaderboard;
+  };
+
+  recordProctoringEvent = async (
+    payload: IRecordProctoringEventInput,
+    user: IJWtPayload
+  ) => {
+    const examNumber = Number(payload.exam_number);
+    if (!Number.isFinite(examNumber)) {
+      throw new ApiError(HttpStatusCode.BAD_REQUEST, "Exam number is required");
+    }
+
+    const eventType = payload.eventType?.trim();
+    const occurredAt = payload.occurredAt?.trim();
+    if (!eventType || !occurredAt) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "eventType and occurredAt are required"
+      );
+    }
+
+    const [exam, userRecord] = await Promise.all([
+      ExamModel.findOne({ exam_number: examNumber })
+        .select("exam_name exam_number")
+        .lean(),
+      UserModel.findById(user.id)
+        .select("name phone_number is_Deleted status")
+        .lean(),
+    ]);
+
+    if (!userRecord || userRecord.is_Deleted) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "User not found");
+    }
+
+    if (!exam) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "Exam not found");
+    }
+
+    const actorName = userRecord.name || user.name || "Student";
+
+    await activityService.record({
+      actorId: String(user.id),
+      actorName,
+      action: "proctoring_violation",
+      module: "exam",
+      title: "Exam proctoring violation",
+      description: `${actorName} triggered ${eventType} during exam "${exam.exam_name || examNumber}" at ${occurredAt}`,
+      entityType: "exam",
+      entityId: String(examNumber),
+      examNumber,
+      severity: "danger",
+    });
+
+    return {
+      exam_number: examNumber,
+      eventType,
+      occurredAt,
+    };
   };
 }
 

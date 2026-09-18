@@ -624,6 +624,23 @@ export const schemas = {
       updatedAt: { type: "string", format: "date-time" },
     },
   },
+  RecordExamStartedRequest: {
+    type: "object",
+    properties: {
+      exam_number: { type: "integer", example: 1234567890123 },
+      sessionStartedAt: { type: "string", format: "date-time" },
+    },
+    required: ["exam_number", "sessionStartedAt"],
+  },
+  ProctoringEventRequest: {
+    type: "object",
+    properties: {
+      exam_number: { type: "integer", example: 1234567890123 },
+      eventType: { type: "string", example: "app_background" },
+      occurredAt: { type: "string", format: "date-time" },
+    },
+    required: ["exam_number", "eventType", "occurredAt"],
+  },
   CreateResultRequest: {
     type: "object",
     properties: {
@@ -638,6 +655,19 @@ export const schemas = {
       unanswered: { type: "integer", example: 5 },
       is_cheated: { type: "boolean", default: false },
       is_on_time: { type: "boolean", default: true },
+      clientSubmittedAt: { type: "string", format: "date-time" },
+      sessionStartedAt: { type: "string", format: "date-time" },
+      submittedOffline: { type: "boolean", default: false },
+      proctoringEvents: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            type: { type: "string" },
+            at: { type: "string", format: "date-time" },
+          },
+        },
+      },
       writtenExam: {
         type: "array",
         items: { $ref: "#/components/schemas/WrittenExamAnswer" },

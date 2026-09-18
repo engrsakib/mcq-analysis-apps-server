@@ -227,6 +227,55 @@ async function main() {
     `isSubmitted=${String(userCExam?.isSubmitted)}`
   );
 
+  const sessionStart = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const clientSubmittedAt = new Date().toISOString();
+  const userC = {
+    id: createdUserC._id.toString(),
+    phone_number: USER_C_PHONE,
+    name: "Verify User C",
+    role: ROLES.STUDENT,
+  };
+
+  const cheatedAttempt = await resultService.createResult(
+    {
+      ...basePayload,
+      is_cheated: true,
+      sessionStartedAt: sessionStart,
+      clientSubmittedAt,
+      proctoringEvents: [{ type: "app_background", at: clientSubmittedAt }],
+    },
+    userC
+  );
+  const cheatedOfficial = await ResultModel.findOne({
+    exam_number: TEST_EXAM_NUMBER,
+    student_phone: USER_C_PHONE,
+  }).lean();
+  record(
+    "Cheated submission does not create official result",
+    Boolean(cheatedAttempt) && !cheatedOfficial,
+    `officialExists=${Boolean(cheatedOfficial)}`
+  );
+
+  const idempotentRetry = await resultService.createResult(
+    {
+      ...basePayload,
+      score: 77,
+      sessionStartedAt: sessionStart,
+      clientSubmittedAt,
+    },
+    userC
+  );
+  const userCAttempts = await ExamAttemptModel.countDocuments({
+    exam_number: TEST_EXAM_NUMBER,
+    student_phone: USER_C_PHONE,
+    sessionStartedAt: new Date(sessionStart),
+  });
+  record(
+    "Duplicate sessionStartedAt returns existing attempt without second insert",
+    Boolean(idempotentRetry) && userCAttempts === 1,
+    `attemptsWithSession=${userCAttempts}`
+  );
+
   await ResultModel.deleteMany({
     exam_number: TEST_EXAM_NUMBER,
     student_phone: { $in: [USER_A_PHONE, USER_B_PHONE, USER_C_PHONE] },
