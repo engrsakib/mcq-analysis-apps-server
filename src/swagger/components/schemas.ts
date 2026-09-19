@@ -410,7 +410,12 @@ export const schemas = {
     type: "object",
     properties: {
       _id: { type: "string", format: "objectId" },
-      questionId: { type: "integer", example: 1234567890123 },
+      questionId: {
+        type: "integer",
+        example: 1,
+        description:
+          "Sequential 1–9999 for newly created questions; legacy rows may use longer EAN-style IDs.",
+      },
       title: { type: "string", example: "What is 2+2?" },
       description: { type: "string" },
       type: { $ref: "#/components/schemas/QuestionTypeEnum" },

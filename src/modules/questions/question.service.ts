@@ -4,7 +4,7 @@ import { HttpStatusCode } from "@/lib/httpStatus";
 import { IPaginationOptions } from "@/interfaces/pagination.interfaces";
 import { paginationHelpers } from "@/helpers/paginationHelpers";
 import { QuestionModel } from "./questuon.model";
-import { BarcodeService } from "@/lib/barcode";
+import { allocateNextQuestionNumber } from "@/lib/questionNumber";
 import { QuestionStudyTopicModel } from "../question-study-topic/question-study-topic.model";
 import { eventBus } from "@/events/EventBus";
 import {
@@ -50,7 +50,7 @@ class Service {
     await this.validateCategoryId(questionData.category_id);
 
     const payload = this.sanitizeQuestionPayload(questionData);
-    payload.questionId = BarcodeService.generateEAN13();
+    payload.questionId = await allocateNextQuestionNumber();
 
     const question = await QuestionModel.create(payload);
     const populated = await question.populate(

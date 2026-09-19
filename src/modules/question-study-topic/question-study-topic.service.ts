@@ -126,7 +126,7 @@ class Service {
   getDropdownTopics = async () => {
     return QuestionStudyTopicModel.find()
       .select("name category_number type position")
-      .sort({ position: 1 });
+      .sort({ position: -1 });
   };
 
   getTopicByCategoryNumber = async (categoryNumber: number) => {
