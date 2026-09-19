@@ -1,9 +1,47 @@
 import { NotificationEventPayload } from "@/events/EventTypes";
-import { processNotification } from "./notification.helpers";
+import { notifyUser, processNotification } from "./notification.helpers";
 
 const dispatch = async (payload: NotificationEventPayload): Promise<void> => {
   await processNotification(payload);
 };
+
+function studentExamSubmitCopy(payload: NotificationEventPayload): {
+  title: string;
+  description: string;
+} {
+  const scorePart = payload.description.match(/\(Score:[^)]+\)/i)?.[0];
+  const examPart = payload.description.match(
+    /submitted exam (.+?) \(Score:/i
+  )?.[1];
+  if (examPart) {
+    return {
+      title: "Exam submitted",
+      description: scorePart
+        ? `Your answers for ${examPart} were recorded ${scorePart}.`
+        : `Your answers for ${examPart} were recorded.`,
+    };
+  }
+  return {
+    title: "Exam submitted",
+    description: "Your exam submission was received.",
+  };
+}
+
+async function mirrorToStudentInbox(
+  payload: NotificationEventPayload,
+  userId: string,
+  overrides: Partial<NotificationEventPayload>
+): Promise<void> {
+  const id = userId.trim();
+  if (!id) return;
+
+  await notifyUser({
+    ...payload,
+    ...overrides,
+    userId: id,
+    audience: "user",
+  });
+}
 
 export const handleStudyPlanCreated = async (
   payload: NotificationEventPayload
@@ -165,6 +203,21 @@ export const handleUserRegistered = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
   await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+
+  const newUserId = payload.entityId?.trim();
+  if (newUserId) {
+    await mirrorToStudentInbox(payload, newUserId, {
+      title: "Welcome",
+      description:
+        "Your account is ready. You'll see updates here when exams, results, and announcements are published.",
+      module: "user",
+      action: "registered",
+      actorName: "System",
+      actorId: "system",
+      entityType: "user",
+      entityId: newUserId,
+    });
+  }
 };
 
 export const handleUserUpdated = async (
@@ -201,4 +254,16 @@ export const handleExamSubmitted = async (
   payload: NotificationEventPayload
 ): Promise<void> => {
   await dispatch({ ...payload, audience: payload.audience ?? "admin" });
+
+  const studentId = payload.actorId?.trim();
+  if (!studentId || studentId === "system") return;
+
+  const copy = studentExamSubmitCopy(payload);
+  await mirrorToStudentInbox(payload, studentId, {
+    ...copy,
+    module: "exam",
+    action: "submitted",
+    entityType: payload.entityType ?? "exam",
+    entityId: payload.entityId,
+  });
 };

@@ -1,6 +1,6 @@
 /**
  * Optional one-time setup: set the question_number counter to max(existing short IDs)
- * so the next allocated ID does not collide with questions numbered 1–9999.
+ * so the next allocated ID does not collide with questions numbered 1–999999.
  *
  * Does NOT renumber legacy EAN-style question IDs.
  *

@@ -414,7 +414,7 @@ export const schemas = {
         type: "integer",
         example: 1,
         description:
-          "Sequential 1–9999 for newly created questions; legacy rows may use longer EAN-style IDs.",
+          "Sequential 1–999999 for newly created questions; display as 000001 in clients. Legacy rows may use longer EAN-style IDs.",
       },
       title: { type: "string", example: "What is 2+2?" },
       description: { type: "string" },

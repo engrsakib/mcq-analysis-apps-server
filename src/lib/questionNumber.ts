@@ -3,7 +3,8 @@ import ApiError from "@/middlewares/error";
 import { HttpStatusCode } from "@/lib/httpStatus";
 
 export const QUESTION_NUMBER_COUNTER_NAME = "question_number";
-export const QUESTION_NUMBER_MAX = 9999;
+export const QUESTION_NUMBER_MAX = 999_999;
+export const QUESTION_ID_DISPLAY_LENGTH = 6;
 
 export function formatQuestionIdForDisplay(questionId: number): string {
   if (
@@ -11,7 +12,10 @@ export function formatQuestionIdForDisplay(questionId: number): string {
     questionId >= 1 &&
     questionId <= QUESTION_NUMBER_MAX
   ) {
-    return String(Math.trunc(questionId)).padStart(4, "0");
+    return String(Math.trunc(questionId)).padStart(
+      QUESTION_ID_DISPLAY_LENGTH,
+      "0"
+    );
   }
   return String(questionId);
 }
