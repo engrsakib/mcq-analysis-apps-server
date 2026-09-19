@@ -232,6 +232,74 @@ export const userPaths = {
       },
     },
   },
+  "/user/auth/google-config": {
+    get: {
+      tags: ["User"],
+      summary: "Google Sign-In public OAuth client IDs",
+      operationId: "getGoogleAuthConfig",
+      security: securityRequirements.public,
+      responses: {
+        "200": successResponse(200, "Google config", {
+          type: "object",
+          properties: {
+            webClientId: { type: "string" },
+            androidClientId: { type: "string" },
+          },
+        }),
+      },
+    },
+  },
+  "/user/auth/google": {
+    post: {
+      tags: ["User"],
+      summary: "Sign in with Google ID token",
+      operationId: "authWithGoogle",
+      security: securityRequirements.public,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/GoogleIdTokenRequest",
+        "Google ID token"
+      ),
+      responses: {
+        "200": successResponse(200, "Google auth result"),
+        "401": commonResponses.Unauthorized,
+        "409": commonResponses.Conflict,
+      },
+    },
+  },
+  "/user/auth/google/register": {
+    post: {
+      tags: ["User"],
+      summary: "Complete registration after Google sign-in",
+      operationId: "registerWithGoogle",
+      security: securityRequirements.public,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/GoogleRegisterRequest",
+        "Google register payload"
+      ),
+      responses: {
+        "201": successResponse(201, "Registered with Google", {
+          $ref: "#/components/schemas/AuthTokens",
+        }),
+        "409": commonResponses.Conflict,
+      },
+    },
+  },
+  "/user/link-google": {
+    post: {
+      tags: ["User"],
+      summary: "Link Google account to logged-in user",
+      operationId: "linkGoogleAccount",
+      security: securityRequirements.authenticated,
+      requestBody: jsonRequestBody(
+        "#/components/schemas/GoogleIdTokenRequest",
+        "Google ID token"
+      ),
+      responses: {
+        "200": successResponse(200, "Google linked"),
+        "409": commonResponses.Conflict,
+      },
+    },
+  },
   "/user/login": {
     post: {
       tags: ["User"],

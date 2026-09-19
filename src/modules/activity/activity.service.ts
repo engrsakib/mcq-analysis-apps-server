@@ -12,6 +12,7 @@ import {
   IRecordActivityInput,
   IRecordExamStartedInput,
 } from "./activity.interface";
+import { formatActivityClock12h } from "./activity-datetime";
 import { AdminModel } from "@/modules/admin/admin.model";
 import { UserModel } from "@/modules/user/user.model";
 import { AdminActivityLogModel } from "./activity.model";
@@ -301,7 +302,7 @@ class ActivityService {
       action: "exam_started",
       module: "exam",
       title: "Exam started",
-      description: `${actorName} started exam "${exam.exam_name || examNumber}" at ${sessionStartedAt}`,
+      description: `${actorName} started exam "${exam.exam_name || examNumber}" at ${formatActivityClock12h(sessionStartedAt)}`,
       entityType: "exam",
       entityId: sessionStartedAt,
       examNumber,
@@ -313,6 +314,26 @@ class ActivityService {
       sessionStartedAt,
       recorded: true,
     };
+  };
+
+  updateProctoringDescription = async (input: {
+    actorId: string;
+    examNumber: number;
+    startedAt: string;
+    description: string;
+  }): Promise<boolean> => {
+    const updated = await AdminActivityLogModel.findOneAndUpdate(
+      {
+        actorId: input.actorId,
+        action: "proctoring_violation",
+        examNumber: input.examNumber,
+        entityId: input.startedAt,
+      },
+      { $set: { description: input.description } },
+      { new: true }
+    );
+
+    return Boolean(updated);
   };
 }
 

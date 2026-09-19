@@ -164,6 +164,26 @@ export const schemas = {
     required: ["phone_number", "password"],
     additionalProperties: false,
   },
+  GoogleIdTokenRequest: {
+    type: "object",
+    properties: {
+      idToken: { type: "string", minLength: 10 },
+    },
+    required: ["idToken"],
+    additionalProperties: false,
+  },
+  GoogleRegisterRequest: {
+    type: "object",
+    properties: {
+      idToken: { type: "string", minLength: 10 },
+      name: { type: "string", minLength: 3 },
+      phone_number: { type: "string", minLength: 10 },
+      password: { type: "string", minLength: 6, maxLength: 15 },
+      role: { type: "string", enum: ["customer", "student", "admin"] },
+    },
+    required: ["idToken", "name", "phone_number", "password"],
+    additionalProperties: false,
+  },
   RefreshTokenRequest: {
     type: "object",
     properties: {
@@ -638,6 +658,7 @@ export const schemas = {
       exam_number: { type: "integer", example: 1234567890123 },
       eventType: { type: "string", example: "app_background" },
       occurredAt: { type: "string", format: "date-time" },
+      endedAt: { type: "string", format: "date-time" },
     },
     required: ["exam_number", "eventType", "occurredAt"],
   },

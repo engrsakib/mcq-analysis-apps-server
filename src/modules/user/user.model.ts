@@ -11,6 +11,13 @@ const userSchema = new Schema<IUser>(
     image: { type: String, default: "" },
     is_Deleted: { type: Boolean, default: false },
     email: { type: String, default: "" },
+    googleId: { type: String, sparse: true, unique: true },
+    googleEmail: { type: String, default: "" },
+    authProviders: {
+      type: [String],
+      enum: ["local", "google"],
+      default: ["local"],
+    },
     role: { type: String, default: ROLES.STUDENT, required: false },
     password: { type: String, required: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },

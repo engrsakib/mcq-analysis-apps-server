@@ -268,6 +268,7 @@ export const resultPaths = {
             exam_number: { type: "integer" },
             eventType: { type: "string" },
             occurredAt: { type: "string", format: "date-time" },
+            endedAt: { type: "string", format: "date-time" },
           },
         }),
         "400": commonResponses.ValidationError,

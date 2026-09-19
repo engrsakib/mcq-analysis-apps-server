@@ -13,6 +13,10 @@ import {
   sanitizeClientSubmittedAt,
 } from "./result.timing.utils";
 import { activityService } from "@/modules/activity/activity.service";
+import {
+  buildProctoringDescription,
+  formatActivityClock12h,
+} from "@/modules/activity/activity-datetime";
 import { maskPhoneNumber } from "./result.utils";
 import { ResultModel } from "./result.model";
 import { ExamAttemptModel } from "../exam-attempt/exam-attempt.model";
@@ -312,7 +316,7 @@ class service {
       action: submitAction,
       module: "exam",
       title: submitTitle,
-      description: `${studentName} submitted exam "${exam.exam_name || exam_number}" (Score: ${score}/${total_score}) at ${submitInstant.toISOString()}${submittedOffline ? " — synced from offline queue" : ""}`,
+      description: `${studentName} submitted exam "${exam.exam_name || exam_number}" (Score: ${score}/${total_score}) at ${formatActivityClock12h(submitInstant)}${submittedOffline ? " — synced from offline queue" : ""}`,
       entityType: "exam",
       entityId: String(exam_number),
       examNumber: exam_number,
@@ -871,11 +875,30 @@ class service {
 
     const eventType = payload.eventType?.trim();
     const occurredAt = payload.occurredAt?.trim();
+    const endedAt = payload.endedAt?.trim();
     if (!eventType || !occurredAt) {
       throw new ApiError(
         HttpStatusCode.BAD_REQUEST,
         "eventType and occurredAt are required"
       );
+    }
+
+    const startedDate = new Date(occurredAt);
+    if (Number.isNaN(startedDate.getTime())) {
+      throw new ApiError(
+        HttpStatusCode.BAD_REQUEST,
+        "occurredAt must be a valid ISO date"
+      );
+    }
+
+    if (endedAt) {
+      const endedDate = new Date(endedAt);
+      if (Number.isNaN(endedDate.getTime())) {
+        throw new ApiError(
+          HttpStatusCode.BAD_REQUEST,
+          "endedAt must be a valid ISO date"
+        );
+      }
     }
 
     const [exam, userRecord] = await Promise.all([
@@ -896,24 +919,57 @@ class service {
     }
 
     const actorName = userRecord.name || user.name || "Student";
-
-    await activityService.record({
-      actorId: String(user.id),
+    const examName = exam.exam_name || String(examNumber);
+    const description = buildProctoringDescription({
       actorName,
-      action: "proctoring_violation",
-      module: "exam",
-      title: "Exam proctoring violation",
-      description: `${actorName} triggered ${eventType} during exam "${exam.exam_name || examNumber}" at ${occurredAt}`,
-      entityType: "exam",
-      entityId: String(examNumber),
-      examNumber,
-      severity: "danger",
+      eventType,
+      examName,
+      startedAt: occurredAt,
+      endedAt,
     });
+
+    if (endedAt) {
+      const updated = await activityService.updateProctoringDescription({
+        actorId: String(user.id),
+        examNumber,
+        startedAt: occurredAt,
+        description,
+      });
+
+      if (!updated) {
+        await activityService.record({
+          actorId: String(user.id),
+          actorName,
+          action: "proctoring_violation",
+          module: "exam",
+          title: "Exam proctoring violation",
+          description,
+          entityType: "exam",
+          entityId: occurredAt,
+          examNumber,
+          severity: "danger",
+        });
+      }
+    } else {
+      await activityService.record({
+        actorId: String(user.id),
+        actorName,
+        action: "proctoring_violation",
+        module: "exam",
+        title: "Exam proctoring violation",
+        description,
+        entityType: "exam",
+        entityId: occurredAt,
+        examNumber,
+        severity: "danger",
+      });
+    }
 
     return {
       exam_number: examNumber,
       eventType,
       occurredAt,
+      endedAt: endedAt || null,
     };
   };
 }

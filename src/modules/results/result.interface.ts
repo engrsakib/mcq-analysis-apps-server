@@ -24,6 +24,7 @@ export interface IResult extends Document {
 export interface IProctoringEventInput {
   type: string;
   at: string;
+  endedAt?: string;
 }
 
 export interface ICreateResultInput {
@@ -47,6 +48,7 @@ export interface IRecordProctoringEventInput {
   exam_number: number;
   eventType: string;
   occurredAt: string;
+  endedAt?: string;
 }
 
 export type UpdateMarkAction = "increase_marks" | "decrease_marks";

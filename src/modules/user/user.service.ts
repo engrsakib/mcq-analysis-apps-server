@@ -21,10 +21,15 @@ import {
   ActorInfo,
   buildAdminActivityPayload,
 } from "@/modules/notification/notification.helpers";
+import {
+  getGoogleOAuthPublicConfig,
+  verifyGoogleIdToken,
+} from "@/lib/googleIdToken";
+import { AuthProvider } from "./user.interface";
 
 class Service {
   private publishUserRegistered = async (user: IUser) => {
-    if (user.role !== ROLES.STUDENT) return;
+    if (user.role !== ROLES.STUDENT && user.role !== ROLES.CUSTOMER) return;
 
     await eventBus.publish({
       type: "USER_REGISTERED",
@@ -522,6 +527,178 @@ class Service {
     const newPassword = await BcryptInstance.hash(data.new_password);
 
     await UserModel.findByIdAndUpdate(user._id, { password: newPassword });
+  }
+
+  getGoogleAuthConfig() {
+    return getGoogleOAuthPublicConfig();
+  }
+
+  async authWithGoogle(idToken: string) {
+    const profile = await verifyGoogleIdToken(idToken);
+
+    const byGoogle = await UserModel.findOne({
+      googleId: profile.sub,
+      is_Deleted: false,
+    });
+
+    if (byGoogle) {
+      if (byGoogle.status === USER_STATUS.INACTIVE) {
+        await OTPService.sendVerificationOtp(
+          byGoogle.phone_number,
+          byGoogle.role as IRoles
+        );
+        throw new ApiError(
+          HttpStatusCode.UNAUTHORIZED,
+          "Your account is not verified yet. We've sent a verification OTP."
+        );
+      }
+
+      await UserModel.findByIdAndUpdate(byGoogle._id, {
+        last_login_at: new Date(),
+      });
+
+      return {
+        registrationRequired: false as const,
+        ...(await this.generateLoginCredentials(byGoogle._id)),
+      };
+    }
+
+    if (profile.email) {
+      const emailUser = await UserModel.findOne({
+        email: profile.email,
+        is_Deleted: false,
+      });
+
+      if (emailUser && !emailUser.googleId) {
+        throw new ApiError(
+          HttpStatusCode.CONFLICT,
+          "An account with this email already exists. Log in with your phone number, then connect Google from your profile."
+        );
+      }
+    }
+
+    return {
+      registrationRequired: true as const,
+      googleProfile: {
+        name: profile.name,
+        email: profile.email,
+        picture: profile.picture,
+      },
+    };
+  }
+
+  async registerWithGoogle(data: {
+    idToken: string;
+    name: string;
+    phone_number: string;
+    password: string;
+    role?: string;
+  }) {
+    const profile = await verifyGoogleIdToken(data.idToken);
+
+    const existingGoogle = await UserModel.findOne({
+      googleId: profile.sub,
+      is_Deleted: false,
+    });
+    if (existingGoogle) {
+      throw new ApiError(
+        HttpStatusCode.CONFLICT,
+        "This Google account is already registered. Please sign in with Google."
+      );
+    }
+
+    const phoneTaken = await UserModel.findOne({
+      phone_number: data.phone_number,
+      is_Deleted: false,
+    });
+    if (phoneTaken) {
+      throw new ApiError(
+        HttpStatusCode.CONFLICT,
+        "This phone number is already registered. Log in or use a different number."
+      );
+    }
+
+    if (profile.email) {
+      const emailTaken = await UserModel.findOne({
+        email: profile.email,
+        is_Deleted: false,
+      });
+      if (emailTaken) {
+        throw new ApiError(
+          HttpStatusCode.CONFLICT,
+          "This email is already linked to another account."
+        );
+      }
+    }
+
+    const providers: AuthProvider[] = ["local", "google"];
+    const hashedPassword = await BcryptInstance.hash(data.password);
+
+    const user = await UserModel.create({
+      name: data.name.trim() || profile.name || "User",
+      phone_number: data.phone_number.trim(),
+      password: hashedPassword,
+      email: profile.email ?? "",
+      googleId: profile.sub,
+      googleEmail: profile.email ?? "",
+      image: profile.picture ?? "",
+      authProviders: providers,
+      role: data.role ?? ROLES.CUSTOMER,
+      status: USER_STATUS.ACTIVE,
+    });
+
+    if (user.role === ROLES.STUDENT || user.role === ROLES.CUSTOMER) {
+      await this.publishUserRegistered(user);
+    }
+
+    return this.generateLoginCredentials(user._id);
+  }
+
+  async linkGoogleAccount(userId: string, idToken: string) {
+    const profile = await verifyGoogleIdToken(idToken);
+
+    const currentUser = await UserModel.findById(userId);
+    if (!currentUser || currentUser.is_Deleted) {
+      throw new ApiError(HttpStatusCode.NOT_FOUND, "User was not found!");
+    }
+
+    if (currentUser.googleId && currentUser.googleId === profile.sub) {
+      return UserModel.findById(userId).select({ password: 0 });
+    }
+
+    const other = await UserModel.findOne({
+      googleId: profile.sub,
+      _id: { $ne: userId },
+      is_Deleted: false,
+    });
+    if (other) {
+      throw new ApiError(
+        HttpStatusCode.CONFLICT,
+        "This Google account is already linked to another user."
+      );
+    }
+
+    const providers = new Set<AuthProvider>(
+      currentUser.authProviders ?? ["local"]
+    );
+    providers.add("google");
+    providers.add("local");
+
+    const updated = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        googleId: profile.sub,
+        googleEmail: profile.email ?? currentUser.googleEmail,
+        email: profile.email || currentUser.email,
+        authProviders: Array.from(providers),
+        ...(profile.picture && !currentUser.image
+          ? { image: profile.picture }
+          : {}),
+      },
+      { new: true }
+    ).select({ password: 0 });
+
+    return updated;
   }
 
   async saveToken(userId: string, token: string) {

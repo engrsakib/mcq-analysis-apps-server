@@ -1,4 +1,4 @@
-import { ROLES } from "@/constants/roles";
+import { APP_USER_ROLES } from "@/constants/roles";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { AdminModel } from "@/modules/admin/admin.model";
 import { UserModel } from "@/modules/user/user.model";
@@ -157,6 +157,29 @@ export function buildAdminActivityPayload(options: {
   };
 }
 
+async function deliverPushToUser(
+  userId: string,
+  token: string,
+  title: string,
+  body: string
+): Promise<void> {
+  const result = await sendPushNotification(token, title, body);
+  if (result.success) return;
+
+  console.warn(
+    `[Notification] FCM failed for userId="${userId}": ${result.error ?? "unknown"}`
+  );
+
+  const err = result.error ?? "";
+  if (
+    err.includes("registration-token-not-registered") ||
+    err.includes("InvalidRegistration") ||
+    err.includes("NotRegistered")
+  ) {
+    await UserModel.updateOne({ _id: userId }, { $set: { fcmToken: "" } });
+  }
+}
+
 const getUserFcmToken = async (userId: string): Promise<string | null> => {
   if (!isValidObjectId(userId)) {
     return null;
@@ -246,7 +269,7 @@ export async function notifyAllUsers(
   try {
     const users = await UserModel.find({
       is_Deleted: false,
-      role: ROLES.STUDENT,
+      role: { $in: [...APP_USER_ROLES] },
     })
       .select("_id fcmToken")
       .lean<{ _id: { toString(): string }; fcmToken?: string }[]>();
@@ -284,18 +307,12 @@ export async function notifyAllUsers(
 
           if (!fcmToken) return;
 
-          try {
-            await sendPushNotification(
-              fcmToken,
-              payload.title,
-              payload.description
-            );
-          } catch (pushError) {
-            console.error(
-              `[Notification] FCM failed for userId="${userId}":`,
-              pushError
-            );
-          }
+          await deliverPushToUser(
+            userId,
+            fcmToken,
+            payload.title,
+            payload.description
+          );
         })
       );
     }
@@ -331,7 +348,12 @@ export async function notifyUser(
 
     const token = await getUserFcmToken(userId);
     if (token) {
-      await sendPushNotification(token, payload.title, payload.description);
+      await deliverPushToUser(
+        userId,
+        token,
+        payload.title,
+        payload.description
+      );
     }
   } catch (error) {
     console.error("[Notification] notifyUser failed:", error);

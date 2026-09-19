@@ -200,8 +200,66 @@ class Controller extends BaseController {
     });
   });
 
+  getGoogleAuthConfig = this.catchAsync(
+    async (_req: Request, res: Response) => {
+      const config = UserService.getGoogleAuthConfig();
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Google Sign-In configuration",
+        data: config,
+      });
+    }
+  );
+
+  authWithGoogle = this.catchAsync(async (req: Request, res: Response) => {
+    const { idToken } = req.body as { idToken: string };
+    const result = await UserService.authWithGoogle(idToken);
+
+    if (result.registrationRequired) {
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Complete registration with your phone number",
+        data: result,
+      });
+      return;
+    }
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "You've logged in successfully with Google",
+      data: result,
+    });
+  });
+
+  registerWithGoogle = this.catchAsync(async (req: Request, res: Response) => {
+    const result = await UserService.registerWithGoogle(req.body);
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.CREATED,
+      success: true,
+      message: "Account created successfully with Google",
+      data: result,
+    });
+  });
+
+  linkGoogle = this.catchAsync(async (req: Request, res: Response) => {
+    const { idToken } = req.body as { idToken: string };
+    const user = await UserService.linkGoogleAccount(req.user.id, idToken);
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Google account linked successfully",
+      data: user,
+    });
+  });
+
   saveToken = this.catchAsync(async (req: Request, res: Response) => {
-    const { userId, token } = req.body;
+    const { token } = req.body;
+    const userId = req.user?.id
+      ? String(req.user.id)
+      : String(req.body.userId ?? "");
 
     const result = await UserService.saveToken(userId, token);
 

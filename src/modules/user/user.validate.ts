@@ -72,4 +72,36 @@ const refreshToken = z.object({
     .strict(),
 });
 
-export const UserValidations = { create, update, refreshToken };
+const googleIdTokenBody = z.object({
+  body: z
+    .object({
+      idToken: z.string().min(10, "Google ID token is required"),
+    })
+    .strict(),
+});
+
+const googleRegister = z.object({
+  body: z
+    .object({
+      idToken: z.string().min(10, "Google ID token is required"),
+      name: z.string().min(3, "Name must be at least 3 characters"),
+      phone_number: z.string().min(10, "Phone number is required"),
+      password: z
+        .string()
+        .min(6, "Password must be at least 6 characters")
+        .max(15, "Password must be less than 15 characters"),
+      role: z
+        .enum([...USER_ROLES] as [string, ...string[]])
+        .optional()
+        .default("customer"),
+    })
+    .strict(),
+});
+
+export const UserValidations = {
+  create,
+  update,
+  refreshToken,
+  googleIdTokenBody,
+  googleRegister,
+};

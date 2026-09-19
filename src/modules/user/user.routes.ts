@@ -21,6 +21,27 @@ router.post(
   UserController.create
 );
 
+router.get("/auth/google-config", UserController.getGoogleAuthConfig);
+
+router.post(
+  "/auth/google",
+  validateRequest(UserValidations.googleIdTokenBody),
+  UserController.authWithGoogle
+);
+
+router.post(
+  "/auth/google/register",
+  validateRequest(UserValidations.googleRegister),
+  UserController.registerWithGoogle
+);
+
+router.post(
+  "/link-google",
+  JwtInstance.authenticate(Object.values(ROLES)),
+  validateRequest(UserValidations.googleIdTokenBody),
+  UserController.linkGoogle
+);
+
 router.post(
   "/save-token",
   JwtInstance.authenticate(),

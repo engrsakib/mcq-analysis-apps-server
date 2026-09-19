@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { ROLES } from "@/constants/roles";
+import { APP_USER_ROLES } from "@/constants/roles";
 import {
   NotificationEventPayload,
   NotificationModuleName,
@@ -195,7 +195,7 @@ export async function sendTopRankCongratulations(options: {
     const studentUser = await UserModel.findOne({
       phone_number: row.student_phone,
       is_Deleted: false,
-      role: ROLES.STUDENT,
+      role: { $in: [...APP_USER_ROLES] },
     })
       .select("_id")
       .lean<{ _id: { toString(): string } } | null>();

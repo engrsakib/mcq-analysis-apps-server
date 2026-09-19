@@ -1,5 +1,7 @@
 import { Types } from "mongoose";
 
+export type AuthProvider = "local" | "google";
+
 export type IUser = {
   _id: Types.ObjectId | string;
   name: string;
@@ -8,6 +10,9 @@ export type IUser = {
   is_Deleted: boolean;
   image: string;
   email: string;
+  googleId?: string;
+  googleEmail?: string;
+  authProviders?: AuthProvider[];
   role: string;
   password: string;
   status: "inactive" | "active";

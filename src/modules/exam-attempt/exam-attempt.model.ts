@@ -31,6 +31,7 @@ const ExamAttemptSchema = new Schema<IExamAttempt>(
         {
           type: { type: String, required: true },
           at: { type: String, required: true },
+          endedAt: { type: String, required: false },
         },
       ],
       default: [],
