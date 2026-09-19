@@ -257,9 +257,7 @@ class Controller extends BaseController {
 
   saveToken = this.catchAsync(async (req: Request, res: Response) => {
     const { token } = req.body;
-    const userId = req.user?.id
-      ? String(req.user.id)
-      : String(req.body.userId ?? "");
+    const userId = req.user?.id ? String(req.user.id) : "";
 
     const result = await UserService.saveToken(userId, token);
 

@@ -70,8 +70,9 @@ export const schemas = {
       },
       exam_number: {
         type: "integer",
-        description: "Public exam identifier (barcode number)",
-        example: 1234567890123,
+        description:
+          "Public exam identifier (sequential 1–9999 for new exams; display as 0001 in clients). Legacy exams may use longer numeric IDs.",
+        example: 1,
       },
       exam_name: {
         type: "string",
@@ -493,7 +494,7 @@ export const schemas = {
     type: "object",
     properties: {
       _id: { type: "string", format: "objectId" },
-      exam_number: { type: "integer", example: 1234567890123 },
+      exam_number: { type: "integer", example: 1 },
       exam_name: { type: "string", example: "BCS Preliminary Mock Test" },
       subject: {
         type: "string",
@@ -625,7 +626,7 @@ export const schemas = {
       _id: { type: "string", format: "objectId" },
       student_name: { type: "string", example: "Jane Student" },
       student_phone: { type: "string", example: "01800000000" },
-      exam_number: { type: "integer", example: 1234567890123 },
+      exam_number: { type: "integer", example: 1 },
       total_score: { type: "number", example: 100 },
       score: { type: "number", example: 85 },
       totalQuestions: { type: "integer", example: 100 },
@@ -647,7 +648,7 @@ export const schemas = {
   RecordExamStartedRequest: {
     type: "object",
     properties: {
-      exam_number: { type: "integer", example: 1234567890123 },
+      exam_number: { type: "integer", example: 1 },
       sessionStartedAt: { type: "string", format: "date-time" },
     },
     required: ["exam_number", "sessionStartedAt"],
@@ -655,7 +656,7 @@ export const schemas = {
   ProctoringEventRequest: {
     type: "object",
     properties: {
-      exam_number: { type: "integer", example: 1234567890123 },
+      exam_number: { type: "integer", example: 1 },
       eventType: { type: "string", example: "app_background" },
       occurredAt: { type: "string", format: "date-time" },
       endedAt: { type: "string", format: "date-time" },
@@ -667,7 +668,7 @@ export const schemas = {
     properties: {
       student_name: { type: "string", example: "Jane Student" },
       student_phone: { type: "string", example: "01800000000" },
-      exam_number: { type: "integer", example: 1234567890123 },
+      exam_number: { type: "integer", example: 1 },
       total_score: { type: "number", example: 100 },
       score: { type: "number", example: 85 },
       totalQuestions: { type: "integer", example: 100 },
@@ -708,7 +709,7 @@ export const schemas = {
   UpdateMarksRequest: {
     type: "object",
     properties: {
-      exam_number: { type: "integer", example: 1234567890123 },
+      exam_number: { type: "integer", example: 1 },
       student_phone: { type: "string", example: "01800000000" },
       amount: { type: "number", example: 5 },
       action: {

@@ -44,7 +44,8 @@ export const examPaths = {
     post: {
       tags: ["Exam"],
       summary: "Create exam",
-      description: "Creates a new exam with auto-generated exam_number",
+      description:
+        "Creates a new exam with auto-generated sequential exam_number (1, 2, …; display as 0001 in apps)",
       operationId: "createExam",
       requestBody: jsonRequestBody(
         "#/components/schemas/CreateExamRequest",

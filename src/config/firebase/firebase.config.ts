@@ -76,12 +76,6 @@ if (hasFirebaseCredentials()) {
   console.warn("[Firebase] Missing credentials — push notifications disabled.");
 }
 
-if (firebaseAdmin) {
-  console.info(
-    `[Firebase] Admin SDK ready (project: ${process.env.FIREBASE_PROJECT_ID})`
-  );
-}
-
 export { firebaseAdmin };
 
 export const sendPushNotification = async (
@@ -97,25 +91,6 @@ export const sendPushNotification = async (
     const messageId = await firebaseAdmin.messaging().send({
       token,
       notification: { title, body },
-      data: {
-        title,
-        body,
-        description: body,
-      },
-      android: {
-        priority: "high",
-        notification: {
-          channelId: "mcq_analysis_high_importance",
-          sound: "default",
-        },
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
     });
 
     return { success: true, messageId };

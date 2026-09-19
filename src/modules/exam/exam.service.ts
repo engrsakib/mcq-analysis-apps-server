@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { BarcodeService } from "@/lib/barcode";
+import { allocateNextExamNumber } from "@/lib/examNumber";
 import { ExamModel } from "./exam.model";
 import { IExam } from "./exam.interface";
 import { eventBus } from "@/events/EventBus";
@@ -92,7 +92,7 @@ const buildSubjectFilter = (query: Record<string, unknown>) => {
 class Service {
   async createExam(payload: Partial<IExam>, actor?: ActorInfo): Promise<IExam> {
     try {
-      const examNumber = BarcodeService.generateEAN13();
+      const examNumber = await allocateNextExamNumber();
       const normalizedPayload = pickExamCreatePayload(payload);
 
       const examData = {

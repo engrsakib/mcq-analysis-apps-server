@@ -35,5 +35,6 @@ examSchema.index({ is_published: 1, exam_name: 1 });
 examSchema.index({ is_published: 1, is_started: 1, exam_date_time: 1 });
 examSchema.index({ is_started: 1, is_completed: 1 });
 examSchema.index({ subject: 1, is_published: 1 });
+examSchema.index({ exam_number: 1 }, { unique: true, sparse: true });
 
 export const ExamModel = model<IExam>("Exam", examSchema);
