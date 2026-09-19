@@ -7,12 +7,14 @@ import {
 
 export enum NotificationModuleEnum {
   STUDY_PLAN = "study-plan",
+  EXAM_SOLUTION = "exam-solution",
   EXAM_ROUTINE = "exam-routine",
   YOUTUBE = "youtube",
   RESULT = "result",
   BOOKS = "books",
   EXAM = "exam",
   GUIDELINE = "guideline",
+  ANNOUNCEMENT = "announcement",
   QUESTION = "question",
   USER = "user",
   ADMIN = "admin",

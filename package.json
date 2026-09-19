@@ -24,7 +24,9 @@
     "docker:stop": "docker-compose down",
     "checkly:test": "checkly test --config src/checkly.config.ts",
     "checkly:deploy": "checkly deploy --config src/checkly.config.ts",
-    "migrate:question-topics": "ts-node -r tsconfig-paths/register src/scripts/backfill-question-category.ts"
+    "migrate:question-topics": "ts-node -r tsconfig-paths/register src/scripts/backfill-question-category.ts",
+    "firebase:sync": "node scripts/sync-firebase-env.mjs",
+    "firebase:verify": "node scripts/verify-firebase-env.mjs"
   },
   "lint-staged": {
     "*.ts": [

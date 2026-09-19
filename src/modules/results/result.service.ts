@@ -27,6 +27,15 @@ import { IRoles } from "@/constants/roles";
 import { hasExamStarted, isExamWithinWindow } from "../exam/exam.utils";
 import { buildAdminActivityPayload } from "@/modules/notification/notification.helpers";
 
+function isMongoDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: number }).code === 11000
+  );
+}
+
 function toResultResponse(
   attempt: IExamAttempt,
   studentName: string,
@@ -117,7 +126,11 @@ class service {
       throw new ApiError(HttpStatusCode.FORBIDDEN, "Exam has not started yet");
     }
 
-    if (exam.is_completed && !exam.is_practice_mode) {
+    if (
+      exam.is_completed &&
+      !exam.is_practice_mode &&
+      isExamWithinWindow(exam, new Date())
+    ) {
       throw new ApiError(
         HttpStatusCode.FORBIDDEN,
         "Exam has ended. Practice mode will be available shortly."
@@ -159,6 +172,14 @@ class service {
       serverNow,
     });
 
+    const withinWindow = isExamWithinWindow(exam, submitInstant);
+    const attemptIsOnTime = computeAttemptIsOnTime({
+      exam,
+      submitInstant,
+      sessionStartedAt: sessionStart,
+      clientIsOnTime,
+    });
+
     if (sessionStart) {
       const duplicateAttempt = await ExamAttemptModel.findOne({
         exam_number,
@@ -167,8 +188,83 @@ class service {
       }).lean();
 
       if (duplicateAttempt) {
+        const mergedCheated = Boolean(duplicateAttempt.is_cheated || cheated);
+
+        await ExamAttemptModel.updateOne(
+          { _id: duplicateAttempt._id },
+          {
+            $set: {
+              score,
+              total_score,
+              totalQuestions,
+              correctAnswers,
+              wrongAnswers,
+              unanswered,
+              is_cheated: mergedCheated,
+              is_on_time: attemptIsOnTime,
+              dateTaken: submitInstant,
+              proctoringEvents:
+                proctoringEvents ?? duplicateAttempt.proctoringEvents ?? [],
+            },
+          }
+        );
+
+        if (existingResult) {
+          await ResultModel.updateOne(
+            {
+              exam_number,
+              student_phone: user.phone_number,
+            },
+            {
+              $set: {
+                score,
+                total_score,
+                totalQuestions,
+                correctAnswers,
+                wrongAnswers,
+                unanswered,
+                is_cheated: mergedCheated,
+                is_on_time: attemptIsOnTime,
+                dateTaken: submitInstant,
+              },
+            }
+          );
+        } else if (mergedCheated) {
+          const cheatedResultPayload = {
+            student_name: studentName,
+            student_phone: user.phone_number,
+            exam_number,
+            total_score,
+            score,
+            totalQuestions,
+            correctAnswers,
+            wrongAnswers,
+            unanswered,
+            is_cheated: true,
+            is_on_time: attemptIsOnTime,
+            dateTaken: submitInstant,
+            writtenExam: writtenExam ?? [],
+          };
+
+          try {
+            await ResultModel.create(cheatedResultPayload);
+          } catch (error) {
+            if (!isMongoDuplicateKeyError(error)) {
+              throw error;
+            }
+            await ResultModel.updateOne(
+              { exam_number, student_phone: user.phone_number },
+              { $set: cheatedResultPayload }
+            );
+          }
+        }
+
+        const refreshedAttempt = await ExamAttemptModel.findById(
+          duplicateAttempt._id
+        ).lean();
+
         return toResultResponse(
-          duplicateAttempt as unknown as IExamAttempt,
+          refreshedAttempt as unknown as IExamAttempt,
           studentName,
           user.phone_number,
           exam_number
@@ -176,14 +272,7 @@ class service {
       }
     }
 
-    const withinWindow = isExamWithinWindow(exam, submitInstant);
     const attemptNumber = priorAttemptCount + 1;
-    const attemptIsOnTime = computeAttemptIsOnTime({
-      exam,
-      submitInstant,
-      sessionStartedAt: sessionStart,
-      clientIsOnTime,
-    });
 
     const attempt = await ExamAttemptModel.create({
       student_name: studentName,
@@ -244,7 +333,7 @@ class service {
       }),
     });
 
-    const shouldCreateOfficialResult =
+    const shouldCreateRankedOfficialResult =
       !existingResult &&
       withinWindow &&
       !exam.is_completed &&
@@ -252,43 +341,81 @@ class service {
       !cheated &&
       attemptIsOnTime;
 
-    if (shouldCreateOfficialResult) {
-      const result = await ResultModel.create({
-        student_name: studentName,
-        student_phone: user.phone_number,
-        exam_number,
-        total_score,
-        score,
-        totalQuestions,
-        correctAnswers,
-        wrongAnswers,
-        unanswered,
-        is_cheated: cheated,
-        is_on_time: attemptIsOnTime,
-        dateTaken: submitInstant,
-        writtenExam: writtenExam ?? [],
-      });
+    const shouldCreateCheatedLeaderboardResult = !existingResult && cheated;
+
+    const leaderboardResultPayload = {
+      student_name: studentName,
+      student_phone: user.phone_number,
+      exam_number,
+      total_score,
+      score,
+      totalQuestions,
+      correctAnswers,
+      wrongAnswers,
+      unanswered,
+      is_cheated: cheated,
+      is_on_time: attemptIsOnTime,
+      dateTaken: submitInstant,
+      writtenExam: writtenExam ?? [],
+    };
+
+    if (
+      shouldCreateRankedOfficialResult ||
+      shouldCreateCheatedLeaderboardResult
+    ) {
+      let result;
+      try {
+        result = await ResultModel.create(leaderboardResultPayload);
+      } catch (error) {
+        if (
+          !shouldCreateCheatedLeaderboardResult ||
+          !isMongoDuplicateKeyError(error)
+        ) {
+          throw error;
+        }
+        result = await ResultModel.findOneAndUpdate(
+          { exam_number, student_phone: user.phone_number },
+          { $set: leaderboardResultPayload },
+          { new: true }
+        );
+      }
+
+      if (!result) {
+        throw new ApiError(
+          HttpStatusCode.INTERNAL_SERVER_ERROR,
+          "Could not save exam result"
+        );
+      }
 
       await ExamAttemptModel.updateOne(
         { _id: attempt._id },
         { $set: { is_official: true } }
       );
 
-      await eventBus.publish({
-        type: "RESULT_PUBLISHED",
-        payload: buildAdminActivityPayload({
-          actor: { id: String(user.id), name: studentName },
-          action: "submitted",
-          entityType: "result",
-          entityLabel: `${studentName} official result for ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
-          entityId: result._id.toString(),
-          module: "result",
-          title: "Official Result Recorded",
-          description: `${studentName} official result recorded for ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
-        }),
-      });
+      if (shouldCreateRankedOfficialResult) {
+        await eventBus.publish({
+          type: "RESULT_PUBLISHED",
+          payload: buildAdminActivityPayload({
+            actor: { id: String(user.id), name: studentName },
+            action: "submitted",
+            entityType: "result",
+            entityLabel: `${studentName} official result for ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
+            entityId: result._id.toString(),
+            module: "result",
+            title: "Official Result Recorded",
+            description: `${studentName} official result recorded for ${exam.exam_name || "Exam"} (Score: ${score}/${total_score})`,
+          }),
+        });
+      }
 
       return result;
+    }
+
+    if (existingResult && cheated) {
+      await ResultModel.updateOne(
+        { exam_number, student_phone: user.phone_number },
+        { $set: leaderboardResultPayload }
+      );
     }
 
     return toResultResponse(
@@ -554,6 +681,8 @@ class service {
         student_phone: student.student_phone,
         exam_number: student.exam_number ?? examNum,
         score: student.score,
+        is_cheated: student.is_cheated,
+        is_on_time: student.is_on_time,
       };
     });
   };

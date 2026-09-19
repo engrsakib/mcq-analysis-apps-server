@@ -64,6 +64,8 @@ export interface IRankedLeaderboardRow {
   student_phone: string;
   exam_number: number;
   score: number;
+  is_cheated?: boolean;
+  is_on_time?: boolean;
 }
 
 export type MeritExportPhoneMode = "half" | "full";

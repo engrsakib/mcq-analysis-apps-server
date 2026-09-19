@@ -356,10 +356,7 @@ class Service {
     const exam = await ExamModel.findOne({
       ...buildExamFilter(id),
       is_published: true,
-      $or: [
-        { is_started: true, is_completed: false },
-        { is_practice_mode: true },
-      ],
+      is_started: true,
     }).populate("questions");
 
     if (!exam) {

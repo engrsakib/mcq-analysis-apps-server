@@ -1,6 +1,17 @@
 # Notification System and Save Token Guide
 
-This document is for Flutter and backend developers. It explains how notification events are generated, processed, stored, pushed by Firebase, and consumed by mobile clients.
+This document covers the **API, EventBus, worker, Firebase (FCM), and student Flutter app**.
+
+**Admin web dashboard** does not use FCM. It uses **SSE + REST** (`GET /notifications/stream`, `audience=admin`). Setup, proxy rules, and why “live” admin alerts work are documented here:
+
+**[`frontend/bcs-test-app-frontend/docs/ADMIN_NOTIFICATIONS.md`](../frontend/bcs-test-app-frontend/docs/ADMIN_NOTIFICATIONS.md)**
+
+### Firebase service account (student FCM only)
+
+- **Server:** set `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY_ID`, `FIREBASE_PRIVATE_KEY` (PEM with `\n` or base64), `FIREBASE_CLIENT_EMAIL`, `FIREBASE_CLIENT_ID`, `FIREBASE_CLIENT_X509_CERT_URL` in `.env` locally and in **production** (e.g. Render/hosting env). See `server/.env.example`.
+- **Do not** commit `firebase-service-account.json` or paste keys in chat — add the JSON locally (gitignored), then run `node scripts/sync-firebase-env.mjs` to print env lines for your host.
+- **Flutter (`exam-hub`):** uses **client** config (`android/app/google-services.json`, `lib/firebase_options.dart`), same Firebase **project** as the server — not the service account JSON.
+- **Admin web:** no Firebase env needed.
 
 ## 1) High-Level Overview
 
@@ -9,8 +20,10 @@ This document is for Flutter and backend developers. It explains how notificatio
 - Converts important backend actions into notification events.
 - Processes events through EventBus + JobQueue + Worker.
 - Saves notifications into database for in-app history.
-- Sends push notifications to user devices using Firebase Cloud Messaging.
-- Lets Flutter app fetch notification history and unread state from API.
+- Sends **FCM push** to **student** devices when `fcmToken` is saved.
+- Saves every notification in MongoDB (admin + student audiences).
+- **Admin web**: real-time via **SSE** to logged-in admins (see admin doc above).
+- **Student app**: FCM + `GET /notifications?audience=user`.
 
 ### Modules that send notifications
 
@@ -23,7 +36,9 @@ This document is for Flutter and backend developers. It explains how notificatio
 
 ### End-to-end flow (simple)
 
-User Action -> API -> Service -> EventBus -> JobQueue -> Worker -> Notification Handler -> Notification DB + Firebase Push -> Flutter App
+User Action -> API -> Service -> EventBus -> JobQueue -> Worker -> Notification Handler -> Notification DB
+  -> Admin: SSE broadcast to open dashboards
+  -> Student: FCM push (if token) + Flutter inbox
 
 ### ASCII architecture diagram
 
@@ -87,7 +102,7 @@ Important rule:
 ### 2.2 API Endpoint
 
 - Method: POST
-- URL: /users/save-token
+- URL: `/user/save-token` (mounted under your API prefix, e.g. `/api/v1/user/save-token`)
 - Auth: Recommended (JWT)
 - Content-Type: application/json
 
