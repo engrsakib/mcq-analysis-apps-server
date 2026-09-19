@@ -162,7 +162,14 @@ class ActivityService {
     }
 
     if (module?.trim()) {
-      andConditions.push({ module: module.trim() });
+      const moduleValue = module.trim();
+      if (moduleValue === "cheated") {
+        andConditions.push({
+          action: { $in: ["exam_submitted_cheated", "proctoring_violation"] },
+        });
+      } else {
+        andConditions.push({ module: moduleValue });
+      }
     }
 
     if (action?.trim()) {

@@ -57,6 +57,7 @@ class DashboardService {
           _id: number;
           onTimeSubmissions: number;
           lateSubmissions: number;
+          cheatedSubmissions: number;
         }>([
           { $match: { exam_number: { $in: examNumbers } } },
           {
@@ -98,6 +99,9 @@ class DashboardService {
                   ],
                 },
               },
+              cheatedSubmissions: {
+                $sum: { $cond: [{ $eq: ["$is_cheated", true] }, 1, 0] },
+              },
             },
           },
         ]),
@@ -120,6 +124,7 @@ class DashboardService {
         {
           onTimeSubmissions: row.onTimeSubmissions,
           lateSubmissions: row.lateSubmissions,
+          cheatedSubmissions: row.cheatedSubmissions,
         },
       ])
     );
@@ -135,6 +140,7 @@ class DashboardService {
         const timing = timingByExam.get(examNumber) ?? {
           onTimeSubmissions: 0,
           lateSubmissions: 0,
+          cheatedSubmissions: 0,
         };
         const participationRate =
           totalStudents > 0 ? (participants / totalStudents) * 100 : 0;
@@ -146,6 +152,7 @@ class DashboardService {
           participationRate: Math.round(participationRate * 100) / 100,
           onTimeSubmissions: timing.onTimeSubmissions,
           lateSubmissions: timing.lateSubmissions,
+          cheatedSubmissions: timing.cheatedSubmissions,
         };
       })
       .filter((row): row is IExamParticipation => row !== null);

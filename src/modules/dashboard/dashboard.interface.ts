@@ -5,6 +5,7 @@ export interface IExamParticipation {
   participationRate: number;
   onTimeSubmissions: number;
   lateSubmissions: number;
+  cheatedSubmissions: number;
 }
 
 export interface IDashboardStats {
