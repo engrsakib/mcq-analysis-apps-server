@@ -560,7 +560,25 @@ await eventBus.publish({
 });
 ```
 
-## 11) Debugging Checklist
+## 11) Activity log updates but `notifications` collection is stale
+
+If **Admin Activity Log** shows new rows but MongoDB `notifications` has no recent `createdAt`:
+
+1. **Check fan-out targets** (same DB as API):
+   - `db.admins.countDocuments({ is_Deleted: false })` — if **0**, `notifyAllAdmins` skips all inserts (activity still records the actor from JWT).
+   - Or run: `npx ts-node -r tsconfig-paths/register src/scripts/diagnose-notifications-db.ts`
+2. **Check `/health`** → `data.notifications`:
+   - `lastCreatedAt`, `countLast24h`, `adminsEligible`
+3. **PM2 / server logs** (after deploy with improved logging):
+   - `[Notification] notifyAllAdmins skipped — no eligible admins`
+   - `[Notification] notifyAllAdmins create validation failed`
+   - `[JobQueue] Event handler failed (type=...)`
+4. **Verify pipeline locally/staging:**
+   - `npx ts-node -r tsconfig-paths/register src/scripts/verify-notification-pipeline.ts`
+
+Note: Proctoring / some exam lifecycle rows are written to **activity logs only** (not the notifications collection).
+
+## 12) Debugging Checklist
 
 If push is not received:
 
@@ -578,7 +596,7 @@ If notification is in DB but no push:
 - Usually token is missing/expired or Firebase delivery failed.
 - Re-save token from device and retry.
 
-## 12) Production Notes
+## 13) Production Notes
 
 - Keep push sending in worker, not inside request-response critical path.
 - Always save DB notification even when push fails.

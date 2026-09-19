@@ -11,6 +11,7 @@ import { corsOptions } from "./config/corsOptions";
 import { initWorker } from "./events/Worker";
 import { setupSwagger } from "./swagger";
 import { requestContextMiddleware } from "./middlewares/requestContext";
+import { getHealthData } from "./lib/health/getHealthData";
 
 dotenv.config();
 
@@ -56,11 +57,13 @@ app.use(morgan("dev"));
 
 // health check (root + /health for uptime monitors)
 app.get(["/", "/health"], async (_req, res) => {
+  const data = await getHealthData();
+
   res.status(200).json({
     statusCode: 200,
     success: true,
     message: "MCQ Analysis application is running...",
-    data: null,
+    data,
   });
 });
 initWorker();

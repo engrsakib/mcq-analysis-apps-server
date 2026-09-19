@@ -39,12 +39,21 @@ function fixPrivateKey(key?: string) {
   return fixed;
 }
 
-function hasFirebaseCredentials(): boolean {
-  return Boolean(
-    process.env.FIREBASE_PROJECT_ID?.trim() &&
-      process.env.FIREBASE_CLIENT_EMAIL?.trim() &&
-      process.env.FIREBASE_PRIVATE_KEY?.trim()
-  );
+const FIREBASE_REQUIRED_ENV = [
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_CLIENT_EMAIL",
+  "FIREBASE_PRIVATE_KEY",
+] as const;
+
+export function getMissingFirebaseEnv(): string[] {
+  return FIREBASE_REQUIRED_ENV.filter((key) => {
+    const value = process.env[key];
+    return !value?.trim();
+  });
+}
+
+export function hasFirebaseCredentials(): boolean {
+  return getMissingFirebaseEnv().length === 0;
 }
 
 const serviceAccount = {

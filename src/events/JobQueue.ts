@@ -25,7 +25,10 @@ export class JobQueue {
         await this.handler(job);
       } catch (error) {
         // Safety: notification/DB errors in background jobs must not crash the server.
-        console.error("[JobQueue] Event handler failed:", error);
+        console.error(
+          `[JobQueue] Event handler failed (type=${job.type}):`,
+          error
+        );
       }
     }
 

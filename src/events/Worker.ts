@@ -38,6 +38,16 @@ import { AppEvent } from "./EventTypes";
 import { jobQueue } from "./JobQueue";
 let workerInitialized = false;
 
+function ensureEventBusBridge(): void {
+  if (workerInitialized) return;
+
+  eventBus.subscribe(async (event: AppEvent) => {
+    jobQueue.enqueue(event);
+  });
+
+  workerInitialized = true;
+}
+
 jobQueue.setHandler(async (event: AppEvent) => {
   switch (event.type) {
     case "STUDY_PLAN_CREATED":
@@ -179,11 +189,7 @@ jobQueue.setHandler(async (event: AppEvent) => {
 });
 
 export const initWorker = () => {
-  if (workerInitialized) return;
-
-  eventBus.subscribe(async (event: AppEvent) => {
-    jobQueue.enqueue(event);
-  });
-
-  workerInitialized = true;
+  ensureEventBusBridge();
 };
+
+ensureEventBusBridge();

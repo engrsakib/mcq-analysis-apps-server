@@ -11,8 +11,49 @@ import {
 } from "@/events/EventTypes";
 import { activityService } from "@/modules/activity/activity.service";
 import { getRequestContext } from "@/middlewares/requestContext";
+import { Error as MongooseError } from "mongoose";
 import { NotificationModel } from "./notification.model";
 import { sseManager } from "./notification.sse";
+
+const FCM_SEND_TIMEOUT_MS = 10_000;
+
+function logNotificationWriteError(
+  context: string,
+  error: unknown,
+  meta: Record<string, unknown>
+): void {
+  if (error instanceof MongooseError.ValidationError) {
+    const fields = Object.fromEntries(
+      Object.entries(error.errors).map(([key, val]) => [
+        key,
+        val?.message ?? String(val),
+      ])
+    );
+    console.error(`[Notification] ${context} validation failed:`, {
+      ...meta,
+      fields,
+    });
+    return;
+  }
+
+  console.error(`[Notification] ${context} failed:`, error, meta);
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      );
+    }),
+  ]);
+}
 
 export type ActorInfo = {
   id: string;
@@ -163,7 +204,14 @@ async function deliverPushToUser(
   title: string,
   body: string
 ): Promise<void> {
-  const result = await sendPushNotification(token, title, body);
+  const result = await withTimeout(
+    sendPushNotification(token, title, body),
+    FCM_SEND_TIMEOUT_MS,
+    "FCM send"
+  ).catch((error) => ({
+    success: false as const,
+    error: error instanceof Error ? error.message : "FCM send failed",
+  }));
   if (result.success) return;
 
   console.warn(
@@ -223,12 +271,24 @@ export function serializeNotification(
 export async function notifyAllAdmins(
   payload: NotificationEventPayload
 ): Promise<void> {
+  let insertedCount = 0;
+  let failedCount = 0;
+
   try {
     const admins = await AdminModel.find({ is_Deleted: false })
       .select("_id")
       .lean();
 
-    if (!admins.length) return;
+    if (!admins.length) {
+      console.warn(
+        "[Notification] notifyAllAdmins skipped — no eligible admins",
+        {
+          module: payload.module,
+          title: payload.title,
+        }
+      );
+      return;
+    }
 
     const basePayload = {
       title: payload.title,
@@ -246,18 +306,40 @@ export async function notifyAllAdmins(
 
     for (const admin of admins) {
       const adminId = admin._id.toString();
-      const notification = await NotificationModel.create({
-        ...basePayload,
-        userId: adminId,
-      });
+      try {
+        const notification = await NotificationModel.create({
+          ...basePayload,
+          userId: adminId,
+        });
+        insertedCount += 1;
 
-      sseManager.broadcast(adminId, {
-        type: "notification",
-        data: serializeNotification(notification),
+        sseManager.broadcast(adminId, {
+          type: "notification",
+          data: serializeNotification(notification),
+        });
+      } catch (error) {
+        failedCount += 1;
+        logNotificationWriteError("notifyAllAdmins create", error, {
+          module: payload.module,
+          audience: "admin",
+          userId: adminId,
+        });
+      }
+    }
+
+    if (failedCount > 0) {
+      console.warn("[Notification] notifyAllAdmins summary", {
+        module: payload.module,
+        insertedCount,
+        failedCount,
+        adminCount: admins.length,
       });
     }
   } catch (error) {
-    console.error("[Notification] notifyAllAdmins failed:", error);
+    logNotificationWriteError("notifyAllAdmins", error, {
+      module: payload.module,
+      audience: "admin",
+    });
   }
 }
 
@@ -266,6 +348,9 @@ const USER_FANOUT_CHUNK_SIZE = 50;
 export async function notifyAllUsers(
   payload: NotificationEventPayload
 ): Promise<void> {
+  let insertedCount = 0;
+  let failedCount = 0;
+
   try {
     const users = await UserModel.find({
       is_Deleted: false,
@@ -274,7 +359,16 @@ export async function notifyAllUsers(
       .select("_id fcmToken")
       .lean<{ _id: { toString(): string }; fcmToken?: string }[]>();
 
-    if (!users.length) return;
+    if (!users.length) {
+      console.warn(
+        "[Notification] notifyAllUsers skipped — no eligible users",
+        {
+          module: payload.module,
+          title: payload.title,
+        }
+      );
+      return;
+    }
 
     const basePayload = {
       title: payload.title,
@@ -292,7 +386,7 @@ export async function notifyAllUsers(
 
     for (let i = 0; i < users.length; i += USER_FANOUT_CHUNK_SIZE) {
       const chunk = users.slice(i, i + USER_FANOUT_CHUNK_SIZE);
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         chunk.map(async (user) => {
           const userId = user._id.toString();
 
@@ -300,6 +394,7 @@ export async function notifyAllUsers(
             ...basePayload,
             userId,
           });
+          insertedCount += 1;
 
           const fcmToken = user.fcmToken?.trim()
             ? user.fcmToken.trim()
@@ -315,9 +410,31 @@ export async function notifyAllUsers(
           );
         })
       );
+
+      for (const result of results) {
+        if (result.status === "rejected") {
+          failedCount += 1;
+          logNotificationWriteError("notifyAllUsers fan-out", result.reason, {
+            module: payload.module,
+            audience: "user",
+          });
+        }
+      }
+    }
+
+    if (failedCount > 0) {
+      console.warn("[Notification] notifyAllUsers summary", {
+        module: payload.module,
+        insertedCount,
+        failedCount,
+        userCount: users.length,
+      });
     }
   } catch (error) {
-    console.error("[Notification] notifyAllUsers failed:", error);
+    logNotificationWriteError("notifyAllUsers", error, {
+      module: payload.module,
+      audience: "user",
+    });
   }
 }
 
@@ -356,7 +473,11 @@ export async function notifyUser(
       );
     }
   } catch (error) {
-    console.error("[Notification] notifyUser failed:", error);
+    logNotificationWriteError("notifyUser", error, {
+      module: payload.module,
+      audience: "user",
+      userId,
+    });
   }
 }
 
