@@ -490,18 +490,6 @@ class Service {
       throw new Error("Exam not found");
     }
 
-    await eventBus.publish({
-      type: "EXAM_UPDATED",
-      payload: buildAdminActivityPayload({
-        actor,
-        action: "updated",
-        entityType: "exam",
-        entityLabel: `"${updatedExam.exam_name || "Exam"}" status`,
-        entityId: String(updatedExam.exam_number),
-        module: "exam",
-      }),
-    });
-
     try {
       await handleExamStatusTransition(
         {
@@ -526,6 +514,25 @@ class Service {
     } catch (error) {
       console.error(
         `[ExamService] Student notification on status update failed for exam ${updatedExam.exam_number}:`,
+        error
+      );
+    }
+
+    try {
+      await eventBus.publish({
+        type: "EXAM_UPDATED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "exam",
+          entityLabel: `"${updatedExam.exam_name || "Exam"}" status`,
+          entityId: String(updatedExam.exam_number),
+          module: "exam",
+        }),
+      });
+    } catch (error) {
+      console.error(
+        `[ExamService] Admin activity event failed after student status notify for exam ${updatedExam.exam_number}:`,
         error
       );
     }

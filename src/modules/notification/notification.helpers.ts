@@ -1,4 +1,4 @@
-import { APP_USER_ROLES } from "@/constants/roles";
+import { appUserMatchFilter } from "@/constants/roles";
 import { IJWtPayload } from "@/interfaces/common.interface";
 import { AdminModel } from "@/modules/admin/admin.model";
 import { UserModel } from "@/modules/user/user.model";
@@ -345,17 +345,33 @@ export async function notifyAllAdmins(
 
 const USER_FANOUT_CHUNK_SIZE = 50;
 
+async function persistUserInboxNotification(
+  userId: string,
+  basePayload: Record<string, unknown>
+): Promise<void> {
+  try {
+    await NotificationModel.create({
+      ...basePayload,
+      userId,
+    });
+  } catch (error) {
+    logNotificationWriteError("notifyAllUsers inbox", error, {
+      audience: "user",
+      userId,
+      module: basePayload.module,
+    });
+  }
+}
+
 export async function notifyAllUsers(
   payload: NotificationEventPayload
 ): Promise<void> {
-  let insertedCount = 0;
-  let failedCount = 0;
+  let pushSent = 0;
+  let pushSkippedNoToken = 0;
+  let pushFailed = 0;
 
   try {
-    const users = await UserModel.find({
-      is_Deleted: false,
-      role: { $in: [...APP_USER_ROLES] },
-    })
+    const users = await UserModel.find(appUserMatchFilter())
       .select("_id fcmToken")
       .lean<{ _id: { toString(): string }; fcmToken?: string }[]>();
 
@@ -386,50 +402,63 @@ export async function notifyAllUsers(
 
     for (let i = 0; i < users.length; i += USER_FANOUT_CHUNK_SIZE) {
       const chunk = users.slice(i, i + USER_FANOUT_CHUNK_SIZE);
-      const results = await Promise.allSettled(
+      await Promise.all(
         chunk.map(async (user) => {
           const userId = user._id.toString();
 
-          await NotificationModel.create({
-            ...basePayload,
-            userId,
-          });
-          insertedCount += 1;
+          await persistUserInboxNotification(userId, basePayload);
 
           const fcmToken = user.fcmToken?.trim()
             ? user.fcmToken.trim()
             : await getUserFcmToken(userId);
 
-          if (!fcmToken) return;
+          if (!fcmToken) {
+            pushSkippedNoToken += 1;
+            return;
+          }
 
-          await deliverPushToUser(
-            userId,
-            fcmToken,
-            payload.title,
-            payload.description
+          const result = await withTimeout(
+            sendPushNotification(fcmToken, payload.title, payload.description),
+            FCM_SEND_TIMEOUT_MS,
+            "FCM send"
+          ).catch((error) => ({
+            success: false as const,
+            error: error instanceof Error ? error.message : "FCM send failed",
+          }));
+
+          if (result.success) {
+            pushSent += 1;
+            return;
+          }
+
+          pushFailed += 1;
+          console.warn(
+            `[Notification] FCM failed for userId="${userId}": ${result.error ?? "unknown"}`
           );
+
+          const err = result.error ?? "";
+          if (
+            err.includes("registration-token-not-registered") ||
+            err.includes("InvalidRegistration") ||
+            err.includes("NotRegistered")
+          ) {
+            await UserModel.updateOne(
+              { _id: userId },
+              { $set: { fcmToken: "" } }
+            );
+          }
         })
       );
-
-      for (const result of results) {
-        if (result.status === "rejected") {
-          failedCount += 1;
-          logNotificationWriteError("notifyAllUsers fan-out", result.reason, {
-            module: payload.module,
-            audience: "user",
-          });
-        }
-      }
     }
 
-    if (failedCount > 0) {
-      console.warn("[Notification] notifyAllUsers summary", {
-        module: payload.module,
-        insertedCount,
-        failedCount,
-        userCount: users.length,
-      });
-    }
+    console.info("[Notification] notifyAllUsers push summary", {
+      module: payload.module,
+      title: payload.title,
+      userCount: users.length,
+      pushSent,
+      pushSkippedNoToken,
+      pushFailed,
+    });
   } catch (error) {
     logNotificationWriteError("notifyAllUsers", error, {
       module: payload.module,

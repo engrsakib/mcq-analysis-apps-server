@@ -83,6 +83,7 @@ export function buildStudentPayload(options: {
           ? "result"
           : "exam",
     kind: options.kind,
+    audience: "user",
   };
 }
 

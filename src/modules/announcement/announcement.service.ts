@@ -42,24 +42,31 @@ class Service {
       is_published: payload.is_published ?? true,
     });
 
-    await eventBus.publish({
-      type: "ANNOUNCEMENT_CREATED",
-      payload: buildAdminActivityPayload({
-        actor,
-        action: "created",
-        entityType: "announcement",
-        entityLabel: `"${announcement.title || "Announcement"}"`,
-        entityId: String(announcement.announcement_number),
-        module: "announcement",
-      }),
-    });
-
     if (announcement.is_published) {
       await notifyAnnouncementPublished({
         title: announcement.title,
         body: announcement.body,
         announcementNumber: announcement.announcement_number,
       });
+    }
+
+    try {
+      await eventBus.publish({
+        type: "ANNOUNCEMENT_CREATED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "created",
+          entityType: "announcement",
+          entityLabel: `"${announcement.title || "Announcement"}"`,
+          entityId: String(announcement.announcement_number),
+          module: "announcement",
+        }),
+      });
+    } catch (error) {
+      console.error(
+        "[Announcement] Admin activity event failed after student notify:",
+        error
+      );
     }
 
     return announcement;
@@ -133,17 +140,24 @@ class Service {
       });
     }
 
-    await eventBus.publish({
-      type: "ANNOUNCEMENT_UPDATED",
-      payload: buildAdminActivityPayload({
-        actor,
-        action: "updated",
-        entityType: "announcement",
-        entityLabel: `"${updated.title || "Announcement"}"`,
-        entityId: String(updated.announcement_number),
-        module: "announcement",
-      }),
-    });
+    try {
+      await eventBus.publish({
+        type: "ANNOUNCEMENT_UPDATED",
+        payload: buildAdminActivityPayload({
+          actor,
+          action: "updated",
+          entityType: "announcement",
+          entityLabel: `"${updated.title || "Announcement"}"`,
+          entityId: String(updated.announcement_number),
+          module: "announcement",
+        }),
+      });
+    } catch (error) {
+      console.error(
+        "[Announcement] Admin activity event failed after student notify:",
+        error
+      );
+    }
 
     return updated;
   }

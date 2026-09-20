@@ -132,19 +132,6 @@ async function autoStartExams(): Promise<void> {
 
   for (const exam of examsToStart) {
     try {
-      await eventBus.publish({
-        type: "EXAM_UPDATED",
-        payload: buildAdminActivityPayload({
-          actor: { id: "system", name: "System" },
-          action: "updated",
-          entityType: "exam",
-          entityLabel: `"${exam.exam_name || "Exam"}" started automatically`,
-          entityId: String(exam.exam_number ?? ""),
-          module: "exam",
-          title: "Exam Started",
-          description: `Exam "${exam.exam_name || "Exam"}" started automatically`,
-        }),
-      });
       await notifyExamStarted({
         exam_name: exam.exam_name,
         exam_number: exam.exam_number,
@@ -154,6 +141,26 @@ async function autoStartExams(): Promise<void> {
         is_completed: false,
         results_published: false,
       });
+      try {
+        await eventBus.publish({
+          type: "EXAM_UPDATED",
+          payload: buildAdminActivityPayload({
+            actor: { id: "system", name: "System" },
+            action: "updated",
+            entityType: "exam",
+            entityLabel: `"${exam.exam_name || "Exam"}" started automatically`,
+            entityId: String(exam.exam_number ?? ""),
+            module: "exam",
+            title: "Exam Started",
+            description: `Exam "${exam.exam_name || "Exam"}" started automatically`,
+          }),
+        });
+      } catch (eventError) {
+        console.error(
+          `[ExamScheduler] Admin activity event failed after student start push for exam ${exam.exam_number}:`,
+          eventError
+        );
+      }
     } catch (error) {
       console.error(
         `[ExamScheduler] Failed to publish auto-start event for exam ${exam.exam_number}:`,
@@ -204,19 +211,6 @@ async function autoMarkExamsCompleted(): Promise<void> {
 
   for (const exam of examsToComplete) {
     try {
-      await eventBus.publish({
-        type: "EXAM_UPDATED",
-        payload: buildAdminActivityPayload({
-          actor: { id: "system", name: "System" },
-          action: "updated",
-          entityType: "exam",
-          entityLabel: `"${exam.exam_name || "Exam"}" marked completed`,
-          entityId: String(exam.exam_number ?? ""),
-          module: "exam",
-          title: "Exam Completed",
-          description: `Exam "${exam.exam_name || "Exam"}" duration ended and was marked completed`,
-        }),
-      });
       await notifyExamEnded({
         exam_name: exam.exam_name,
         exam_number: exam.exam_number,
@@ -226,6 +220,26 @@ async function autoMarkExamsCompleted(): Promise<void> {
         is_completed: true,
         results_published: false,
       });
+      try {
+        await eventBus.publish({
+          type: "EXAM_UPDATED",
+          payload: buildAdminActivityPayload({
+            actor: { id: "system", name: "System" },
+            action: "updated",
+            entityType: "exam",
+            entityLabel: `"${exam.exam_name || "Exam"}" marked completed`,
+            entityId: String(exam.exam_number ?? ""),
+            module: "exam",
+            title: "Exam Completed",
+            description: `Exam "${exam.exam_name || "Exam"}" duration ended and was marked completed`,
+          }),
+        });
+      } catch (eventError) {
+        console.error(
+          `[ExamScheduler] Admin activity event failed after student end push for exam ${exam.exam_number}:`,
+          eventError
+        );
+      }
     } catch (error) {
       console.error(
         `[ExamScheduler] Failed to publish auto-complete event for exam ${exam.exam_number}:`,

@@ -100,6 +100,28 @@ export const sendPushNotification = async (
     const messageId = await firebaseAdmin.messaging().send({
       token,
       notification: { title, body },
+      data: {
+        title,
+        body,
+        description: body,
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "mcq_analysis_high_importance",
+          priority: "high",
+          sound: "default",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            contentAvailable: true,
+          },
+        },
+      },
     });
 
     return { success: true, messageId };
