@@ -68,4 +68,9 @@ export const envConfig = {
     api_key: process.env.COURIER_API_KEY as string,
     secret_key: process.env.COURIER_SECRET_KEY as string,
   },
+  cloudinary: {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
+    api_key: process.env.CLOUDINARY_API_KEY as string,
+    api_secret: process.env.CLOUDINARY_API_SECRET as string,
+  },
 };
