@@ -87,25 +87,31 @@ if (hasFirebaseCredentials()) {
 
 export { firebaseAdmin };
 
+export type PushNotificationData = Record<string, string>;
+
 export const sendPushNotification = async (
   token: string,
   title: string,
-  body: string
+  body: string,
+  extraData?: PushNotificationData
 ): Promise<PushNotificationResult> => {
   if (!firebaseAdmin) {
     return { success: false, error: "Firebase not configured" };
   }
 
+  const data: Record<string, string> = {
+    title,
+    body,
+    description: body,
+    click_action: "FLUTTER_NOTIFICATION_CLICK",
+    ...(extraData ?? {}),
+  };
+
   try {
     const messageId = await firebaseAdmin.messaging().send({
       token,
       notification: { title, body },
-      data: {
-        title,
-        body,
-        description: body,
-        click_action: "FLUTTER_NOTIFICATION_CLICK",
-      },
+      data,
       android: {
         priority: "high",
         notification: {

@@ -36,6 +36,7 @@ import {
 import { eventBus } from "./EventBus";
 import { AppEvent } from "./EventTypes";
 import { jobQueue } from "./JobQueue";
+import { deliverNotificationCampaign } from "@/modules/notification/notification-campaign-delivery.service";
 let workerInitialized = false;
 
 function ensureEventBusBridge(): void {
@@ -180,6 +181,10 @@ jobQueue.setHandler(async (event: AppEvent) => {
 
     case "EXAM_SUBMITTED":
       await handleExamSubmitted(event.payload);
+      break;
+
+    case "NOTIFICATION_CAMPAIGN_DELIVER":
+      await deliverNotificationCampaign(event.payload.campaignId);
       break;
 
     default:

@@ -19,6 +19,7 @@ export enum NotificationModuleEnum {
   USER = "user",
   ADMIN = "admin",
   QUESTION_STUDY_TOPIC = "question-study-topic",
+  ADMIN_BROADCAST = "admin-broadcast",
 }
 
 export interface INotification extends Document {
@@ -35,6 +36,9 @@ export interface INotification extends Document {
   entityType?: string;
   entityId?: string;
   audience?: NotificationAudience;
+  campaignId?: string;
+  kind?: string;
+  popupSeenAt?: Date | null;
 }
 
 export interface ICreateNotificationPayload {
@@ -49,4 +53,6 @@ export interface ICreateNotificationPayload {
   entityType?: string;
   entityId?: string;
   audience?: NotificationAudience;
+  campaignId?: string;
+  kind?: string;
 }

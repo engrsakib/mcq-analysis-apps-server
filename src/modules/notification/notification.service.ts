@@ -4,6 +4,7 @@ import {
 } from "./notification.interface";
 import { NotificationModel } from "./notification.model";
 import { NotificationAudience } from "@/events/EventTypes";
+import { CUSTOM_CAMPAIGN_KIND } from "./notification-campaign.constants";
 
 const NOTIFICATION_SORT = { createdAt: -1 } as const;
 const READ_FILTER = { isRead: false } as const;
@@ -79,6 +80,28 @@ class Service {
     );
 
     return { modifiedCount: result.modifiedCount };
+  }
+
+  async getOldestUnseenCustomPopup(
+    userId: string
+  ): Promise<INotification | null> {
+    return NotificationModel.findOne({
+      userId,
+      audience: "user",
+      kind: CUSTOM_CAMPAIGN_KIND,
+      $or: [{ popupSeenAt: null }, { popupSeenAt: { $exists: false } }],
+    }).sort({ createdAt: 1 });
+  }
+
+  async markPopupSeen(
+    id: string,
+    userId: string
+  ): Promise<INotification | null> {
+    return NotificationModel.findOneAndUpdate(
+      { _id: id, userId, kind: CUSTOM_CAMPAIGN_KIND },
+      { popupSeenAt: new Date() },
+      { new: true }
+    );
   }
 }
 

@@ -11,7 +11,8 @@ export type NotificationModuleName =
   | "question"
   | "user"
   | "admin"
-  | "question-study-topic";
+  | "question-study-topic"
+  | "admin-broadcast";
 
 export type NotificationAction =
   | "created"
@@ -80,4 +81,5 @@ export type AppEvent =
   | { type: "ADMIN_CREATED"; payload: NotificationEventPayload }
   | { type: "ADMIN_UPDATED"; payload: NotificationEventPayload }
   | { type: "ADMIN_DELETED"; payload: NotificationEventPayload }
-  | { type: "EXAM_SUBMITTED"; payload: NotificationEventPayload };
+  | { type: "EXAM_SUBMITTED"; payload: NotificationEventPayload }
+  | { type: "NOTIFICATION_CAMPAIGN_DELIVER"; payload: { campaignId: string } };

@@ -28,8 +28,13 @@ const notificationSchema = new Schema<INotification>({
     enum: ["admin", "user"],
     default: "user",
   },
+  campaignId: { type: Schema.Types.ObjectId, ref: "NotificationCampaign" },
+  kind: { type: String, trim: true, index: true },
+  popupSeenAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },
 });
+
+notificationSchema.index({ userId: 1, kind: 1, popupSeenAt: 1 });
 
 notificationSchema.index({ userId: 1, audience: 1, createdAt: -1 });
 

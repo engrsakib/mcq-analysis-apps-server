@@ -203,6 +203,74 @@ class Controller extends BaseController {
     });
   });
 
+  getUnseenPopup = this.catchAsync(async (req: Request, res: Response) => {
+    const userId = this.resolveUserId(req);
+    if (!userId) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: MESSAGE.USER_ID_REQUIRED,
+      });
+    }
+
+    if (req.user?.role && ADMIN_ROLE_VALUES.includes(req.user.role as never)) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "No popup for admin audience",
+        data: null,
+      });
+    }
+
+    const notification =
+      await NotificationService.getOldestUnseenCustomPopup(userId);
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: notification ? "Unseen popup found" : "No unseen popup",
+      data: notification,
+    });
+  });
+
+  markPopupSeen = this.catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = this.resolveUserId(req);
+
+    if (!id) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: MESSAGE.NOTIFICATION_ID_REQUIRED,
+      });
+    }
+
+    if (!userId) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: MESSAGE.USER_ID_REQUIRED,
+      });
+    }
+
+    const notification = await NotificationService.markPopupSeen(id, userId);
+
+    if (!notification) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.NOT_FOUND,
+        success: false,
+        message: MESSAGE.NOT_FOUND,
+      });
+    }
+
+    this.sendResponse(res, {
+      statusCode: HttpStatusCode.OK,
+      success: true,
+      message: "Popup marked as seen",
+      data: notification,
+    });
+  });
+
   streamNotifications = this.catchAsync(async (req: Request, res: Response) => {
     const adminId = String(req.user?.id ?? "");
 

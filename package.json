@@ -26,7 +26,8 @@
     "checkly:deploy": "checkly deploy --config src/checkly.config.ts",
     "migrate:question-topics": "ts-node -r tsconfig-paths/register src/scripts/backfill-question-category.ts",
     "firebase:sync": "node scripts/sync-firebase-env.mjs",
-    "firebase:verify": "node scripts/verify-firebase-env.mjs"
+    "firebase:verify": "node scripts/verify-firebase-env.mjs",
+    "test:campaign-utils": "ts-node -r tsconfig-paths/register src/scripts/test-notification-campaign-utils.ts"
   },
   "lint-staged": {
     "*.ts": [

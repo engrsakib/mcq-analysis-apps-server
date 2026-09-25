@@ -602,3 +602,13 @@ If notification is in DB but no push:
 - Always save DB notification even when push fails.
 - Re-register token on every login and on token refresh.
 - Consider adding retry with backoff for transient Firebase failures.
+
+## 14) Admin custom push campaigns
+
+Staff (founder/admin/editor) can send custom messages from the admin dashboard (**App Notifications** → `/dashboard/notifications/send`).
+
+- **API:** `POST /api/v1/notifications/campaigns` with `{ subject, body, audienceMode: "all"|"selected", phoneNumbers?: string[] }`.
+- **Validation:** body max **200 words**; selected phones must be valid BD numbers and match registered app users (unresolved phones are rejected before queueing).
+- **Delivery:** Job `NOTIFICATION_CAMPAIGN_DELIVER` creates per-user inbox rows (`module: admin-broadcast`, `kind: custom_campaign`) and sends FCM with `data.kind=custom_campaign`, `notificationId`, `campaignId`, `subject`, `body`.
+- **Popup state:** `GET /notifications/popup/unseen`, `PATCH /notifications/:id/popup-seen` (student JWT).
+- **History:** `GET /notifications/campaigns`, `GET /notifications/campaigns/:id`.
