@@ -610,5 +610,14 @@ Staff (founder/admin/editor) can send custom messages from the admin dashboard (
 - **API:** `POST /api/v1/notifications/campaigns` with `{ subject, body, audienceMode: "all"|"selected", phoneNumbers?: string[] }`.
 - **Validation:** body max **200 words**; selected phones must be valid BD numbers and match registered app users (unresolved phones are rejected before queueing).
 - **Delivery:** Job `NOTIFICATION_CAMPAIGN_DELIVER` creates per-user inbox rows (`module: admin-broadcast`, `kind: custom_campaign`) and sends FCM with `data.kind=custom_campaign`, `notificationId`, `campaignId`, `subject`, `body`.
+- **Flutter foreground:** custom campaigns show the in-app popup **and** a high-importance local notification (system tray, default sound/vibration via channel `mcq_analysis_high_importance`). **Background/killed:** the OS shows the FCM notification only (no duplicate local post from the app).
 - **Popup state:** `GET /notifications/popup/unseen`, `PATCH /notifications/:id/popup-seen` (student JWT).
 - **History:** `GET /notifications/campaigns`, `GET /notifications/campaigns/:id`.
+  - List query (all optional except pagination): `page`, `limit` (max 50), `status` (`queued`|`processing`|`completed`|`failed`), `audienceMode` (`all`|`selected`), `dateFrom` / `dateTo` (YYYY-MM-DD, UTC day bounds), `search` (subject substring, max 100 chars).
+- **Recipient picker (admin composer):** `GET /notifications/campaigns/recipients`
+  - `segment` (required): `browse` | `not_attended` | `top_by_exam`
+  - `page`, `limit` (max 50)
+  - `search` — name/phone filter for `browse` and `not_attended`
+  - `examNumber` — required for `not_attended` and `top_by_exam`
+  - `topN` — for `top_by_exam` only (default 50, max 200); returns ranked rows with `rank` and `score`
+  - Response: `{ data: [{ userId?, name, phone_number, rank?, score? }], meta: { page, limit, total, totalPage, hasMore } }`

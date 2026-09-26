@@ -6,7 +6,11 @@ import {
   CreateNotificationCampaignInput,
   INotificationCampaign,
 } from "./notification-campaign.interface";
-import { normalizePhoneList } from "./notification-campaign.utils";
+import {
+  buildCampaignListFilter,
+  CampaignListFilters,
+  normalizePhoneList,
+} from "./notification-campaign.utils";
 import { Types } from "mongoose";
 
 export type CreateCampaignResult =
@@ -114,18 +118,23 @@ class NotificationCampaignService {
     return { ok: true, campaign };
   }
 
-  async listCampaigns(page: number, limit: number) {
+  async listCampaigns(
+    page: number,
+    limit: number,
+    filters: CampaignListFilters = {}
+  ) {
     const safePage = Math.max(1, page);
     const safeLimit = Math.min(50, Math.max(1, limit));
     const skip = (safePage - 1) * safeLimit;
+    const mongoFilter = buildCampaignListFilter(filters);
 
     const [data, total] = await Promise.all([
-      NotificationCampaignModel.find()
+      NotificationCampaignModel.find(mongoFilter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(safeLimit)
         .lean(),
-      NotificationCampaignModel.countDocuments(),
+      NotificationCampaignModel.countDocuments(mongoFilter),
     ]);
 
     return {

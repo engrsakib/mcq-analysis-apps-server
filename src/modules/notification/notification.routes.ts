@@ -49,6 +49,12 @@ router.get(
 );
 
 router.get(
+  "/campaigns/recipients",
+  JwtInstance.authenticate(ADMIN_ROLE_VALUES),
+  NotificationCampaignController.listCampaignRecipients
+);
+
+router.get(
   "/campaigns/:id",
   JwtInstance.authenticate(ADMIN_ROLE_VALUES),
   NotificationCampaignController.getCampaign

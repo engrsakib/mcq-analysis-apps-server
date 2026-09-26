@@ -64,3 +64,74 @@ export function normalizePhoneList(phones: string[]): {
 
   return { normalized, invalid };
 }
+
+export type CampaignListFilters = {
+  status?: "queued" | "processing" | "completed" | "failed";
+  audienceMode?: "all" | "selected";
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+};
+
+const CAMPAIGN_STATUSES = [
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+] as const;
+
+/** Parse YYYY-MM-DD to UTC start of day. */
+export function parseCampaignDateFrom(raw: string): Date | null {
+  const trimmed = raw.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const d = new Date(`${trimmed}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Parse YYYY-MM-DD to UTC end of day (inclusive). */
+export function parseCampaignDateTo(raw: string): Date | null {
+  const trimmed = raw.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const d = new Date(`${trimmed}T23:59:59.999Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Build Mongo filter for campaign list queries (unit-testable). */
+export function buildCampaignListFilter(
+  filters: CampaignListFilters
+): Record<string, unknown> {
+  const mongo: Record<string, unknown> = {};
+
+  if (
+    filters.status &&
+    CAMPAIGN_STATUSES.includes(
+      filters.status as (typeof CAMPAIGN_STATUSES)[number]
+    )
+  ) {
+    mongo.status = filters.status;
+  }
+
+  if (filters.audienceMode === "all" || filters.audienceMode === "selected") {
+    mongo.audienceMode = filters.audienceMode;
+  }
+
+  const createdAt: Record<string, Date> = {};
+  if (filters.dateFrom) {
+    const from = parseCampaignDateFrom(filters.dateFrom);
+    if (from) createdAt.$gte = from;
+  }
+  if (filters.dateTo) {
+    const to = parseCampaignDateTo(filters.dateTo);
+    if (to) createdAt.$lte = to;
+  }
+  if (Object.keys(createdAt).length > 0) {
+    mongo.createdAt = createdAt;
+  }
+
+  const search = filters.search?.trim().slice(0, 100);
+  if (search) {
+    mongo.subject = { $regex: search, $options: "i" };
+  }
+
+  return mongo;
+}

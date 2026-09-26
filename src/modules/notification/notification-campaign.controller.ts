@@ -2,8 +2,13 @@ import { Request, Response } from "express";
 import BaseController from "@/shared/baseController";
 import { HttpStatusCode } from "@/lib/httpStatus";
 import { ADMIN_ROLE_VALUES } from "@/constants/roles";
-import { createNotificationCampaignSchema } from "./notification-campaign.validate";
+import {
+  createNotificationCampaignSchema,
+  listCampaignsQuerySchema,
+  listCampaignRecipientsQuerySchema,
+} from "./notification-campaign.validate";
 import { notificationCampaignService } from "./notification-campaign.service";
+import { notificationCampaignAudienceService } from "./notification-campaign-audience.service";
 
 class CampaignController extends BaseController {
   private assertAdmin(req: Request, res: Response): boolean {
@@ -74,10 +79,25 @@ class CampaignController extends BaseController {
   listCampaigns = this.catchAsync(async (req: Request, res: Response) => {
     if (!this.assertAdmin(req, res)) return;
 
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
+    const parsed = listCampaignsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return this.sendResponse(res, {
+        statusCode: HttpStatusCode.BAD_REQUEST,
+        success: false,
+        message: parsed.error.errors[0]?.message ?? "Invalid query parameters",
+        data: parsed.error.flatten(),
+      });
+    }
 
-    const result = await notificationCampaignService.listCampaigns(page, limit);
+    const page = parsed.data.page ?? 1;
+    const limit = parsed.data.limit ?? 10;
+    const { status, audienceMode, dateFrom, dateTo, search } = parsed.data;
+
+    const result = await notificationCampaignService.listCampaigns(
+      page,
+      limit,
+      { status, audienceMode, dateFrom, dateTo, search }
+    );
 
     this.sendResponse(res, {
       statusCode: HttpStatusCode.OK,
@@ -86,6 +106,34 @@ class CampaignController extends BaseController {
       data: result,
     });
   });
+
+  listCampaignRecipients = this.catchAsync(
+    async (req: Request, res: Response) => {
+      if (!this.assertAdmin(req, res)) return;
+
+      const parsed = listCampaignRecipientsQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return this.sendResponse(res, {
+          statusCode: HttpStatusCode.BAD_REQUEST,
+          success: false,
+          message:
+            parsed.error.errors[0]?.message ?? "Invalid query parameters",
+          data: parsed.error.flatten(),
+        });
+      }
+
+      const result = await notificationCampaignAudienceService.listRecipients(
+        parsed.data
+      );
+
+      this.sendResponse(res, {
+        statusCode: HttpStatusCode.OK,
+        success: true,
+        message: "Campaign recipients retrieved successfully",
+        data: result,
+      });
+    }
+  );
 
   getCampaign = this.catchAsync(async (req: Request, res: Response) => {
     if (!this.assertAdmin(req, res)) return;

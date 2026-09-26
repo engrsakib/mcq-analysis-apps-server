@@ -53,3 +53,41 @@ export const createNotificationCampaignSchema = z
 export type CreateNotificationCampaignBody = z.infer<
   typeof createNotificationCampaignSchema
 >;
+
+const isoDateString = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+  .optional();
+
+export const listCampaignsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  status: z.enum(["queued", "processing", "completed", "failed"]).optional(),
+  audienceMode: z.enum(["all", "selected"]).optional(),
+  dateFrom: isoDateString,
+  dateTo: isoDateString,
+  search: z.string().trim().max(100).optional(),
+});
+
+export const listCampaignRecipientsQuerySchema = z
+  .object({
+    segment: z.enum(["browse", "not_attended", "top_by_exam"]),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional(),
+    search: z.string().trim().max(100).optional(),
+    examNumber: z.coerce.number().int().positive().optional(),
+    topN: z.coerce.number().int().min(1).max(200).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      (data.segment === "not_attended" || data.segment === "top_by_exam") &&
+      !data.examNumber
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "examNumber is required for this segment",
+        path: ["examNumber"],
+      });
+    }
+  });
