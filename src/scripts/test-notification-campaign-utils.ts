@@ -53,4 +53,9 @@ assert.deepEqual(Object.keys(filter.createdAt as object).sort(), [
 ]);
 assert.equal((filter.subject as { $regex: string }).$regex, "test");
 
+import { stripHtmlToPlainText } from "../shared/strip-html";
+
+const stripped = stripHtmlToPlainText("<p><strong>Hello</strong> world</p>");
+assert.equal(stripped, "Hello world");
+
 console.log("notification-campaign.utils: all assertions passed");

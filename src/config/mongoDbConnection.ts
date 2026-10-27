@@ -18,9 +18,12 @@ const mongodbConnection = async (): Promise<boolean> => {
 
   console.log("Connecting MongoDB Database...");
 
+  const useTls =
+    mongoUrl.startsWith("mongodb+srv://") || process.env.MONGODB_SSL === "true";
+
   try {
     await mongoose.connect(mongoUrl, {
-      ssl: true,
+      ...(useTls ? { ssl: true } : {}),
       retryWrites: true,
       serverSelectionTimeoutMS: 10000,
     });

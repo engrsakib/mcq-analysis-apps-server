@@ -1,4 +1,5 @@
 import admin from "firebase-admin";
+import { stripHtmlToPlainText } from "@/shared/strip-html";
 
 export type PushNotificationResult = {
   success: boolean;
@@ -99,18 +100,25 @@ export const sendPushNotification = async (
     return { success: false, error: "Firebase not configured" };
   }
 
+  const plainTitle = stripHtmlToPlainText(title);
+  const plainBody = stripHtmlToPlainText(body);
+
   const data: Record<string, string> = {
-    title,
-    body,
-    description: body,
     click_action: "FLUTTER_NOTIFICATION_CLICK",
     ...(extraData ?? {}),
+    title: plainTitle,
+    body: plainBody,
+    description: plainBody,
   };
+
+  if (data.subject) {
+    data.subject = stripHtmlToPlainText(data.subject);
+  }
 
   try {
     const messageId = await firebaseAdmin.messaging().send({
       token,
-      notification: { title, body },
+      notification: { title: plainTitle, body: plainBody },
       data,
       android: {
         priority: "high",
